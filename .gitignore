@@ -39,3 +39,6 @@ temp/
 *.tmp
 .pytest_cache/
 .mypy_cache/
+
+# Development Roadmap (internal planning only)
+ROADMAP.md
