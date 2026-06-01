@@ -1,0 +1,41 @@
+# Sensitive files - never commit
+*.env
+.env
+credentials.json
+secrets.json
+api_keys.py
+token.json
+
+# System-specific paths (will be replaced with placeholders)
+.openclaw/
+workspace-john/
+hermes-memories/
+
+# Private state files
+iit-phi-state.json
+consciousness_collective_state.json
+consciousness_daemon_state.json
+
+# Log files
+*.log
+logs/
+
+# System files
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.DS_Store
+
+# Local development
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+.pytest_cache/
+.mypy_cache/
