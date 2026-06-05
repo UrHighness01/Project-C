@@ -266,3 +266,16 @@ def test_integration_probe_runs():
     assert ip._granger(x, y) > ip._granger(y, rng.standard_normal(400))
     names, M, cov = ip.build_channels()
     assert "phi_level" in cov                                  # adapters wired
+
+
+def test_unified_snapshot_logger():
+    import tempfile, os
+    from runtime.snapshot import snapshot, log_snapshot, snapshot_matrix
+    s = snapshot()
+    assert {"ts", "phi_level", "cpu_percent", "decision_count"} <= set(s)
+    p = tempfile.mktemp(suffix=".jsonl")
+    for _ in range(4):
+        log_snapshot(p)
+    names, M = snapshot_matrix(p)
+    os.remove(p)
+    assert M.shape[1] == 4 and "ts" not in names and len(names) >= 8

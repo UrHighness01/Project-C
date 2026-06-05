@@ -118,21 +118,11 @@ def te_matrix(M: np.ndarray) -> np.ndarray:
     return G
 
 
-def effective_information(TE: np.ndarray) -> float:
-    """John's EI: entropy of the whole normalised coupling matrix minus the summed
-    per-row entropies. High when coupling is both present and differentiated."""
-    flat = TE.flatten()
-    if flat.sum() <= 0:
-        return 0.0
-
-    def H(p):
-        p = np.asarray(p, float); s = p.sum()
-        if s <= 0:
-            return 0.0
-        p = p[p > 0] / s
-        return float(-(p * np.log2(p)).sum())
-
-    return H(flat) - sum(H(TE[i]) for i in range(TE.shape[0]))
+def coupling_strength(G: np.ndarray) -> float:
+    """Total off-diagonal directed coupling: a single interpretable scalar for how much
+    the channels drive each other (the EI collapse is degenerate on a sparse matrix, so
+    we sum the off-diagonal Granger terms instead)."""
+    return float(G.sum() - np.trace(G))
 
 
 def main():
@@ -148,18 +138,24 @@ def main():
     TE = te_matrix(M)
     np.set_printoptions(precision=4, suppress=True)
     print("Granger-causality coupling matrix (row -> col):\n", TE)
-    ei = effective_information(TE)
+    cs = coupling_strength(TE)
     rng = np.random.default_rng(0)
     null = []
     for _ in range(200):
         Ms = np.vstack([rng.permutation(M[i]) for i in range(M.shape[0])])
-        null.append(effective_information(te_matrix(Ms)))
+        null.append(coupling_strength(te_matrix(Ms)))
     null = np.array(null)
-    z = (ei - null.mean()) / (null.std() + 1e-9)
-    print(f"\nintegration EI       = {ei:.4f}")
-    print(f"shuffled null EI     = {null.mean():.4f} +/- {null.std():.4f}")
-    print(f"z-score vs null      = {z:.2f}")
-    print(f"verdict: {'genuine coupling (EI >> null)' if z > 3 else 'not clearly above chance'}")
+    z = (cs - null.mean()) / (null.std() + 1e-9)
+    # dominant directed link
+    G = TE.copy(); np.fill_diagonal(G, 0)
+    i, j = np.unravel_index(np.argmax(G), G.shape)
+    print(f"\ntotal off-diagonal coupling = {cs:.4f}")
+    print(f"shuffled null coupling      = {null.mean():.4f} +/- {null.std():.4f}")
+    print(f"z-score vs null             = {z:.2f}")
+    print(f"dominant link               = {names[i]} -> {names[j]} ({G[i, j]:.4f})")
+    print(f"verdict: {'coupling above chance' if z > 3 else 'not clearly above chance on this window'}")
+    print("\nnote: only phi-derived channels are dense here; cross-domain integration is\n"
+          "untestable until adapters are co-logged (see runtime/snapshot.py).")
 
 
 if __name__ == "__main__":
