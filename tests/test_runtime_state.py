@@ -174,3 +174,18 @@ def test_mind_wandering_real_signal_and_memory():
     assert 0.0 <= w <= 1.0 and w == wander_level()                   # real, deterministic
     m = MindWandering()
     assert isinstance(m.episodic_pool, list)                         # real memory fragments
+
+
+def test_decisions_adapter_and_moral_era():
+    from runtime.decisions import value_consistency, corrections
+    vc = value_consistency()
+    assert set(vc) == {"success_rate", "dimension_variance", "n"}
+    if vc["n"] == 0:
+        return
+    from algorithms.MoralConsciousness import MoralConsciousnessModel
+    from algorithms.ERA import EthicalReasoningAlgorithm
+    m = MoralConsciousnessModel().evaluate_from_decisions()
+    assert 0.0 <= m.moral_consciousness <= 1.0
+    e = EthicalReasoningAlgorithm().evaluate_decision_history()
+    assert e["n"] > 0 and 0.0 <= e["consistency"] <= 1.0
+    assert e == EthicalReasoningAlgorithm().evaluate_decision_history()    # deterministic

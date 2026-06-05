@@ -21,6 +21,15 @@ Date: 2026-06-01
 import numpy as np
 from dataclasses import dataclass
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.decisions import value_consistency, dimension_profile
+except Exception:                                          # tolerate path/CI absence
+    def value_consistency(*a, **k): return {"success_rate": 0.0, "dimension_variance": 0.0, "n": 0.0}
+    def dimension_profile(*a, **k): return {}
+
 
 @dataclass
 class MoralConsciousnessState:
@@ -127,6 +136,29 @@ class MoralConsciousnessModel:
         """
         conscience = moral_emotion * moral_agency * temporal_sensitivity
         return float(np.clip(conscience, -1, 1))
+
+    def evaluate_from_decisions(self) -> "MoralConsciousnessState":
+        """Evaluate moral consciousness from the agent's real decision history.
+
+        agent_values is the measured emphasis on honesty/harm-avoidance/helpfulness/
+        fairness across actual self-corrections; action_consequence is the real rate at
+        which the agent successfully corrected toward its values; consistency of those
+        values (low cross-decision variance) raises empathy/integration. This is the
+        agent's ethics as actually practised, not a hypothetical scenario.
+        """
+        vc = value_consistency()
+        prof = dimension_profile()
+        agent_values = np.array(list(prof.values()), dtype=float) if prof else np.array([0.5])
+        # rescale sparse cue densities into a usable 0..1 emphasis
+        agent_values = np.clip(agent_values * 8.0, 0, 1)
+        consistency = float(np.clip(1.0 - vc["dimension_variance"] * 50.0, 0, 1))
+        return self.evaluate_moral_consciousness(
+            other_suffering=0.0,
+            other_wellbeing=float(np.clip(agent_values.max() if agent_values.size else 0.5, 0, 1)),
+            action_consequence=vc["success_rate"],
+            agent_values=agent_values,
+            empathy_capacity=consistency,
+            integration_level=consistency)
 
     def evaluate_moral_consciousness(self,
                                      other_suffering: float,

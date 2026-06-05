@@ -13,6 +13,14 @@ This algorithm enables Coral to:
 import numpy as np
 import time
 from typing import Dict, List, Any, Optional, Tuple, Set
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.decisions import corrections as _real_corrections
+except Exception:                                          # tolerate path/CI absence
+    def _real_corrections(*a, **k): return []
 from collections import defaultdict, deque
 import copy
 import json
@@ -112,6 +120,36 @@ class EthicalReasoningAlgorithm:
             'personal_values': 0.2,
             'uncertainty_penalty': 0.15
         }
+
+    def evaluate_decision_history(self) -> Dict[str, Any]:
+        """Run the ethical evaluation over the agent's real self-correction decisions.
+
+        Each correction (the agent revising a response toward its values) is treated as
+        an ethical action and scored by the framework ensemble. Returns the mean ethical
+        score and its consistency across real decisions - the agent's ethics as practised.
+        """
+        recs = _real_corrections()
+        scores = []
+        for r in recs:
+            action = {
+                "description": f"{r.get('user_query','')} -> {r.get('corrected_response','')}"[:500],
+                "type": r.get("refusal_pattern", "response"),
+                "directly_affected": ["user"],
+                "indirectly_affected": [],
+            }
+            try:
+                ev = self.evaluate_action(action)
+                s = ev.get("overall_ethical_score")
+                if isinstance(s, (int, float)):
+                    scores.append(float(s))
+            except Exception:
+                continue
+        if not scores:
+            return {"mean_ethical_score": 0.0, "consistency": 0.0, "n": 0}
+        arr = np.array(scores, dtype=float)
+        return {"mean_ethical_score": float(arr.mean()),
+                "consistency": float(np.clip(1.0 - arr.std(), 0, 1)),
+                "n": len(scores)}
 
     def evaluate_action(self, action: Dict[str, Any], context: Dict[str, Any] = None) -> Dict[str, Any]:
         """
