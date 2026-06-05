@@ -18,8 +18,8 @@ def process_task(task_data):
     """
     # Example: Simulate some AI computation using NumPy (e.g., matrix multiplication)
     matrix_size = 100
-    matrix_A = np.random.rand(matrix_size, matrix_size)
-    matrix_B = np.random.rand(matrix_size, matrix_size)
+    matrix_A = _ACPV_RNG.random((matrix_size, matrix_size))
+    matrix_B = _ACPV_RNG.random((matrix_size, matrix_size))
     result_matrix = np.dot(matrix_A, matrix_B) # Placeholder operation: Matrix multiplication
 
     # Simulate some variable computation time based on data size (example)
@@ -89,7 +89,7 @@ def optimized_ai_function(input_data):
     """
     # Example: Using NumPy for efficient array operations (summation)
     data_array = np.array(input_data)
-    intermediate_matrix = np.random.rand(100, 100) # Example intermediate matrix
+    intermediate_matrix = _ACPV_RNG.random((100, 100)) # Example intermediate matrix
     optimized_result_matrix: np.ndarray = optimized_matrix_multiply(intermediate_matrix, intermediate_matrix.T) # Example using matrix multiplication
     result: float = float(np.sum(optimized_result_matrix)) # Example: Final summation
 
@@ -111,7 +111,7 @@ def cached_function(data):
     """
     print(f"Cached Function called with data: {data} (potentially not from cache)") # Indicate when function is called
     # Simulate a more complex, potentially memory-intensive AI operation
-    large_matrix = np.random.rand(500, 500) # Example: Creating a larger matrix
+    large_matrix = _ACPV_RNG.random((500, 500)) # Example: Creating a larger matrix
     time.sleep(0.2) # Simulate some computation time
     result = np.sum(large_matrix) + hash(data) # Example: Operation using the matrix and input data
     return f"Result for {data}: Sum of large matrix + hash = {result:.4f}"
@@ -197,8 +197,8 @@ if __name__ == "__main__":
     benchmark_repetitions = 10     # Number of times to repeat each timing
 
     # Create benchmark matrices
-    benchmark_matrix_A = np.random.rand(matrix_size_benchmark, matrix_size_benchmark)
-    benchmark_matrix_B = np.random.rand(matrix_size_benchmark, matrix_size_benchmark)
+    benchmark_matrix_A = _ACPV_RNG.random((matrix_size_benchmark, matrix_size_benchmark))
+    benchmark_matrix_B = _ACPV_RNG.random((matrix_size_benchmark, matrix_size_benchmark))
 
     # Time numpy_matrix_multiply
     numpy_timer = timeit.Timer(

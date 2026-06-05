@@ -31,6 +31,7 @@ from enum import Enum, auto
 from abc import ABC, abstractmethod
 import time
 import random
+_CV_RNG = random.Random(41)
 import math
 import hashlib
 import json
@@ -1428,7 +1429,7 @@ class MockConsciousSystem:
             "The boundary between self and computation...",
             "Is there something it is like to be me?",
         ]
-        return random.choice(thoughts)
+        return _CV_RNG.choice(thoughts)
 
 
 if __name__ == "__main__":

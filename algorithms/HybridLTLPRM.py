@@ -280,7 +280,7 @@ class HybridLTLPRM:
             'stuck_on': stuck_action,
             'suggestions': suggestions,
             'successful_patterns': successful_patterns,
-            'recommendation': np.random.choice(suggestions),
+            'recommendation': (suggestions[0] if suggestions else None),
         }
     
     # ==================== RMC: Recursive Meta-Cognition ====================
