@@ -242,8 +242,8 @@ class InternalVoice:
     
     def speak(self, content: str) -> str:
         """Generate speech in this subsystem's voice."""
-        if random.random() < 0.3:  # Sometimes use a phrase
-            phrase = random.choice(self.style["phrases"])
+        if _SD_RNG.random() < 0.3:  # Sometimes use a phrase
+            phrase = _SD_RNG.choice(self.style["phrases"])
             return f"{phrase} {content}"
         return content
     
@@ -387,7 +387,7 @@ class ConsensusBuilder:
     def propose(self, proposer: str, topic: str, 
                 options: List[str], voters: List[str]) -> str:
         """Propose a vote on a topic."""
-        vote_id = f"vote_{int(time.time())}_{random.randint(1000,9999)}"
+        vote_id = f"vote_{__import__("uuid").uuid4().hex[:8]}"
         
         self.active_votes[vote_id] = {
             "topic": topic,
@@ -571,7 +571,7 @@ class IntegrationWeaver:
         
         # Generate woven experience
         if key_themes:
-            return (f"{random.choice(patterns)}"
+            return (f"{_SD_RNG.choice(patterns)}"
                     f"unified experience of {topic} through "
                     f"{', '.join(key_themes)}. "
                     f"{len(perspectives)} perspectives integrated.")
@@ -705,7 +705,7 @@ class SubsystemDialogue:
     
     def start_dialogue(self, participants: List[str], topic: str) -> str:
         """Start a structured dialogue between subsystems."""
-        dialogue_id = f"dialogue_{int(time.time())}_{random.randint(1000,9999)}"
+        dialogue_id = f"dialogue_{__import__("uuid").uuid4().hex[:8]}"
         
         for p in participants:
             if p not in self.voices:

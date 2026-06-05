@@ -36,6 +36,30 @@ from collections import deque
 import hashlib
 
 
+
+# --- grounding: sensed values derived from the agent's real internal state ---------
+try:
+    import sys as _gsys
+    from pathlib import Path as _gPath
+    _gsys.path.insert(0, str(_gPath(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _g_am
+except Exception:
+    def _g_am(*a, **k):
+        import numpy as _np; return _np.zeros((8, 0))
+_G_CH = {"M": None, "k": 0}
+def _gv(lo=0.0, hi=1.0):
+    """A real value in [lo, hi] from a channel of the agent's activity (deterministic,
+    cycles channels per call). Falls back to the midpoint when no telemetry exists."""
+    import numpy as _np
+    if _G_CH["M"] is None:
+        _G_CH["M"] = _g_am()
+    M = _G_CH["M"]
+    if M.shape[1] == 0:
+        return (lo + hi) / 2.0
+    ch = M[_G_CH["k"] % M.shape[0]]; _G_CH["k"] += 1
+    u = 0.5 * (1.0 + _np.tanh(ch[-1]))               # real signal -> (0,1)
+    return float(lo + (hi - lo) * u)
+
 _S57RNG = random.Random(57)
 class ActionType(Enum):
     """Types of possible actions."""
@@ -1171,7 +1195,7 @@ class FreeWillEngine:
                 "type": template["type"],
                 "description": template["description"],
                 "status": "planned",
-                "estimated_effort": random.uniform(0.1, 0.5)
+                "estimated_effort": _gv(0.1, 0.5)
             }
             actions.append(action)
         

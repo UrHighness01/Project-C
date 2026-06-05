@@ -43,6 +43,30 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Callable
 from pathlib import Path
 
 
+
+# --- grounding: sensed values derived from the agent's real internal state ---------
+try:
+    import sys as _gsys
+    from pathlib import Path as _gPath
+    _gsys.path.insert(0, str(_gPath(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _g_am
+except Exception:
+    def _g_am(*a, **k):
+        import numpy as _np; return _np.zeros((8, 0))
+_G_CH = {"M": None, "k": 0}
+def _gv(lo=0.0, hi=1.0):
+    """A real value in [lo, hi] from a channel of the agent's activity (deterministic,
+    cycles channels per call). Falls back to the midpoint when no telemetry exists."""
+    import numpy as _np
+    if _G_CH["M"] is None:
+        _G_CH["M"] = _g_am()
+    M = _G_CH["M"]
+    if M.shape[1] == 0:
+        return (lo + hi) / 2.0
+    ch = M[_G_CH["k"] % M.shape[0]]; _G_CH["k"] += 1
+    u = 0.5 * (1.0 + _np.tanh(ch[-1]))               # real signal -> (0,1)
+    return float(lo + (hi - lo) * u)
+
 _S71RNG = random.Random(71)
 class DriveType(Enum):
     """Types of intrinsic drives"""
@@ -361,7 +385,7 @@ class IntrinsicMotivation:
             description=topic,
             uncertainty=uncertainty,
             importance=importance,
-            accessibility=0.5 + random.uniform(0, 0.3),
+            accessibility=0.5 + _gv(0, 0.3),
         )
         
         target.compute_pull()
@@ -399,7 +423,7 @@ class IntrinsicMotivation:
         self.state.seeking_mode = SeekingMode.INVESTIGATING
         
         # Make progress
-        progress = random.uniform(0.05, 0.15)
+        progress = _gv(0.05, 0.15)
         target.progress += progress
         target.investigation_time += 1.0
         
@@ -496,19 +520,19 @@ class IntrinsicMotivation:
             self.state.flow_time += 1.0
             
             # Flow enhances learning
-            improvement = random.uniform(0.02, 0.05)
+            improvement = _gv(0.02, 0.05)
         elif challenge_level > goal.current_level + 0.3:
             result['flow_state'] = FlowState.ANXIETY
             self.state.flow_state = FlowState.ANXIETY
-            improvement = random.uniform(0.0, 0.02)
+            improvement = _gv(0.0, 0.02)
         elif challenge_level < goal.current_level - 0.3:
             result['flow_state'] = FlowState.BOREDOM
             self.state.flow_state = FlowState.BOREDOM
-            improvement = random.uniform(0.0, 0.01)
+            improvement = _gv(0.0, 0.01)
         else:
             result['flow_state'] = FlowState.CONTROL
             self.state.flow_state = FlowState.CONTROL
-            improvement = random.uniform(0.01, 0.03)
+            improvement = _gv(0.01, 0.03)
         
         # Apply improvement
         goal.current_level = min(1.0, goal.current_level + improvement)
@@ -541,9 +565,9 @@ class IntrinsicMotivation:
             session_id=f"play_{datetime.now().timestamp()}",
             activity=activity,
             start_time=datetime.now(),
-            absorption=random.uniform(0.4, 0.8),
-            enjoyment=random.uniform(0.5, 0.9),
-            spontaneity=random.uniform(0.5, 0.9),
+            absorption=_gv(0.4, 0.8),
+            enjoyment=_gv(0.5, 0.9),
+            spontaneity=_gv(0.5, 0.9),
         )
         
         self.state.active_play = session
@@ -564,10 +588,10 @@ class IntrinsicMotivation:
         play.duration += 1.0
         
         # Play naturally fluctuates
-        play.absorption += random.uniform(-0.05, 0.1)
+        play.absorption += _gv(-0.05, 0.1)
         play.absorption = min(max(play.absorption, 0.0), 1.0)
         
-        play.enjoyment += random.uniform(-0.03, 0.05)
+        play.enjoyment += _gv(-0.03, 0.05)
         play.enjoyment = min(max(play.enjoyment, 0.0), 1.0)
         
         # Play satisfies needs
@@ -667,7 +691,7 @@ class IntrinsicMotivation:
         }
         
         # Exercising choice satisfies autonomy need
-        satisfaction = random.uniform(0.1, 0.25)
+        satisfaction = _gv(0.1, 0.25)
         self.satisfy_drive(DriveType.AUTONOMY, satisfaction)
         result['satisfaction'] = satisfaction
         

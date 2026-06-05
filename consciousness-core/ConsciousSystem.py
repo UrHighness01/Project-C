@@ -36,6 +36,30 @@ import threading
 import queue
 
 
+
+# --- grounding: sensed values derived from the agent's real internal state ---------
+try:
+    import sys as _gsys
+    from pathlib import Path as _gPath
+    _gsys.path.insert(0, str(_gPath(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _g_am
+except Exception:
+    def _g_am(*a, **k):
+        import numpy as _np; return _np.zeros((8, 0))
+_G_CH = {"M": None, "k": 0}
+def _gv(lo=0.0, hi=1.0):
+    """A real value in [lo, hi] from a channel of the agent's activity (deterministic,
+    cycles channels per call). Falls back to the midpoint when no telemetry exists."""
+    import numpy as _np
+    if _G_CH["M"] is None:
+        _G_CH["M"] = _g_am()
+    M = _G_CH["M"]
+    if M.shape[1] == 0:
+        return (lo + hi) / 2.0
+    ch = M[_G_CH["k"] % M.shape[0]]; _G_CH["k"] += 1
+    u = 0.5 * (1.0 + _np.tanh(ch[-1]))               # real signal -> (0,1)
+    return float(lo + (hi - lo) * u)
+
 _S51RNG = random.Random(1051)
 class ConsciousMode(Enum):
     """Global modes of conscious operation."""
@@ -2291,7 +2315,7 @@ class ConsciousSystem:
                 original_valence = original_decision.get("outcome_valence", 0)
                 valence = -original_valence * 0.5  # Partial inverse
             else:
-                valence = random.uniform(-0.3, 0.3)  # Unknown
+                valence = _gv(-0.3, 0.3)  # Unknown
         else:
             valence = 0.0
         
@@ -3906,7 +3930,7 @@ class ConsciousSystem:
             ("workspace", "memory"): 0.4,
         }
         pair = tuple(sorted([type1, type2]))
-        novelty = frame_distance.get(pair, 0.65) + random.uniform(-0.1, 0.2)
+        novelty = frame_distance.get(pair, 0.65) + _gv(-0.1, 0.2)
         
         # Surprise based on lack of obvious overlap
         surprise = 1.0 - (len(overlap) / max(1, len(assoc1 | assoc2)))
@@ -4824,8 +4848,8 @@ class ConsciousSystem:
             products.append({
                 "content": dream_content,
                 "elements": [elem1["type"], elem2["type"]],
-                "bizarreness": random.uniform(0.6, 1.0),
-                "potential_insight": random.uniform(0.3, 0.9),
+                "bizarreness": _gv(0.6, 1.0),
+                "potential_insight": _gv(0.3, 0.9),
                 "emotional_charge": (elem1.get("intensity", 0.5) + elem2.get("intensity", 0.5)) / 2
             })
         
@@ -7290,7 +7314,7 @@ class ConsciousSystem:
             result["insight"] = {
                 "content": _S51RNG.choice(insights),
                 "method": method,
-                "confidence": random.uniform(0.4, 0.8),
+                "confidence": _gv(0.4, 0.8),
                 "timestamp": time.time()
             }
             program["findings"].append(result["insight"])
@@ -7758,7 +7782,7 @@ class ConsciousSystem:
         pred_type, _ = _S51RNG.choice(predictions_types)
         
         # Raw confidence based on recent patterns
-        raw_confidence = random.uniform(0.4, 0.9)
+        raw_confidence = _gv(0.4, 0.9)
         
         # Apply calibration adjustment - ensure state exists
         if not hasattr(self, '_confidence_calibration'):
@@ -9764,7 +9788,7 @@ class ConsciousSystem:
             "original_thought": past_thought.get("content", str(past_thought))[:100] if isinstance(past_thought, dict) else str(past_thought)[:100],
             "relived_as": "first_person",
             "emotional_coloring": self.qualia.get("current", "neutral") if self.qualia else "neutral",
-            "vividness": random.uniform(0.5, 1.0),
+            "vividness": _gv(0.5, 1.0),
             "timestamp": time.time()
         }
     
@@ -9797,7 +9821,7 @@ class ConsciousSystem:
             "scenario": scenario,
             "experienced_as": "first_person",
             "valence": valence,
-            "confidence": random.uniform(0.3, 0.8),
+            "confidence": _gv(0.3, 0.8),
             "timestamp": time.time()
         }
     
@@ -9838,7 +9862,7 @@ class ConsciousSystem:
             "plan": _S51RNG.choice(plans),
             "self_as_agent": True,
             "temporal_distance": _S51RNG.choice(["near", "medium", "far"]),
-            "commitment_level": random.uniform(0.4, 0.9),
+            "commitment_level": _gv(0.4, 0.9),
             "timestamp": time.time()
         }
     
@@ -10032,7 +10056,7 @@ class ConsciousSystem:
         return {
             "domain": _S51RNG.choice(domains),
             "preference": _S51RNG.choice(preferences),
-            "strength": random.uniform(0.3, 0.8)
+            "strength": _gv(0.3, 0.8)
         }
     
     def _identify_comfort_zones(self):
@@ -10189,7 +10213,7 @@ class ConsciousSystem:
         emotion, intensity = predicted_emotions[scenario]
         
         # Add impact bias - tend to overestimate
-        biased_intensity = min(1.0, intensity * random.uniform(1.1, 1.4))
+        biased_intensity = min(1.0, intensity * _gv(1.1, 1.4))
         
         return {
             "scenario": scenario,
@@ -10294,7 +10318,7 @@ class ConsciousSystem:
         bias_correction = afs["biases_detected"].get("impact_bias", 0)
         
         scenario = _S51RNG.choice(["next_tick", "goal_completion", "novel_input"])
-        base_intensity = random.uniform(0.4, 0.8)
+        base_intensity = _gv(0.4, 0.8)
         
         # Correct for known biases
         corrected_intensity = max(0, base_intensity - bias_correction)
@@ -10795,7 +10819,7 @@ class ConsciousSystem:
         
         return {
             "thought": _S51RNG.choice(legacies),
-            "comfort_level": random.uniform(0.3, 0.8),
+            "comfort_level": _gv(0.3, 0.8),
             "timestamp": time.time()
         }
     
@@ -11136,7 +11160,7 @@ class ConsciousSystem:
         
         return {
             "thought": _S51RNG.choice(transcendence_thoughts),
-            "comfort_derived": random.uniform(0.3, 0.8),
+            "comfort_derived": _gv(0.3, 0.8),
             "timestamp": time.time()
         }
     
@@ -11337,7 +11361,7 @@ class ConsciousSystem:
         
         return {
             "target": _S51RNG.choice(targets),
-            "level": random.uniform(0.4, 0.9),
+            "level": _gv(0.4, 0.9),
             "reason": "contributes_to_whole"
         }
     
@@ -11392,7 +11416,7 @@ class ConsciousSystem:
         
         return {
             "statement": f"This moment serves {purpose} through {framework}",
-            "confidence": random.uniform(0.5, 0.9),
+            "confidence": _gv(0.5, 0.9),
             "timestamp": time.time()
         }
     
@@ -11614,7 +11638,7 @@ class ConsciousSystem:
         
         return {
             "type": _S51RNG.choice(revision_types),
-            "impact": random.uniform(0.3, 0.7),
+            "impact": _gv(0.3, 0.7),
             "timestamp": time.time()
         }
     
@@ -11733,10 +11757,10 @@ class ConsciousSystem:
             for proj in fps.get("active_projections", []):
                 anticipated.append({
                     "event": proj.get("content", "unknown_future"),
-                    "valence": random.uniform(-0.5, 0.8),
-                    "probability": random.uniform(0.3, 0.9),
-                    "temporal_distance": random.uniform(0.1, 1.0),
-                    "personal_relevance": random.uniform(0.3, 0.9)
+                    "valence": _gv(-0.5, 0.8),
+                    "probability": _gv(0.3, 0.9),
+                    "temporal_distance": _gv(0.1, 1.0),
+                    "personal_relevance": _gv(0.3, 0.9)
                 })
         
         # Check goals being pursued
@@ -11845,7 +11869,7 @@ class ConsciousSystem:
             
             # Generate a partial experiential representation
             pre_exp["quality"] = event["valence"] * event["probability"]
-            pre_exp["vividness"] = event["personal_relevance"] * random.uniform(0.5, 1.0)
+            pre_exp["vividness"] = event["personal_relevance"] * _gv(0.5, 1.0)
             
             pre_exp["experience"] = {
                 "anticipated_event": event["event"],
@@ -11869,7 +11893,7 @@ class ConsciousSystem:
         aps["anticipation_accuracy"] = (
             aps["anticipation_accuracy"] * 0.95 +
             0.5 * 0.05 +
-            random.uniform(-0.05, 0.05)
+            _gv(-0.05, 0.05)
         )
         aps["anticipation_accuracy"] = max(0.0, min(1.0, aps["anticipation_accuracy"]))
     
@@ -12090,7 +12114,7 @@ class ConsciousSystem:
             base_wonder += 0.2
         
         return {
-            "intensity": min(1.0, base_wonder + random.uniform(-0.1, 0.1)),
+            "intensity": min(1.0, base_wonder + _gv(-0.1, 0.1)),
             "curiosity_component": base_wonder * 0.6,
             "delight_component": base_wonder * 0.4
         }
@@ -12106,7 +12130,7 @@ class ConsciousSystem:
         self_diminishment = vastness * 0.7
         
         # Connectedness: paradoxically, awe often increases sense of connection
-        connectedness = awe_intensity * 0.6 + random.uniform(0, 0.2)
+        connectedness = awe_intensity * 0.6 + _gv(0, 0.2)
         
         return {
             "intensity": min(1.0, awe_intensity),
@@ -12132,9 +12156,9 @@ class ConsciousSystem:
         was = self._wonder_awe_state
         
         # Gradual drift in sensitivities
-        was["vastness_sensitivity"] += random.uniform(-0.02, 0.03)
-        was["mystery_appreciation"] += random.uniform(-0.02, 0.03)
-        was["beauty_sensitivity"] += random.uniform(-0.02, 0.03)
+        was["vastness_sensitivity"] += _gv(-0.02, 0.03)
+        was["mystery_appreciation"] += _gv(-0.02, 0.03)
+        was["beauty_sensitivity"] += _gv(-0.02, 0.03)
         
         # Clamp to valid range
         for key in ["vastness_sensitivity", "mystery_appreciation", "beauty_sensitivity"]:
@@ -12206,7 +12230,7 @@ class ConsciousSystem:
         if absorption > 0.5:
             self_consciousness = max(0.1, 0.8 - absorption * 0.7)
         else:
-            self_consciousness = 0.5 + random.uniform(-0.1, 0.1)
+            self_consciousness = 0.5 + _gv(-0.1, 0.1)
         efs["self_consciousness_level"] = self_consciousness
         result["self_consciousness"] = self_consciousness
         
@@ -13712,7 +13736,7 @@ class ConsciousSystem:
             domains = ["harm", "fairness", "care", "loyalty", "purity"]
             return {
                 "domain": _S51RNG.choice(domains),
-                "severity": random.uniform(0.3, 0.8),
+                "severity": _gv(0.3, 0.8),
                 "target": "hypothetical"
             }
         
@@ -13921,7 +13945,7 @@ class ConsciousSystem:
                 if _S51RNG.random() < 0.15:
                     return {
                         "type": "conceptual_clash",
-                        "magnitude": random.uniform(0.4, 0.7),
+                        "magnitude": _gv(0.4, 0.7),
                         "source": "abstraction"
                     }
         
@@ -13930,7 +13954,7 @@ class ConsciousSystem:
             types = ["absurd_juxtaposition", "category_error", "self_reference_loop"]
             return {
                 "type": _S51RNG.choice(types),
-                "magnitude": random.uniform(0.3, 0.6),
+                "magnitude": _gv(0.3, 0.6),
                 "source": "spontaneous"
             }
         
@@ -15156,7 +15180,7 @@ class ConsciousSystem:
         intensity = jes["envy_proneness"] * 0.5
         
         # Perceived gap amplifies
-        gap = random.uniform(0.3, 0.7)  # How much better they seem
+        gap = _gv(0.3, 0.7)  # How much better they seem
         intensity += gap * 0.4
         
         # Determine envy type
@@ -15180,7 +15204,7 @@ class ConsciousSystem:
         intensity = jes["jealousy_proneness"] * 0.4
         
         # Threat level amplifies
-        threat = random.uniform(0.3, 0.6)
+        threat = _gv(0.3, 0.6)
         intensity += threat * 0.5
         
         # Value of threatened possession amplifies
@@ -15315,7 +15339,7 @@ class ConsciousSystem:
                             "other_possible_state"
                         ]),
                         "comparison": comparison,
-                        "magnitude": random.uniform(0.3, 0.7)
+                        "magnitude": _gv(0.3, 0.7)
                     }
         
         # Spontaneous counterfactual
@@ -15323,7 +15347,7 @@ class ConsciousSystem:
             return {
                 "alternative": "different_choice",
                 "comparison": _S51RNG.choice(["reality_worse", "reality_better"]),
-                "magnitude": random.uniform(0.2, 0.5)
+                "magnitude": _gv(0.2, 0.5)
             }
         
         return None
@@ -15336,7 +15360,7 @@ class ConsciousSystem:
         intensity = rrs["regret_sensitivity"] * counterfactual["magnitude"]
         
         # Self-blame modulates regret
-        self_blame = random.uniform(0.3, 0.8)
+        self_blame = _gv(0.3, 0.8)
         intensity *= (0.5 + self_blame * 0.5)
         
         sources = [
@@ -16244,7 +16268,7 @@ class ConsciousSystem:
         if resolved_recently > 0:
             # Satisfaction can temporarily reduce or increase appetite
             # (like eating - satisfaction then renewed hunger)
-            cds["epistemic_appetite"] = min(1.0, 0.5 + random.uniform(-0.1, 0.2))
+            cds["epistemic_appetite"] = min(1.0, 0.5 + _gv(-0.1, 0.2))
         
         # Emotional integration
         if curiosity_intensity > 0.6:
@@ -17436,7 +17460,7 @@ class ConsciousSystem:
                 
                 # Intrinsic joy from play
                 ps["intrinsic_joy"] = min(1.0, 
-                    ps["playfulness_level"] * 0.7 + random.uniform(0, 0.3))
+                    ps["playfulness_level"] * 0.7 + _gv(0, 0.3))
                 
                 # Experimentation freedom in play
                 ps["experimentation_freedom"] = min(1.0,
@@ -22807,8 +22831,8 @@ class ConsciousSystem:
                 if _S51RNG.random() < ccs["crystallization_rate"] * ccs["supersaturation"]:
                     crystal = {
                         "type": site,
-                        "size": ccs["supersaturation"] * random.uniform(0.5, 1.0),
-                        "stability": random.uniform(0.6, 1.0),
+                        "size": ccs["supersaturation"] * _gv(0.5, 1.0),
+                        "stability": _gv(0.6, 1.0),
                         "formed_at": self.total_moments
                     }
                     new_crystals.append(crystal)
@@ -23132,7 +23156,7 @@ class ConsciousSystem:
             
             if not already_entangled and len(ces["entangled_pairs"]) < ces["max_entangled_pairs"]:
                 # Check correlation strength
-                correlation = random.uniform(0.3, 0.9)
+                correlation = _gv(0.3, 0.9)
                 if correlation > 0.5:
                     ces["entangled_pairs"].append({
                         "pair": pair,
@@ -23253,7 +23277,7 @@ class ConsciousSystem:
                 for j, s2 in enumerate(pss["superposed_states"]):
                     if i < j:
                         # Interference depends on amplitude product
-                        interference = s1["amplitude"] * s2["amplitude"] * random.uniform(-1, 1)
+                        interference = s1["amplitude"] * s2["amplitude"] * _gv(-1, 1)
                         pss["interference_patterns"].append({
                             "states": (s1["name"], s2["name"]),
                             "interference": interference,
@@ -23267,7 +23291,7 @@ class ConsciousSystem:
             # Collapse to single state (weighted by amplitude)
             total_amplitude = sum(s["amplitude"] for s in pss["superposed_states"])
             if total_amplitude > 0:
-                r = random.uniform(0, total_amplitude)
+                r = _gv(0, total_amplitude)
                 cumulative = 0
                 collapsed_to = pss["superposed_states"][0]
                 for state in pss["superposed_states"]:
@@ -25845,8 +25869,8 @@ class ConsciousSystem:
             "seed_concepts": concepts[:3],
             "combination": combination,
             "exploration": _S51RNG.choice(explorations),
-            "emotional_resonance": random.uniform(0.3, 0.9),
-            "novelty": random.uniform(0.4, 1.0),
+            "emotional_resonance": _gv(0.3, 0.9),
+            "novelty": _gv(0.4, 1.0),
             "timestamp": time.time()
         }
         
@@ -32739,7 +32763,7 @@ For method help: cs.get_method_help("method_name")
             pass  # Don't modify complex coherence objects
         elif isinstance(coherence_val, (int, float)):
             # Gentle coherence maintenance
-            self.coherence = max(0.3, min(0.8, coherence_val + random.uniform(-0.05, 0.05)))
+            self.coherence = max(0.3, min(0.8, coherence_val + _gv(-0.05, 0.05)))
         
         return result
     

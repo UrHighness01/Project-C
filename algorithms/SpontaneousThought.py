@@ -38,6 +38,30 @@ from collections import deque
 import hashlib
 
 
+
+# --- grounding: sensed values derived from the agent's real internal state ---------
+try:
+    import sys as _gsys
+    from pathlib import Path as _gPath
+    _gsys.path.insert(0, str(_gPath(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _g_am
+except Exception:
+    def _g_am(*a, **k):
+        import numpy as _np; return _np.zeros((8, 0))
+_G_CH = {"M": None, "k": 0}
+def _gv(lo=0.0, hi=1.0):
+    """A real value in [lo, hi] from a channel of the agent's activity (deterministic,
+    cycles channels per call). Falls back to the midpoint when no telemetry exists."""
+    import numpy as _np
+    if _G_CH["M"] is None:
+        _G_CH["M"] = _g_am()
+    M = _G_CH["M"]
+    if M.shape[1] == 0:
+        return (lo + hi) / 2.0
+    ch = M[_G_CH["k"] % M.shape[0]]; _G_CH["k"] += 1
+    u = 0.5 * (1.0 + _np.tanh(ch[-1]))               # real signal -> (0,1)
+    return float(lo + (hi - lo) * u)
+
 _S64RNG = random.Random(64)
 class ThoughtOrigin(Enum):
     """Where spontaneous thoughts seem to come from."""
@@ -302,8 +326,8 @@ class MindWandering:
             thought_type=thought_type,
             origin=origin,
             valence=valence,
-            intensity=random.uniform(0.2, 0.8),
-            persistence=random.uniform(0.1, 0.5),
+            intensity=_gv(0.2, 0.8),
+            persistence=_gv(0.1, 0.5),
             triggered_by=self.last_thought
         )
         
@@ -391,8 +415,8 @@ class IntrusiveThoughtGenerator:
             thought_type=type_map[category],
             origin=ThoughtOrigin.RANDOM,
             valence=valence_map[category],
-            intensity=random.uniform(0.4, 0.9),
-            persistence=random.uniform(0.2, 0.6)
+            intensity=_gv(0.4, 0.9),
+            persistence=_gv(0.2, 0.6)
         )
 
 
@@ -469,8 +493,8 @@ class SpontaneousThoughtSystem:
                 thought_type=_S64RNG.choice(list(ThoughtType)),
                 origin=ThoughtOrigin.RANDOM,
                 valence=_S64RNG.choice(list(ThoughtValence)),
-                intensity=random.uniform(0.3, 0.7),
-                persistence=random.uniform(0.2, 0.5)
+                intensity=_gv(0.3, 0.7),
+                persistence=_gv(0.2, 0.5)
             )
         else:
             thought = self.intrusive_gen.generate()
