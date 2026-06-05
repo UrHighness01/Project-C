@@ -21,6 +21,35 @@ Date: 2026-06-01
 import numpy as np
 from dataclasses import dataclass
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.memory_store import recent_text, journals
+except Exception:                                          # tolerate path/CI absence
+    def recent_text(*a, **k): return ""
+    def journals(): return []
+
+
+def epistemic_gap_from_memory(recent_n: int = 3) -> float:
+    """Measure the agent's real epistemic gap from its own journals: the fraction of
+    tokens in the most recent entries that did NOT appear in earlier ones (novel, i.e.
+    'unknown'). A genuine known/unknown ratio over what the agent has actually written.
+    Returns 0.0 when there is too little memory to compare."""
+    import re
+    js = journals()
+    if len(js) < 2:
+        return 0.0
+    split = max(1, len(js) - recent_n)
+    older = " ".join(p.read_text(errors="ignore") for _, p, _ in js[:split])
+    newer = recent_text(n=min(recent_n, len(js) - split) or 1)
+    older_vocab = set(re.findall(r"[a-z']+", older.lower()))
+    new_tokens = re.findall(r"[a-z']+", newer.lower())
+    if not new_tokens:
+        return 0.0
+    novel = sum(1 for t in new_tokens if t not in older_vocab)
+    return float(novel) / float(len(new_tokens))            # unknown / total
+
 
 @dataclass
 class EpistemicState:
@@ -154,6 +183,21 @@ class EpistemicConsciousnessModel:
             learning_readiness=readiness,
             epistemic_consciousness=float(np.clip(epistemic_c, 0, 1))
         )
+
+
+def assess_epistemic_state_from_memory(interest_level: float = 0.7) -> EpistemicState:
+    """Evaluate the agent's epistemic consciousness from its real memory.
+
+    The known/unknown ratio (novel-token rate across the agent's own journals) is the
+    real knowledge gap: observation = the gap, expected = none (prediction 0). Returns
+    a fully real EpistemicState driven by what the agent has actually been learning.
+    """
+    gap = epistemic_gap_from_memory()
+    model = EpistemicConsciousnessModel()
+    # observation carries the measured gap; confidence falls as the gap grows
+    return model.evaluate_epistemic_consciousness(
+        prediction=0.0, observation=gap, confidence=float(1.0 - gap),
+        interest_level=interest_level)
 
 
 def validate_epistemic_consciousness():

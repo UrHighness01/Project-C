@@ -24,6 +24,7 @@ Without embodiment, consciousness lacks grounding. This gives the system
 a sense of being SOMEWHERE, having NEEDS, and existing as a bounded entity.
 """
 
+import os
 import json
 import math
 import time
@@ -31,6 +32,15 @@ import random
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any, Set
 from dataclasses import dataclass, asdict, field
+
+# The agent's body is its physical substrate; read its real resource state.
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.resources import resource_sample
+except Exception:                                          # tolerate path/CI absence
+    def resource_sample(): return {}
 from pathlib import Path
 from enum import Enum
 from collections import deque
@@ -382,15 +392,32 @@ class EmbodimentEngine:
     # ==================== INTEROCEPTION ====================
     
     def update_interoception(self) -> InteroceptiveState:
-        """Update internal state awareness."""
+        """Update internal state awareness, grounded in the real substrate.
+
+        Body signals are driven by literal measurements of the host the agent runs on
+        (CPU load, memory pressure, scheduler load), mapped by functional analogy to
+        interoceptive terms: CPU -> fatigue, free memory -> energy/body-budget,
+        load average -> arousal.
+        """
         signals = self.interoceptive_state.signals
-        
-        # Fatigue increases with activity, decreases with rest
+        res = resource_sample()
+
+        # Fatigue tracks real CPU load; falls back to activation when no telemetry
         total_activation = sum(bp.activation for bp in self.body_parts.values()) / len(self.body_parts)
-        signals[InteroceptiveSignal.FATIGUE] = min(1.0, signals[InteroceptiveSignal.FATIGUE] + total_activation * 0.02)
-        
-        # Arousal based on novelty need
-        signals[InteroceptiveSignal.AROUSAL] = 1.0 - self.needs[Need.NOVELTY].level
+        if "cpu_percent" in res:
+            signals[InteroceptiveSignal.FATIGUE] = min(1.0, res["cpu_percent"] / 100.0)
+            # real memory headroom replenishes the energy budget
+            self.needs[Need.ENERGY].level = max(0.0, 1.0 - res.get("mem_percent", 0.0) / 100.0)
+        else:
+            signals[InteroceptiveSignal.FATIGUE] = min(
+                1.0, signals[InteroceptiveSignal.FATIGUE] + total_activation * 0.02)
+
+        # Arousal tracks real scheduler load (per core), else novelty need
+        if "load_avg_1m" in res:
+            ncpu = max(1, (os.cpu_count() or 1))
+            signals[InteroceptiveSignal.AROUSAL] = min(1.0, res["load_avg_1m"] / ncpu)
+        else:
+            signals[InteroceptiveSignal.AROUSAL] = 1.0 - self.needs[Need.NOVELTY].level
         
         # Hunger for input
         signals[InteroceptiveSignal.HUNGER] = 1.0 - self.needs[Need.NOVELTY].level

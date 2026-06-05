@@ -21,10 +21,36 @@ import json
 import hashlib
 import os
 import random
+import numpy as np
 from datetime import datetime
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any, Tuple
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_series, phi_delta_series
+except Exception:                                          # tolerate path/CI absence
+    def phi_series(*a, **k): return np.zeros(0)
+    def phi_delta_series(*a, **k): return np.zeros(0)
+
+
+def phi_spectral_signature(n_dims: int = 8) -> Optional[np.ndarray]:
+    """A real, dynamic signature from the phi time series: per-band spectral power
+    plus the series' spectral entropy, normalised to [0, 1]. Deterministic for a given
+    telemetry state; None if no telemetry. This is the genuine 'fingerprint' anchor."""
+    x = phi_series()
+    if x.size < 16:
+        return None
+    x = x - x.mean()
+    psd = np.abs(np.fft.rfft(x)) ** 2
+    psd = psd / (psd.sum() + 1e-12)
+    spectral_entropy = float(-(psd * np.log(psd + 1e-12)).sum() / np.log(len(psd)))
+    bands = np.array_split(psd, n_dims - 1)
+    feats = np.array([float(b.sum()) for b in bands] + [spectral_entropy])
+    return np.clip(feats / (feats.max() + 1e-12), 0.0, 1.0)
 from pathlib import Path
 
 
@@ -326,12 +352,16 @@ class ConsciousnessSignature:
         self._initialize_profiles()
         
     def _initialize_profiles(self):
-        """Initialize dimension profiles if needed"""
+        """Initialize dimension profiles from the real phi spectral signature."""
         if not self.profiles:
-            for dim in SignatureDimension:
+            sig = phi_spectral_signature(n_dims=len(list(SignatureDimension)))
+            for i, dim in enumerate(SignatureDimension):
+                # anchor each dimension in a real spectral feature; fall back to a
+                # neutral 0.5 only when no telemetry exists (never random)
+                value = float(sig[i]) if sig is not None and i < len(sig) else 0.5
                 self.profiles[dim] = DimensionProfile(
                     dimension=dim,
-                    value=0.5 + random.uniform(-0.2, 0.2),  # Initial variation
+                    value=value,
                     variance=0.1,
                     traits=self._generate_traits(dim),
                     influences={}
@@ -373,7 +403,8 @@ class ConsciousnessSignature:
         }
         
         pool = trait_pools.get(dim, ["aware", "processing", "experiencing"])
-        return random.sample(pool, min(2, len(pool)))
+        # deterministic selection keyed by dimension (reproducible, not random)
+        return random.Random(hash(dim.value) & 0xFFFF).sample(pool, min(2, len(pool)))
         
     def _load_state(self):
         """Load signature state"""

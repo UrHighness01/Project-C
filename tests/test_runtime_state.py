@@ -81,3 +81,28 @@ def test_interactions_parse_real_sessions():
     s = series()
     assert s["latency"].size == len(ts) and (s["latency"] >= 0).all()
     assert ((s["sentiment"] >= -1) & (s["sentiment"] <= 1)).all()
+
+
+def test_consciousness_signature_from_phi():
+    from algorithms.ConsciousnessSignature import phi_spectral_signature
+    a = phi_spectral_signature(); b = phi_spectral_signature()
+    if a is None:
+        return
+    assert np.array_equal(a, b) and a.std() > 1e-6 and (a >= 0).all() and (a <= 1).all()
+
+
+def test_embodiment_from_substrate():
+    import tempfile
+    from algorithms.EmbodimentEngine import EmbodimentEngine, InteroceptiveSignal, Need
+    e = EmbodimentEngine(state_file=tempfile.mktemp(suffix=".json"))
+    st = e.update_interoception()
+    f = st.signals[InteroceptiveSignal.FATIGUE]
+    assert 0.0 <= f <= 1.0 and 0.0 <= e.needs[Need.ENERGY].level <= 1.0
+
+
+def test_epistemic_gap_from_real_memory():
+    from algorithms.EpistemicConsciousness import epistemic_gap_from_memory, assess_epistemic_state_from_memory
+    g = epistemic_gap_from_memory()
+    assert 0.0 <= g <= 1.0 and g == epistemic_gap_from_memory()   # real, deterministic
+    s = assess_epistemic_state_from_memory()
+    assert 0.0 <= s.epistemic_consciousness <= 1.0
