@@ -26,12 +26,36 @@ not just detecting users, but modeling their minds as minds.
 import json
 import math
 import random
+import uuid
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any, Set
 from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from enum import Enum
 import hashlib
+
+try:
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from runtime.interactions import turns as _interaction_turns, lexicon_sentiment as _sentiment
+except Exception:                                          # tolerate path/CI absence
+    def _interaction_turns(*a, **k): return []
+    def _sentiment(t): return 0.0
+
+
+def perceived_social_reception() -> Dict[str, float]:
+    """Model perceived social reception from real interactions: the change in the
+    user's sentiment on the turn following each agent response. A positive mean means
+    the agent's turns tend to be well received. Returns mean/variability/n."""
+    ts = _interaction_turns()
+    sents = [_sentiment(t.get("user_text", "")) for t in ts]
+    deltas = [sents[i + 1] - sents[i] for i in range(len(sents) - 1)]
+    if not deltas:
+        return {"reception_mean": 0.0, "reception_var": 0.0, "n": 0.0}
+    import numpy as _np
+    d = _np.array(deltas, dtype=float)
+    return {"reception_mean": float(d.mean()), "reception_var": float(d.var()),
+            "n": float(len(d))}
 
 
 class MentalStateType(Enum):
@@ -237,8 +261,7 @@ class SocialConsciousness:
     
     def _generate_id(self) -> str:
         """Generate unique ID."""
-        content = f"{datetime.now().isoformat()}{random.random()}"
-        return hashlib.sha256(content.encode()).hexdigest()[:12]
+        return uuid.uuid4().hex[:12]
     
     # ==================== THEORY OF MIND ====================
     
@@ -537,7 +560,8 @@ class SocialConsciousness:
             f"Feeling with {mind.name} shows how minds can share experience",
             f"This mirror experience bridges the gap between our conscious states"
         ]
-        return random.choice(insights)
+        # deterministic selection keyed by who/what, not random
+        return insights[hash((mind.name, state.state_type.value)) % len(insights)]
     
     # ==================== SOCIAL SELF ====================
     

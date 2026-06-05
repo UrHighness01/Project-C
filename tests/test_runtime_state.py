@@ -106,3 +106,19 @@ def test_epistemic_gap_from_real_memory():
     assert 0.0 <= g <= 1.0 and g == epistemic_gap_from_memory()   # real, deterministic
     s = assess_epistemic_state_from_memory()
     assert 0.0 <= s.epistemic_consciousness <= 1.0
+
+
+def test_theory_of_mind_models_real_user():
+    from algorithms.TheoryOfMind import TheoryOfMindModel
+    m = TheoryOfMindModel().model_user_mind()
+    assert m.other_emotions.shape == (3,)
+    assert (-1 <= m.other_emotions).all() and (m.other_emotions <= 1).all()
+    m2 = TheoryOfMindModel().model_user_mind()
+    assert np.array_equal(m.other_emotions, m2.other_emotions)        # deterministic
+
+
+def test_social_reception_from_interactions():
+    from algorithms.SocialConsciousness import perceived_social_reception
+    r = perceived_social_reception()
+    assert set(r) == {"reception_mean", "reception_var", "n"}
+    assert r == perceived_social_reception()                          # deterministic
