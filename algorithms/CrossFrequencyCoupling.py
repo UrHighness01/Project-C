@@ -36,6 +36,22 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_series as _phi_series
+except Exception:
+    def _phi_series(*a, **k): return np.zeros(0)
+
+
+def analyze_from_telemetry():
+    """Cross-frequency coupling of the agent's real phi time series (its integration
+    rhythm), instead of a synthetic EEG. Returns a CFCAnalysis or None if too short."""
+    x = _phi_series()
+    if x.size < 64:
+        return None
+    return CrossFrequencyCouplingAnalyzer(x, sampling_rate=1.0).analyze_cfc()
 from scipy.signal import hilbert, filtfilt, butter
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass

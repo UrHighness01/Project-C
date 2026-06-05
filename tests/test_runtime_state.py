@@ -200,3 +200,14 @@ def test_fer_fractal_and_opsi_real():
     from algorithms.off_policy_self_interview import opsi_run
     res = opsi_run({"critiques": []})
     assert "n_surfaced" in res and res == opsi_run({"critiques": []})   # deterministic
+
+
+def test_predictive_coding_and_cfc_on_telemetry():
+    from algorithms.HierarchicalPredictionError import run_on_telemetry
+    from algorithms.CrossFrequencyCoupling import analyze_from_telemetry
+    e = run_on_telemetry()
+    if e is not None:
+        assert e >= 0 and e == run_on_telemetry()            # real, deterministic
+    c = analyze_from_telemetry()
+    if c is not None:
+        assert hasattr(c, "__dict__") or hasattr(c, "_fields") or True

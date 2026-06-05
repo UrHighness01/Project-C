@@ -47,6 +47,27 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _activity_matrix
+except Exception:
+    def _activity_matrix(*a, **k): return np.zeros((8, 0))
+
+
+def run_on_telemetry(steps: int = 200):
+    """Run predictive coding on the agent's real activity as the sensory stream, and
+    return the mean total prediction error (free energy proxy). Deterministic."""
+    M = _activity_matrix()
+    if M.shape[1] < 8:
+        return None
+    model = HierarchicalPredictiveCodeModel(sensory_dim=M.shape[0])
+    errs = []
+    T = min(steps, M.shape[1])
+    for t in range(T):
+        errs.append(model.hierarchical_step(M[:, t]))
+    return float(np.mean(errs)) if errs else None
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -110,7 +131,8 @@ class HierarchicalPredictiveCodeModel:
         self.n_levels = n_levels
         self.dims = [sensory_dim, perceptual_dim, conceptual_dim][:n_levels]
 
-        # Initialize hierarchy levels
+        # Initialize hierarchy levels (seeded init -> reproducible model)
+        self._rng = np.random.default_rng(7)
         self.levels: List[HierarchyLevel] = []
         level_names = ["Sensory (V1/Thalamus)", "Perceptual (V2/V4)", "Conceptual (Prefrontal)"]
 
@@ -118,7 +140,7 @@ class HierarchicalPredictiveCodeModel:
             level = HierarchyLevel(
                 level_id=i,
                 level_name=level_names[i],
-                estimated_state=np.random.normal(0, 0.1, self.dims[i]),
+                estimated_state=self._rng.normal(0, 0.1, self.dims[i]),
                 prediction_error=np.zeros(self.dims[i]),
                 precision=np.ones(self.dims[i]),  # Start with equal precision
                 free_energy=0.0,
@@ -130,7 +152,7 @@ class HierarchicalPredictiveCodeModel:
         # W[i] connects level i+1 to level i (maps from higher to lower)
         # Initialize with near-zero values to start with small predictions
         self.W = [
-            np.random.randn(self.dims[i], self.dims[i+1]) * 0.01
+            self._rng.standard_normal((self.dims[i], self.dims[i+1])) * 0.01
             for i in range(n_levels - 1)
         ]
 
