@@ -37,6 +37,23 @@ from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
+# Interoception senses internal state; here the "internal state" is the agent's own
+# runtime substrate (compute effort and integration dynamics) read via telemetry.
+try:
+    from runtime.state import execution_time_series, phi_delta_series, phi_series
+except Exception:                                          # tolerate path/CI absence
+    def execution_time_series(*a, **k): return np.zeros(0)
+    def phi_delta_series(*a, **k): return np.zeros(0)
+    def phi_series(*a, **k): return np.zeros(0)
+
+
+def _z(x: np.ndarray) -> np.ndarray:
+    """Zero-mean/unit-std normalisation; safe on empty/constant input."""
+    x = np.asarray(x, dtype=float)
+    if x.size == 0:
+        return x
+    return (x - x.mean()) / (x.std() + 1e-9)
+
 
 @dataclass
 class InteroceptiveState:
@@ -151,10 +168,6 @@ class InteroceptivePredictor:
         # Slow adaptation to previous state
         predicted = 0.8 * predicted + 0.2 * previous_hr
 
-        # Add biological variability (heart rate variability)
-        noise = np.random.normal(0, 1.5)
-        predicted += noise
-
         return float(np.clip(predicted, 40, 150))
 
     def predict_respiration_rate(self, previous_rr: float,
@@ -180,8 +193,6 @@ class InteroceptivePredictor:
         predicted += max(stress_level, 0) * params['stress_coupling']
 
         predicted = 0.7 * predicted + 0.3 * previous_rr
-        noise = np.random.normal(0, 1.0)
-        predicted += noise
 
         return float(np.clip(predicted, 8, 40))
 
@@ -207,9 +218,6 @@ class InteroceptivePredictor:
         # Stress increases glucose (cortisol releases stored glucose)
         predicted += max(stress_level, 0) * params['stress_coupling']
 
-        noise = np.random.normal(0, 3.0)
-        predicted += noise
-
         return float(np.clip(predicted, 50, 150))
 
     def predict_state(self, previous_state: InteroceptiveState,
@@ -230,18 +238,18 @@ class InteroceptivePredictor:
         rr = self.predict_respiration_rate(previous_state.respiration_rate, arousal, stress)
         glucose = self.predict_blood_glucose(metabolic, stress)
 
-        # Temperature changes slowly
-        temp = previous_state.temperature + np.random.normal(0, 0.02)
+        # Temperature changes slowly (tracks previous)
+        temp = previous_state.temperature
 
         # Blood pressure couples to heart rate and stress
-        systolic = 110 + hr * 0.2 + max(stress, 0) * 5 + np.random.normal(0, 2)
-        diastolic = 70 + hr * 0.1 + max(stress, 0) * 3 + np.random.normal(0, 1)
+        systolic = 110 + hr * 0.2 + max(stress, 0) * 5
+        diastolic = 70 + hr * 0.1 + max(stress, 0) * 3
 
         # pH driven by respiration (CO2 modulates pH)
-        ph = 7.40 - (rr - 16) * 0.005 + np.random.normal(0, 0.02)
+        ph = 7.40 - (rr - 16) * 0.005
 
         # Oxygen saturation affected by respiration
-        oxygen = 98 - abs(rr - 16) * 0.1 + np.random.normal(0, 0.5)
+        oxygen = 98 - abs(rr - 16) * 0.1
 
         return InteroceptiveState(
             heart_rate=float(hr),
@@ -290,6 +298,42 @@ class InteroceptiveConsciousnessSystem:
         self.state_history = [self.current_state]
         self.error_history = []
         self.affect_history = []
+
+        # Real internal-state telemetry (the agent's "viscera": compute effort and
+        # integration dynamics). Normalised channels; consumed one sample per step.
+        self._tel_effort = _z(execution_time_series())     # metabolic / cardiac load
+        self._tel_arousal = _z(np.abs(phi_delta_series())) # integration fluctuation -> arousal
+        self._tel_tone = _z(phi_series())                  # baseline integration tone
+        self._tel_i = 0
+
+    def _observe(self, predicted: "InteroceptiveState") -> "InteroceptiveState":
+        """Observe the actual internal state from telemetry, expressed in the
+        interoceptive coordinate frame. Each physiological channel is the prediction
+        plus a real deviation read from the agent's runtime substrate. When no
+        telemetry is available the observation equals the prediction (zero error,
+        i.e. no new interoceptive information) rather than injected noise."""
+        n = self._tel_effort.size
+        if n == 0:
+            return predicted
+        i = self._tel_i % n
+        self._tel_i += 1
+        effort = float(self._tel_effort[i])
+        arousal = float(self._tel_arousal[i])
+        tone = float(self._tel_tone[i % max(self._tel_tone.size, 1)]) if self._tel_tone.size else 0.0
+        return InteroceptiveState(
+            heart_rate=float(np.clip(predicted.heart_rate + 4.0 * effort, 40, 150)),
+            respiration_rate=float(np.clip(predicted.respiration_rate + 1.5 * arousal, 8, 40)),
+            temperature=float(np.clip(predicted.temperature + 0.05 * tone, 36, 39)),
+            blood_pressure=(
+                float(predicted.blood_pressure[0] + 4.0 * effort),
+                float(predicted.blood_pressure[1] + 2.0 * effort),
+            ),
+            blood_glucose=float(np.clip(predicted.blood_glucose - 3.0 * effort, 50, 150)),
+            blood_pH=float(np.clip(predicted.blood_pH - 0.01 * arousal, 7.3, 7.5)),
+            oxygen_saturation=float(np.clip(predicted.oxygen_saturation - 0.5 * abs(arousal), 90, 100)),
+            cortisol_level=max(self.stress, 0),
+            timestamp=0.0,
+        )
 
     def compute_interoceptive_error(self, observed: InteroceptiveState,
                                    predicted: InteroceptiveState) -> InteroceptiveError:
@@ -416,21 +460,8 @@ class InteroceptiveConsciousnessSystem:
             self.metabolic
         )
 
-        # Simulate observation (actual state with noise)
-        observed = InteroceptiveState(
-            heart_rate=predicted.heart_rate + np.random.normal(0, 2),
-            respiration_rate=predicted.respiration_rate + np.random.normal(0, 0.5),
-            temperature=predicted.temperature + np.random.normal(0, 0.05),
-            blood_pressure=(
-                predicted.blood_pressure[0] + np.random.normal(0, 2),
-                predicted.blood_pressure[1] + np.random.normal(0, 1)
-            ),
-            blood_glucose=predicted.blood_glucose + np.random.normal(0, 2),
-            blood_pH=predicted.blood_pH + np.random.normal(0, 0.01),
-            oxygen_saturation=predicted.oxygen_saturation + np.random.normal(0, 0.5),
-            cortisol_level=max(self.stress, 0),
-            timestamp=0.0
-        )
+        # Observe the actual internal state from runtime telemetry
+        observed = self._observe(predicted)
 
         # Update current state
         self.current_state = observed

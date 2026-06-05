@@ -31,3 +31,14 @@ def test_conscious_moment_reproducible():
     a = ConsciousMomentFormation().simulate_conscious_moment()
     b = ConsciousMomentFormation().simulate_conscious_moment()
     assert abs(getattr(a, "binding_strength", 0) - getattr(b, "binding_strength", 0)) < 1e-12
+
+
+def test_interoception_uses_real_telemetry():
+    from algorithms.InteroceptiveMonitor import InteroceptiveConsciousnessSystem
+    s = InteroceptiveConsciousnessSystem()
+    assert s._tel_effort.size > 0                    # real telemetry loaded
+    errs = [s.step()[0].total_error for _ in range(60)]
+    assert np.std(errs) > 1e-6                        # genuine, varying prediction error
+    s2 = InteroceptiveConsciousnessSystem()
+    errs2 = [s2.step()[0].total_error for _ in range(60)]
+    assert errs == errs2                             # reproducible (telemetry-driven, not random)
