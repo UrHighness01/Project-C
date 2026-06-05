@@ -16,6 +16,37 @@ from typing import Dict, List, Any, Optional, Tuple, Set
 from collections import defaultdict, deque
 import itertools
 import copy
+import re as _re
+
+_CPSA_RNG = random.Random(0xC4EA)
+_SPECULATIVE = ("magic", "imagine", "if ", "supernatural", "time travel", "dream",
+                "fantasy", "impossible", "what if", "radical", "reinvent")
+_CONCRETE = ("apply", "use", "implement", "address", "combine", "step", "build",
+             "measure", "test", "specific", "constraint", "tool", "process")
+
+
+def _novelty(text: str, reference: str = "") -> float:
+    """Real novelty: lexical diversity of the proposal plus speculative-language density,
+    minus overlap with the problem statement. Deterministic, in [0, 1]."""
+    toks = _re.findall(r"[a-z]+", text.lower())
+    if not toks:
+        return 0.0
+    diversity = len(set(toks)) / len(toks)
+    spec = sum(c in text.lower() for c in _SPECULATIVE) / 5.0
+    ref = set(_re.findall(r"[a-z]+", reference.lower()))
+    overlap = sum(t in ref for t in toks) / len(toks) if ref else 0.0
+    return float(max(0.0, min(1.0, 0.5 * diversity + 0.4 * spec + 0.1 * (1 - overlap))))
+
+
+def _feasibility(text: str) -> float:
+    """Real feasibility: density of concrete/actionable language minus speculative
+    language, with a brevity bonus. Deterministic, in [0, 1]."""
+    low = text.lower()
+    concrete = sum(c in low for c in _CONCRETE) / 5.0
+    spec = sum(c in low for c in _SPECULATIVE) / 5.0
+    brevity = 1.0 / (1.0 + len(text) / 120.0)
+    return float(max(0.0, min(1.0, 0.6 * concrete - 0.3 * spec + 0.4 * brevity)))
+
 
 class CreativeProblemSolvingAlgorithm:
     """
@@ -91,6 +122,9 @@ class CreativeProblemSolvingAlgorithm:
         """
         problem_id = f"problem_{int(time.time() * 1000)}"
         self.active_problems[problem_id] = problem
+
+        # Reseed exploration from the problem so the same problem explores reproducibly
+        _CPSA_RNG.seed(hash(str(problem.get('description', ''))) & 0xFFFFFFFF)
 
         # Analyze problem
         problem_analysis = self._analyze_problem(problem)
@@ -208,7 +242,7 @@ class CreativeProblemSolvingAlgorithm:
             return True
 
         # Default: use 70% of modes randomly
-        return random.random() < 0.7
+        return _CPSA_RNG.random() < 0.7
 
     def _divergent_thinking(self, problem: Dict[str, Any], analysis: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Generate many diverse solutions"""
@@ -227,13 +261,13 @@ class CreativeProblemSolvingAlgorithm:
             "using magic or supernatural elements"
         ]
 
-        for perspective in random.sample(perspectives, min(5, len(perspectives))):
+        for perspective in _CPSA_RNG.sample(perspectives, min(5, len(perspectives))):
             solution = {
                 'approach': f'Divergent: {perspective}',
                 'description': f"Approach the problem {perspective}: {description}",
                 'creativity_type': 'divergent',
-                'novelty_factor': random.uniform(0.6, 0.9),
-                'feasibility': random.uniform(0.2, 0.7)
+                'novelty_factor': 0.750,
+                'feasibility': 0.450
             }
             solutions.append(solution)
 
@@ -245,13 +279,13 @@ class CreativeProblemSolvingAlgorithm:
         constraints = analysis.get('constraints', [])
 
         # Use SCAMPER technique
-        for template in random.sample(self.solution_templates, min(3, len(self.solution_templates))):
+        for template in _CPSA_RNG.sample(self.solution_templates, min(3, len(self.solution_templates))):
             solution = {
                 'approach': f'Convergent: {template.split(":")[0]}',
                 'description': f"Apply '{template}' to solve: {problem.get('description', '')}",
                 'creativity_type': 'convergent',
-                'novelty_factor': random.uniform(0.3, 0.7),
-                'feasibility': random.uniform(0.7, 0.95)
+                'novelty_factor': 0.500,
+                'feasibility': 0.825
             }
             solutions.append(solution)
 
@@ -262,8 +296,8 @@ class CreativeProblemSolvingAlgorithm:
                     'approach': f'Constraint-focused: Address {constraint}',
                     'description': f"Develop solution that specifically addresses: {constraint}",
                     'creativity_type': 'convergent',
-                    'novelty_factor': random.uniform(0.2, 0.5),
-                    'feasibility': random.uniform(0.8, 0.98)
+                    'novelty_factor': 0.350,
+                    'feasibility': 0.890
                 }
                 solutions.append(solution)
 
@@ -286,13 +320,13 @@ class CreativeProblemSolvingAlgorithm:
             "combine with an unrelated field"
         ]
 
-        for approach in random.sample(lateral_approaches, min(4, len(lateral_approaches))):
+        for approach in _CPSA_RNG.sample(lateral_approaches, min(4, len(lateral_approaches))):
             solution = {
                 'approach': f'Lateral: {approach}',
                 'description': f"Try {approach} for: {description}",
                 'creativity_type': 'lateral',
-                'novelty_factor': random.uniform(0.7, 0.95),
-                'feasibility': random.uniform(0.1, 0.6)
+                'novelty_factor': 0.825,
+                'feasibility': 0.350
             }
             solutions.append(solution)
 
@@ -311,8 +345,8 @@ class CreativeProblemSolvingAlgorithm:
                 'approach': f'Analogical: Learn from {analogy["source"]}',
                 'description': f"Apply the {analogy['lesson']} principle to: {problem.get('description', '')}",
                 'creativity_type': 'analogical',
-                'novelty_factor': random.uniform(0.5, 0.8),
-                'feasibility': random.uniform(0.6, 0.9),
+                'novelty_factor': 0.650,
+                'feasibility': 0.750,
                 'analogy_source': analogy
             }
             solutions.append(solution)
@@ -334,13 +368,13 @@ class CreativeProblemSolvingAlgorithm:
             concepts2 = list(self.creative_associations.get(cat2, set()))[:3]
 
             if concepts1 and concepts2:
-                concept_combo = f"{random.choice(concepts1)} + {random.choice(concepts2)}"
+                concept_combo = f"{_CPSA_RNG.choice(concepts1)} + {_CPSA_RNG.choice(concepts2)}"
                 solution = {
                     'approach': f'Combinatorial: {concept_combo}',
                     'description': f"Combine {concept_combo} to solve: {description}",
                     'creativity_type': 'combinatorial',
-                    'novelty_factor': random.uniform(0.6, 0.9),
-                    'feasibility': random.uniform(0.4, 0.8)
+                    'novelty_factor': 0.750,
+                    'feasibility': 0.600
                 }
                 solutions.append(solution)
 
@@ -402,14 +436,18 @@ class CreativeProblemSolvingAlgorithm:
         """Evaluate and rank solutions"""
         evaluated = []
 
+        problem_text = str(problem.get('description', ''))
         for solution in solutions:
-            # Calculate overall score
-            novelty = solution.get('novelty_factor', 0.5)
-            feasibility = solution.get('feasibility', 0.5)
+            # Score from the actual proposal text, not the generation-time placeholder
+            desc = str(solution.get('description', solution.get('approach', '')))
+            novelty = _novelty(desc, problem_text)
+            feasibility = _feasibility(desc)
+            solution['novelty_factor'] = novelty
+            solution['feasibility'] = feasibility
 
             overall_score = (novelty * self.novelty_weight) + (feasibility * self.feasibility_weight)
 
-            # Add evaluation metrics
+            # Add evaluation metrics (all computed from content)
             evaluated_solution = solution.copy()
             evaluated_solution.update({
                 'overall_score': overall_score,
@@ -418,8 +456,8 @@ class CreativeProblemSolvingAlgorithm:
                 'evaluation_criteria': {
                     'novelty': novelty,
                     'feasibility': feasibility,
-                    'originality': random.uniform(0.4, 0.9),
-                    'elegance': random.uniform(0.3, 0.8)
+                    'originality': _novelty(desc),
+                    'elegance': float(min(1.0, feasibility * (0.5 + 0.5 * novelty)))
                 }
             })
 

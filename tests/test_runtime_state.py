@@ -232,3 +232,14 @@ def test_oscillatory_and_edges_real():
     from algorithms.TemporalEdgeDetector import detect_edges_from_telemetry
     e = detect_edges_from_telemetry()
     assert e is None or isinstance(e, list)
+
+
+def test_cpsa_real_content_scoring():
+    from algorithms.CPSA import _novelty, _feasibility, CreativeProblemSolvingAlgorithm
+    assert _novelty("magic time travel supernatural") > _novelty("apply the standard tool")
+    assert _feasibility("apply specific tool implement test") > _feasibility("imagine impossible magic")
+    def run():
+        r = CreativeProblemSolvingAlgorithm().solve_problem(
+            {"description": "reduce datacenter energy", "constraints": ["budget"]})
+        return [round(s.get("overall_score", 0), 5) for s in (r.get("solutions") or r.get("all_solutions") or [])]
+    assert run() == run()                                     # deterministic per problem
