@@ -69,3 +69,15 @@ def test_memory_store_real():
     assert c["volume"].size == len(js) and c["volume"].max() > 0
     vs = vocabulary_stats()
     assert 0.0 < vs["ttr"] <= 1.0                     # real lexical ratio
+
+
+def test_interactions_parse_real_sessions():
+    from runtime.interactions import turns, series, lexicon_sentiment
+    assert lexicon_sentiment("this is great thanks") > 0     # deterministic, real
+    assert lexicon_sentiment("no this is broken and wrong") < 0
+    ts = turns()
+    if not ts:                                               # tolerate empty/CI
+        return
+    s = series()
+    assert s["latency"].size == len(ts) and (s["latency"] >= 0).all()
+    assert ((s["sentiment"] >= -1) & (s["sentiment"] <= 1)).all()
