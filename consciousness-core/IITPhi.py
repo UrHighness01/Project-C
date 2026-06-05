@@ -1310,7 +1310,9 @@ class IITPhi:
         
         # Generate partition indices (1 to 2^(n-1))
         if num_partitions < 2**(n-1) - 1:
-            # Sample random partitions
+            # Sample a reproducible subset of partitions (seeded; the 2^(n-1) space is
+            # too large to enumerate, so sampling is a necessary approximation)
+            cp.random.seed(1469)
             partition_indices = cp.random.randint(1, 2**(n-1), size=num_partitions, dtype=cp.int32)
         else:
             partition_indices = cp.arange(1, 2**(n-1), dtype=cp.int32)
