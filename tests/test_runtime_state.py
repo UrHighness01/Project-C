@@ -166,3 +166,11 @@ def test_aesthetic_and_awe_from_telemetry():
     assert 0.0 <= w.awe_consciousness <= 1.0
     a2 = AestheticConsciousnessModel().evaluate_from_telemetry()
     assert dataclasses.asdict(a) == dataclasses.asdict(a2)            # deterministic
+
+
+def test_mind_wandering_real_signal_and_memory():
+    from algorithms.MindWandering import wander_level, MindWandering
+    w = wander_level()
+    assert 0.0 <= w <= 1.0 and w == wander_level()                   # real, deterministic
+    m = MindWandering()
+    assert isinstance(m.episodic_pool, list)                         # real memory fragments

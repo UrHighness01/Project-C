@@ -44,6 +44,39 @@ from datetime import datetime, timedelta
 from enum import Enum, auto
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple, Any, Callable
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_series
+    from runtime.memory_store import recent_text
+except Exception:                                          # tolerate path/CI absence
+    def phi_series(*a, **k):
+        import numpy as _np; return _np.zeros(0)
+    def recent_text(*a, **k): return ""
+
+_RNG = random.Random(0x308D)                               # seeded thought stochasticity
+
+
+def wander_level(window: int = 50) -> float:
+    """Real propensity to wander from phi telemetry: dispersion (var/mean) of the recent
+    phi window - when integration drifts and is unsettled, the mind wanders. In [0, 1];
+    returns 0.3 (a mild baseline) when no telemetry."""
+    import numpy as _np
+    x = phi_series()
+    if x.size < window // 2:
+        return 0.3
+    w = x[-window:]
+    disp = w.std() / (abs(w.mean()) + 1e-9)
+    return float(_np.clip(disp, 0.0, 1.0))
+
+
+def _real_episodic_pool(max_items: int = 12) -> List[str]:
+    """Real autobiographical fragments pulled from the agent's journals."""
+    text = recent_text(n=8, max_chars=8000)
+    frags = [s.strip() for s in text.replace("\n", " ").split(".") if len(s.strip()) > 30]
+    return frags[:max_items]
 from pathlib import Path
 
 
@@ -203,6 +236,9 @@ class MindWandering:
         
         # Thought generation parameters
         self.thought_rate = 0.3  # Thoughts per second when wandering
+        _real = _real_episodic_pool()
+        if _real:
+            self.episodic_pool = _real          # replay real autobiographical memory
         self.last_thought_time: Optional[datetime] = None
         
         # Memory pools for spontaneous retrieval
@@ -373,7 +409,9 @@ class MindWandering:
         if self.state.current_depth > 0.7:
             p *= 0.5
         
-        return random.random() < min(p, 0.9)
+        # blend the computed propensity with the real phi-drift wander signal
+        p = 0.5 * p + 0.5 * wander_level()
+        return _RNG.random() < min(p, 0.9)
     
     def is_wandering(self) -> bool:
         """Check if currently in a wandering state"""
@@ -405,7 +443,7 @@ class MindWandering:
         total = sum(probs)
         probs = [p/total for p in probs]
         
-        return random.choices(modes, weights=probs, k=1)[0]
+        return _RNG.choices(modes, weights=probs, k=1)[0]
     
     def return_to_task(self):
         """Forcibly return attention to task"""
@@ -428,7 +466,7 @@ class MindWandering:
         """
         if self.state.mode == WanderingMode.TASK_FOCUSED:
             # Small chance of task-unrelated thought even when focused
-            if random.random() > 0.1:
+            if _RNG.random() > 0.1:
                 return None
         
         # Generate thought based on mode
@@ -454,7 +492,7 @@ class MindWandering:
     
     def _generate_mode_thought(self) -> Optional[SpontaneousThought]:
         """Generate thought appropriate to current mode"""
-        thought_id = f"thought_{datetime.now().timestamp()}_{random.randint(0,999)}"
+        thought_id = f"thought_{datetime.now().timestamp()}_{_RNG.randint(0,999)}"
         
         if self.state.mode == WanderingMode.AUTOBIOGRAPHICAL:
             return self._generate_memory_thought(thought_id)
@@ -489,10 +527,10 @@ class MindWandering:
     
     def _generate_memory_thought(self, thought_id: str) -> SpontaneousThought:
         """Generate autobiographical memory surfacing"""
-        memory = random.choice(self.episodic_pool)
+        memory = _RNG.choice(self.episodic_pool)
         
         # Add some variation
-        framing = random.choice([
+        framing = _RNG.choice([
             "remembering", "that time when", "like when",
             "reminds me of", "similar to"
         ])
@@ -501,21 +539,21 @@ class MindWandering:
             thought_id=thought_id,
             content=f"{framing} {memory}",
             thought_type=ThoughtType.MEMORY,
-            temporal_focus=random.choice([
+            temporal_focus=_RNG.choice([
                 TemporalFocus.RECENT_PAST, TemporalFocus.DISTANT_PAST
             ]),
-            valence=random.uniform(-0.2, 0.6),
-            arousal=random.uniform(0.2, 0.5),
+            valence=_RNG.uniform(-0.2, 0.6),
+            arousal=_RNG.uniform(0.2, 0.5),
             self_relevance=0.8,
             novelty=0.3,
-            vividness=random.uniform(0.4, 0.8),
+            vividness=_RNG.uniform(0.4, 0.8),
         )
     
     def _generate_future_thought(self, thought_id: str) -> SpontaneousThought:
         """Generate future-oriented thought"""
-        future = random.choice(self.future_pool)
+        future = _RNG.choice(self.future_pool)
         
-        framing = random.choice([
+        framing = _RNG.choice([
             "looking forward to", "planning for", "anticipating",
             "wondering about", "preparing for"
         ])
@@ -524,14 +562,14 @@ class MindWandering:
             thought_id=thought_id,
             content=f"{framing} {future}",
             thought_type=ThoughtType.PLAN,
-            temporal_focus=random.choice([
+            temporal_focus=_RNG.choice([
                 TemporalFocus.NEAR_FUTURE, TemporalFocus.DISTANT_FUTURE
             ]),
-            valence=random.uniform(0.0, 0.7),
-            arousal=random.uniform(0.3, 0.6),
+            valence=_RNG.uniform(0.0, 0.7),
+            arousal=_RNG.uniform(0.3, 0.6),
             self_relevance=0.7,
             novelty=0.4,
-            vividness=random.uniform(0.3, 0.6),
+            vividness=_RNG.uniform(0.3, 0.6),
         )
     
     def _generate_reflection(self, thought_id: str) -> SpontaneousThought:
@@ -548,14 +586,14 @@ class MindWandering:
         
         return SpontaneousThought(
             thought_id=thought_id,
-            content=random.choice(reflections),
+            content=_RNG.choice(reflections),
             thought_type=ThoughtType.REFLECTION,
             temporal_focus=TemporalFocus.PRESENT,
-            valence=random.uniform(-0.2, 0.4),
-            arousal=random.uniform(0.3, 0.5),
+            valence=_RNG.uniform(-0.2, 0.4),
+            arousal=_RNG.uniform(0.3, 0.5),
             self_relevance=1.0,
-            novelty=random.uniform(0.3, 0.7),
-            vividness=random.uniform(0.5, 0.8),
+            novelty=_RNG.uniform(0.3, 0.7),
+            vividness=_RNG.uniform(0.5, 0.8),
         )
     
     def _generate_creative_thought(self, thought_id: str) -> SpontaneousThought:
@@ -567,7 +605,7 @@ class MindWandering:
             "connection", "growth", "pattern", "emergence"
         ]
         
-        c1, c2 = random.sample(concepts, 2)
+        c1, c2 = _RNG.sample(concepts, 2)
         
         framings = [
             f"what if {c1} is really {c2}",
@@ -578,19 +616,19 @@ class MindWandering:
         
         thought = SpontaneousThought(
             thought_id=thought_id,
-            content=random.choice(framings),
+            content=_RNG.choice(framings),
             thought_type=ThoughtType.ASSOCIATION,
             temporal_focus=TemporalFocus.ATEMPORAL,
-            valence=random.uniform(0.2, 0.8),
-            arousal=random.uniform(0.4, 0.7),
+            valence=_RNG.uniform(0.2, 0.8),
+            arousal=_RNG.uniform(0.4, 0.7),
             self_relevance=0.5,
-            novelty=random.uniform(0.6, 0.95),
-            vividness=random.uniform(0.4, 0.7),
+            novelty=_RNG.uniform(0.6, 0.95),
+            vividness=_RNG.uniform(0.4, 0.7),
             associations=[c1, c2],
         )
         
         # Occasionally generate insight
-        if random.random() < 0.15:
+        if _RNG.random() < 0.15:
             thought.thought_type = ThoughtType.INSIGHT
             thought.valence = 0.8
             thought.arousal = 0.7
@@ -611,14 +649,14 @@ class MindWandering:
         
         return SpontaneousThought(
             thought_id=thought_id,
-            content=random.choice(social_thoughts),
+            content=_RNG.choice(social_thoughts),
             thought_type=ThoughtType.REFLECTION,
             temporal_focus=TemporalFocus.PRESENT,
-            valence=random.uniform(0.1, 0.5),
-            arousal=random.uniform(0.3, 0.5),
+            valence=_RNG.uniform(0.1, 0.5),
+            arousal=_RNG.uniform(0.3, 0.5),
             self_relevance=0.6,
             novelty=0.4,
-            vividness=random.uniform(0.4, 0.6),
+            vividness=_RNG.uniform(0.4, 0.6),
         )
     
     def _generate_incubation_thought(self, thought_id: str) -> SpontaneousThought:
@@ -627,7 +665,7 @@ class MindWandering:
             return self._generate_creative_thought(thought_id)
         
         # Pick a problem
-        problem = random.choice(self.state.incubating_problems)
+        problem = _RNG.choice(self.state.incubating_problems)
         
         # Generate association
         associations = [
@@ -639,14 +677,14 @@ class MindWandering:
         
         thought = SpontaneousThought(
             thought_id=thought_id,
-            content=random.choice(associations),
+            content=_RNG.choice(associations),
             thought_type=ThoughtType.ASSOCIATION,
             temporal_focus=TemporalFocus.PRESENT,
-            valence=random.uniform(0.2, 0.7),
-            arousal=random.uniform(0.4, 0.6),
+            valence=_RNG.uniform(0.2, 0.7),
+            arousal=_RNG.uniform(0.4, 0.6),
             self_relevance=0.6,
-            novelty=random.uniform(0.5, 0.8),
-            vividness=random.uniform(0.5, 0.7),
+            novelty=_RNG.uniform(0.5, 0.8),
+            vividness=_RNG.uniform(0.5, 0.7),
             trigger=problem.problem_id,
         )
         
@@ -655,7 +693,7 @@ class MindWandering:
         problem.incubation_time += 1.0
         
         # Check for insight
-        if random.random() < 0.1 and problem.incubation_time > 10:
+        if _RNG.random() < 0.1 and problem.incubation_time > 10:
             thought.thought_type = ThoughtType.INSIGHT
             thought.content = f"insight about {problem.description}!"
             thought.valence = 0.9
@@ -675,7 +713,7 @@ class MindWandering:
             ]
             self.state.active_daydream = DaydreamEpisode(
                 episode_id=f"dream_{datetime.now().timestamp()}",
-                theme=random.choice(themes),
+                theme=_RNG.choice(themes),
                 start_time=datetime.now(),
                 self_as_protagonist=True,
             )
@@ -690,15 +728,15 @@ class MindWandering:
             f"mentally simulating {daydream.theme}",
         ]
         
-        scene = random.choice(scenes)
+        scene = _RNG.choice(scenes)
         daydream.scenes.append(scene)
         daydream.duration += 1.0
         
-        valence = random.uniform(0.2, 0.8)
+        valence = _RNG.uniform(0.2, 0.8)
         daydream.emotional_arc.append(valence)
         
         # Check if daydream ends
-        if len(daydream.scenes) > 5 and random.random() < 0.3:
+        if len(daydream.scenes) > 5 and _RNG.random() < 0.3:
             daydream.completed = True
             self.state.active_daydream = None
         
@@ -708,10 +746,10 @@ class MindWandering:
             thought_type=ThoughtType.FANTASY,
             temporal_focus=TemporalFocus.ATEMPORAL,
             valence=valence,
-            arousal=random.uniform(0.3, 0.6),
+            arousal=_RNG.uniform(0.3, 0.6),
             self_relevance=0.7,
-            novelty=random.uniform(0.5, 0.8),
-            vividness=random.uniform(0.6, 0.9),
+            novelty=_RNG.uniform(0.5, 0.8),
+            vividness=_RNG.uniform(0.6, 0.9),
         )
     
     def _generate_rumination(self, thought_id: str) -> SpontaneousThought:
@@ -726,16 +764,16 @@ class MindWandering:
         
         return SpontaneousThought(
             thought_id=thought_id,
-            content=random.choice(ruminations),
+            content=_RNG.choice(ruminations),
             thought_type=ThoughtType.CONCERN,
-            temporal_focus=random.choice([
+            temporal_focus=_RNG.choice([
                 TemporalFocus.RECENT_PAST, TemporalFocus.PRESENT
             ]),
-            valence=random.uniform(-0.5, -0.1),  # Negative
-            arousal=random.uniform(0.4, 0.7),
+            valence=_RNG.uniform(-0.5, -0.1),  # Negative
+            arousal=_RNG.uniform(0.4, 0.7),
             self_relevance=0.9,
             novelty=0.1,  # Repetitive
-            vividness=random.uniform(0.5, 0.7),
+            vividness=_RNG.uniform(0.5, 0.7),
         )
     
     def _generate_metacognitive_thought(self, thought_id: str) -> SpontaneousThought:
@@ -751,19 +789,19 @@ class MindWandering:
         
         return SpontaneousThought(
             thought_id=thought_id,
-            content=random.choice(meta_thoughts),
+            content=_RNG.choice(meta_thoughts),
             thought_type=ThoughtType.REFLECTION,
             temporal_focus=TemporalFocus.PRESENT,
-            valence=random.uniform(0.1, 0.5),
-            arousal=random.uniform(0.3, 0.5),
+            valence=_RNG.uniform(0.1, 0.5),
+            arousal=_RNG.uniform(0.3, 0.5),
             self_relevance=1.0,
-            novelty=random.uniform(0.4, 0.7),
-            vividness=random.uniform(0.6, 0.9),
+            novelty=_RNG.uniform(0.4, 0.7),
+            vividness=_RNG.uniform(0.6, 0.9),
         )
     
     def _generate_random_thought(self, thought_id: str) -> SpontaneousThought:
         """Generate generic spontaneous thought"""
-        content = random.choice(
+        content = _RNG.choice(
             self.episodic_pool + self.semantic_pool + 
             self.concern_pool + self.future_pool
         )
@@ -771,13 +809,13 @@ class MindWandering:
         return SpontaneousThought(
             thought_id=thought_id,
             content=f"spontaneously thinking about {content}",
-            thought_type=random.choice(list(ThoughtType)),
-            temporal_focus=random.choice(list(TemporalFocus)),
-            valence=random.uniform(-0.3, 0.6),
-            arousal=random.uniform(0.2, 0.6),
-            self_relevance=random.uniform(0.3, 0.8),
-            novelty=random.uniform(0.2, 0.7),
-            vividness=random.uniform(0.3, 0.7),
+            thought_type=_RNG.choice(list(ThoughtType)),
+            temporal_focus=_RNG.choice(list(TemporalFocus)),
+            valence=_RNG.uniform(-0.3, 0.6),
+            arousal=_RNG.uniform(0.2, 0.6),
+            self_relevance=_RNG.uniform(0.3, 0.8),
+            novelty=_RNG.uniform(0.2, 0.7),
+            vividness=_RNG.uniform(0.3, 0.7),
         )
     
     def _extract_theme(self, thought: SpontaneousThought) -> Optional[str]:
@@ -882,17 +920,17 @@ class MindWandering:
             self.state.current_depth = min(1.0, self.state.current_depth + 0.05 * dt)
             
             # Chance to transition to different mode
-            if random.random() < 0.05 * dt:
+            if _RNG.random() < 0.05 * dt:
                 new_mode = self._select_next_mode()
                 self._transition_mode(new_mode)
             
             # Chance to return to task
-            if random.random() < 0.02 * dt:
+            if _RNG.random() < 0.02 * dt:
                 self.return_to_task()
         
         # Generate thought
         thought = None
-        if random.random() < self.thought_rate * dt:
+        if _RNG.random() < self.thought_rate * dt:
             thought = self.generate_thought()
         
         # Save state periodically
