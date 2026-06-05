@@ -26,6 +26,24 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _am
+except Exception:
+    def _am(*a, **k): return np.zeros((8, 0))
+
+
+def detect_edges_from_telemetry(threshold_percentile: float = 90):
+    """Detect temporal edges (abrupt transitions) in the agent's real activity stream
+    instead of a synthetic signal. Returns the velocity edges, or None if too short."""
+    M = _am()
+    if M.shape[1] < 16:
+        return None
+    signal = M.mean(axis=0)                       # mean real activity over channels
+    t = np.arange(signal.size, dtype=float)
+    return TemporalEdgeDetector(signal, t).detect_velocity_edges()
 from scipy.signal import savgol_filter, find_peaks
 from scipy.stats import entropy
 from typing import Dict, Tuple, List, Optional
@@ -427,7 +445,7 @@ def validate_edge_detection():
 
     # Test 3: Continuous fluctuating stimulus
     print("\nTest 3: Information Gain During Fluctuations")
-    activity_fluctuating = np.random.normal(0.3, 0.1, (n_neurons, n_timepoints))
+    activity_fluctuating = np.random.default_rng(3).normal(0.3, 0.1, (n_neurons, n_timepoints))  # seeded demo signal
     # Add burst of synchronized activity
     activity_fluctuating[:, 100:120] += 0.3
 

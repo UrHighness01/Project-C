@@ -34,6 +34,22 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _am, phi_delta_series as _pds
+except Exception:
+    def _am(*a, **k): return np.zeros((8, 0))
+    def _pds(*a, **k): return np.zeros(0)
+def _phi_noise(n, offset=0):
+    """Deterministic perturbation vector from the real phi-increment series, indexed by
+    a stable offset (no mutable global) so results are reproducible across instances."""
+    d = _pds()
+    if d.size == 0:
+        return np.zeros(n)
+    idx = (np.arange(offset, offset + n)) % d.size
+    return np.tanh(d[idx] * 50)
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -104,14 +120,18 @@ class GammaSynchronizationEngine:
             n_neurons: Number of oscillating neurons
             base_frequency: Baseline oscillation frequency (Hz)
         """
-        # Initialize phases randomly
-        phases = np.random.uniform(0, 2*np.pi, n_neurons)
+        # Deterministic phase spread, perturbed by the real phi signal
+        _off = hash(region_name) % 997
+        phases = np.linspace(0, 2*np.pi, n_neurons, endpoint=False) + 0.1 * _phi_noise(n_neurons, _off)
 
-        # Amplitudes (slightly noisy)
-        amplitudes = np.ones(n_neurons) + np.random.normal(0, 0.1, n_neurons)
+        # Amplitudes lightly modulated by real activity
+        amplitudes = np.ones(n_neurons) + 0.1 * _phi_noise(n_neurons, _off + 13)
 
-        # Feature representation (dummy values)
-        feature_rep = np.random.normal(0, 1, 10)
+        # Feature representation from the agent's real activity channels
+        _M = _am()
+        feature_rep = (_M[:, -1][:10] if _M.shape[1] else np.zeros(10))
+        if feature_rep.size < 10:
+            feature_rep = np.pad(feature_rep, (0, 10 - feature_rep.size))
 
         pop = OscillatorPopulation(
             region_name=region_name,
@@ -221,7 +241,7 @@ class GammaSynchronizationEngine:
             new_phases += omega * dt
 
             # Add small noise
-            noise = np.random.normal(0, 0.01, len(pop.phases))
+            noise = 0.01 * _phi_noise(len(pop.phases), int(round(self.time / max(dt,1e-9))))
             new_phases += noise
 
             # Wrap to [-π, π]

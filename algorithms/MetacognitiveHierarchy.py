@@ -33,6 +33,14 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix as _am
+except Exception:
+    def _am(*a, **k): return np.zeros((8, 0))
+_MH_RNG = np.random.default_rng(11)
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 import json
@@ -143,7 +151,7 @@ class RecursiveRepresentation:
 
         # Multiple random initializations
         for _ in range(10):
-            x = np.random.rand(self.dim)
+            x = _MH_RNG.random(self.dim)
 
             # Iterate until convergence
             for _ in range(1000):
@@ -347,7 +355,12 @@ class MetacognitiveHierarchyModel:
             MetacognitiveAnalysis with trajectories and metrics
         """
         if initial_activity is None:
-            initial_activity = np.random.rand(self.dim) * 0.5 + 0.25
+            _M = _am()
+            if _M.shape[1]:                       # seed from real activity when available
+                base = np.resize((_M[:, -1] - _M[:, -1].min()), self.dim)
+                initial_activity = 0.25 + 0.5 * (base / (base.max() + 1e-9))
+            else:
+                initial_activity = _MH_RNG.random(self.dim) * 0.5 + 0.25
 
         structure = self.build_hierarchy(initial_activity)
 

@@ -221,3 +221,14 @@ def test_subjective_loop_and_rhythms_real():
     from algorithms.AttentionalRhythm import AttentionalRhythmModel
     m = AttentionalRhythmModel(); m.update_alpha_phase()
     assert 0.0 <= m.alpha_phase <= 2 * 3.1416 + 1
+
+
+def test_oscillatory_and_edges_real():
+    from algorithms.OscillatoryBindingEngine import GammaSynchronizationEngine
+    def run():
+        e = GammaSynchronizationEngine(); e.add_feature_population("V4", "color", n_neurons=30)
+        return e.simulate_feature_binding(duration=0.03, coupling_strength=0.3).metadata["peak_binding_strength"]
+    assert run() == run()                                     # deterministic
+    from algorithms.TemporalEdgeDetector import detect_edges_from_telemetry
+    e = detect_edges_from_telemetry()
+    assert e is None or isinstance(e, list)
