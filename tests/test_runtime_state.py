@@ -50,3 +50,22 @@ def test_information_flow_runs_on_real_telemetry():
     from algorithms.InformationFlowAnalyzer import analyze_runtime_flow
     r = analyze_runtime_flow(threshold=0.0)
     assert r is not None and hasattr(r, "transfer_entropies")
+
+
+def test_resources_real_and_bounded():
+    from runtime.resources import resource_sample, body_state_vector
+    s = resource_sample()
+    assert set(s) >= {"cpu_percent", "mem_percent", "load_avg_1m"}
+    v = body_state_vector()
+    assert v.shape == (5,) and np.all(v >= 0) and np.all(v <= 2)
+
+
+def test_memory_store_real():
+    from runtime.memory_store import journals, cadence_series, vocabulary_stats
+    js = journals()
+    if not js:                                        # tolerate fresh checkout
+        return
+    c = cadence_series()
+    assert c["volume"].size == len(js) and c["volume"].max() > 0
+    vs = vocabulary_stats()
+    assert 0.0 < vs["ttr"] <= 1.0                     # real lexical ratio
