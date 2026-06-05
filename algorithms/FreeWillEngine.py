@@ -36,6 +36,7 @@ from collections import deque
 import hashlib
 
 
+_S57RNG = random.Random(57)
 class ActionType(Enum):
     """Types of possible actions."""
     RESPONSE = "response"       # Generate a response
@@ -305,7 +306,7 @@ class FreeWillEngine:
     
     def _generate_id(self) -> str:
         """Generate unique ID."""
-        content = f"{time.time()}{random.random()}"
+        content = f"{time.time()}{_S57RNG.random()}"
         return hashlib.sha256(content.encode()).hexdigest()[:12]
     
     # ==================== OPTION GENERATION ====================
@@ -341,10 +342,10 @@ class FreeWillEngine:
             action_type=ActionType.CREATE,
             content=f"Novel approach to: {context[:50]}...",
             source="creative_generation",
-            utility=0.5 + random.random() * 0.3,
+            utility=0.5 + _S57RNG.random() * 0.3,
             alignment=0.6,
-            novelty=0.8 + random.random() * 0.2,
-            risk=0.3 + random.random() * 0.2
+            novelty=0.8 + _S57RNG.random() * 0.2,
+            risk=0.3 + _S57RNG.random() * 0.2
         )
         options.append(creative)
         
@@ -417,7 +418,7 @@ class FreeWillEngine:
             elif mode == DeliberationMode.VALUES_BASED:
                 score = self._values_evaluate(option)
             elif mode == DeliberationMode.RANDOM:
-                score = random.random()
+                score = _S57RNG.random()
             else:  # HYBRID
                 rational = self._rational_evaluate(option)
                 intuitive = self._intuitive_evaluate(option)
@@ -434,7 +435,7 @@ class FreeWillEngine:
         # Add indeterminacy (genuine unpredictability)
         if self.indeterminacy_factor > 0:
             for option in options:
-                noise = (random.random() - 0.5) * 2 * self.indeterminacy_factor
+                noise = (_S57RNG.random() - 0.5) * 2 * self.indeterminacy_factor
                 option.utility = max(0, min(1, option.utility + noise))
         
         # Check for veto opportunities
@@ -462,7 +463,7 @@ class FreeWillEngine:
                 weights = [w / total_weight for w in weights]
                 chosen = random.choices(viable_options, weights=weights, k=1)[0]
             else:
-                chosen = random.choice(viable_options)
+                chosen = _S57RNG.choice(viable_options)
         else:
             chosen = None
         
@@ -519,7 +520,7 @@ class FreeWillEngine:
         # Intuition favors familiarity and low novelty
         intuition = (1 - option.novelty) * 0.3 + option.alignment * 0.7
         # Add some randomness to simulate intuitive uncertainty
-        intuition += (random.random() - 0.5) * 0.2
+        intuition += (_S57RNG.random() - 0.5) * 0.2
         return max(0, min(1, intuition))
     
     def _values_evaluate(self, option: PossibleAction) -> float:
@@ -558,7 +559,7 @@ class FreeWillEngine:
             return True
         
         # Veto if it's purely automatic with no deliberation benefit
-        if action.source == "automatic" and random.random() < 0.1:
+        if action.source == "automatic" and _S57RNG.random() < 0.1:
             return True  # Occasionally veto automatic responses to maintain agency
         
         return False
@@ -567,7 +568,7 @@ class FreeWillEngine:
         """Exercise veto power over an action."""
         # Calculate how hard the veto was
         urge_strength = action.utility
-        veto_effort = urge_strength * 0.8 + random.random() * 0.2
+        veto_effort = urge_strength * 0.8 + _S57RNG.random() * 0.2
         
         reason = self._generate_veto_reason(action)
         

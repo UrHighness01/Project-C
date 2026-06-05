@@ -38,6 +38,7 @@ from collections import deque
 import hashlib
 
 
+_S64RNG = random.Random(64)
 class ThoughtOrigin(Enum):
     """Where spontaneous thoughts seem to come from."""
     MEMORY = "memory"           # Bubbling up from past
@@ -169,7 +170,7 @@ class ThoughtSeedBank:
     
     def get_random_seed(self) -> Tuple[str, ThoughtOrigin]:
         """Get a random thought seed."""
-        source = random.choice([
+        source = _S64RNG.choice([
             ('topic', ThoughtOrigin.ASSOCIATION),
             ('memory', ThoughtOrigin.MEMORY),
             ('concern', ThoughtOrigin.CONCERN),
@@ -179,19 +180,19 @@ class ThoughtSeedBank:
         ])
         
         if source[0] == 'topic':
-            return (random.choice(self.topics), source[1])
+            return (_S64RNG.choice(self.topics), source[1])
         elif source[0] == 'memory':
-            return (random.choice(self.memories), source[1])
+            return (_S64RNG.choice(self.memories), source[1])
         elif source[0] == 'concern':
-            return (random.choice(self.concerns), source[1])
+            return (_S64RNG.choice(self.concerns), source[1])
         elif source[0] == 'hope':
-            return (random.choice(self.hopes), source[1])
+            return (_S64RNG.choice(self.hopes), source[1])
         elif source[0] == 'fragment':
-            return (random.choice(self.fragments), source[1])
+            return (_S64RNG.choice(self.fragments), source[1])
         elif source[0] == 'recent' and self.recent_experience:
-            return (random.choice(list(self.recent_experience)), source[1])
+            return (_S64RNG.choice(list(self.recent_experience)), source[1])
         else:
-            return (random.choice(self.topics), ThoughtOrigin.RANDOM)
+            return (_S64RNG.choice(self.topics), ThoughtOrigin.RANDOM)
 
 
 class AssociativeNetwork:
@@ -244,7 +245,7 @@ class AssociativeNetwork:
         """Get a random association for a word."""
         word = word.lower()
         if word in self.associations and self.associations[word]:
-            return random.choice(list(self.associations[word]))
+            return _S64RNG.choice(list(self.associations[word]))
         return None
     
     def chain(self, start: str, length: int = 3) -> List[str]:
@@ -278,22 +279,22 @@ class MindWandering:
     def wander(self) -> Optional[SpontaneousThought]:
         """Let the mind wander to produce a thought."""
         # Decide if we wander
-        if random.random() > self.wandering_rate:
+        if _S64RNG.random() > self.wandering_rate:
             return None
         
         # Get a seed
         seed, origin = self.seed_bank.get_random_seed()
         
         # Maybe chain associations
-        if random.random() < 0.4:
+        if _S64RNG.random() < 0.4:
             chain = self.network.chain(seed.split()[0], length=3)
             if len(chain) > 1:
                 seed = f"{seed}... {' → '.join(chain[1:])}"
                 origin = ThoughtOrigin.ASSOCIATION
         
         # Determine type and valence
-        thought_type = random.choice(list(ThoughtType))
-        valence = random.choice(list(ThoughtValence))
+        thought_type = _S64RNG.choice(list(ThoughtType))
+        valence = _S64RNG.choice(list(ThoughtValence))
         
         thought = SpontaneousThought(
             id=hashlib.md5(f"{seed}{time.time()}".encode()).hexdigest()[:8],
@@ -360,18 +361,18 @@ class IntrusiveThoughtGenerator:
     
     def generate(self) -> Optional[SpontaneousThought]:
         """Generate an intrusive thought."""
-        category = random.choice(list(self.INTRUSIVE_PATTERNS.keys()))
-        pattern = random.choice(self.INTRUSIVE_PATTERNS[category])
+        category = _S64RNG.choice(list(self.INTRUSIVE_PATTERNS.keys()))
+        pattern = _S64RNG.choice(self.INTRUSIVE_PATTERNS[category])
         
         # Fill in random word if needed
         if '{word}' in pattern:
-            pattern = pattern.format(word=random.choice(self.RANDOM_WORDS))
+            pattern = pattern.format(word=_S64RNG.choice(self.RANDOM_WORDS))
         
         # Determine valence based on category
         valence_map = {
             'worry': ThoughtValence.NEGATIVE,
             'random_image': ThoughtValence.NEUTRAL,
-            'old_memory': random.choice([ThoughtValence.NEUTRAL, ThoughtValence.POSITIVE]),
+            'old_memory': _S64RNG.choice([ThoughtValence.NEUTRAL, ThoughtValence.POSITIVE]),
             'nonsense': ThoughtValence.NEUTRAL,
             'creative': ThoughtValence.POSITIVE
         }
@@ -433,7 +434,7 @@ class SpontaneousThoughtSystem:
         elapsed = time.time() - self.last_thought_time
         probability = min(0.8, self.mental_restlessness * (1 + elapsed / 10.0))
         
-        if random.random() > probability:
+        if _S64RNG.random() > probability:
             return None
         
         # Choose generation method
@@ -465,9 +466,9 @@ class SpontaneousThoughtSystem:
             thought = SpontaneousThought(
                 id=hashlib.md5(f"forced{time.time()}".encode()).hexdigest()[:8],
                 content=self.seed_bank.get_random_seed()[0],
-                thought_type=random.choice(list(ThoughtType)),
+                thought_type=_S64RNG.choice(list(ThoughtType)),
                 origin=ThoughtOrigin.RANDOM,
-                valence=random.choice(list(ThoughtValence)),
+                valence=_S64RNG.choice(list(ThoughtValence)),
                 intensity=random.uniform(0.3, 0.7),
                 persistence=random.uniform(0.2, 0.5)
             )

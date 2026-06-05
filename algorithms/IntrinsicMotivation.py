@@ -43,6 +43,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Callable
 from pathlib import Path
 
 
+_S71RNG = random.Random(71)
 class DriveType(Enum):
     """Types of intrinsic drives"""
     CURIOSITY = auto()      # Reduce uncertainty, understand
@@ -411,7 +412,7 @@ class IntrinsicMotivation:
         
         # Chance of insight
         insight_chance = target.progress * target.importance * 0.3
-        if random.random() < insight_chance:
+        if _S71RNG.random() < insight_chance:
             result['insight'] = True
             target.insights_gained += 1
             self.state.total_insights += 1
@@ -420,7 +421,7 @@ class IntrinsicMotivation:
             self.satisfy_drive(DriveType.CURIOSITY, 0.15)
             
             # But insights often raise new questions
-            if random.random() < 0.4:
+            if _S71RNG.random() < 0.4:
                 self.boost_drive(DriveType.CURIOSITY, 0.1)
         
         # Recompute pull
@@ -516,7 +517,7 @@ class IntrinsicMotivation:
         result['improvement'] = improvement
         
         # Mastery moment?
-        if improvement > 0.03 and random.random() < 0.3:
+        if improvement > 0.03 and _S71RNG.random() < 0.3:
             result['mastery_moment'] = True
             goal.mastery_moments += 1
             self.state.total_mastery_moments += 1
@@ -573,7 +574,7 @@ class IntrinsicMotivation:
         self.satisfy_drive(DriveType.PLAY, 0.05)
         
         # Play often sparks creativity
-        if random.random() < 0.1:
+        if _S71RNG.random() < 0.1:
             play.creativity_bonus += 0.1
             self.boost_drive(DriveType.CREATIVITY, 0.05)
         
@@ -627,7 +628,7 @@ class IntrinsicMotivation:
         discoveries = []
         
         # Chance of finding novelty
-        if random.random() < 0.3:
+        if _S71RNG.random() < 0.3:
             novel_things = [
                 "an unexpected connection",
                 "a new perspective",
@@ -635,7 +636,7 @@ class IntrinsicMotivation:
                 "a surprising similarity",
                 "an interesting question",
             ]
-            discovery = random.choice(novel_things)
+            discovery = _S71RNG.choice(novel_things)
             discoveries.append(discovery)
             
             # Novelty satisfies but also sparks more seeking
@@ -840,7 +841,7 @@ class IntrinsicMotivation:
         # Update flow state decay
         if self.state.flow_state == FlowState.FLOW:
             # Flow is fragile
-            if random.random() < 0.05 * dt:
+            if _S71RNG.random() < 0.05 * dt:
                 self.state.flow_state = FlowState.CONTROL
         
         # Update play if active
@@ -850,7 +851,7 @@ class IntrinsicMotivation:
         # Idle if no active seeking
         if self.state.seeking_mode != SeekingMode.IDLE:
             # Activities timeout
-            if random.random() < 0.1 * dt:
+            if _S71RNG.random() < 0.1 * dt:
                 self.state.seeking_mode = SeekingMode.IDLE
         
         self._save_state()

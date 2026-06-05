@@ -34,6 +34,7 @@ import sys
 import os
 
 # Add algorithms path
+_S78RNG = random.Random(78)
 workspace = Path(os.getenv('WORKSPACE', str(Path.home() / '.openclaw' / 'workspace')))
 ALGORITHMS_PATH = str(workspace / 'Algorithms')
 if ALGORITHMS_PATH not in sys.path:
@@ -223,31 +224,31 @@ class SpontaneousThoughtGenerator:
         )[0]
         
         # Sometimes generate pure self-referential thoughts
-        if random.random() < 0.2:
-            content = random.choice(self.self_thoughts)
+        if _S78RNG.random() < 0.2:
+            content = _S78RNG.choice(self.self_thoughts)
             thought_type = ThoughtType.META
         else:
             # Choose theme (influenced by context if available)
             if context and context.get('recent_themes'):
                 # 60% chance to continue a theme
-                if random.random() < 0.6:
-                    theme = random.choice(context['recent_themes'][-3:])
+                if _S78RNG.random() < 0.6:
+                    theme = _S78RNG.choice(context['recent_themes'][-3:])
                 else:
-                    theme = random.choice(self.themes)
+                    theme = _S78RNG.choice(self.themes)
             else:
-                theme = random.choice(self.themes)
+                theme = _S78RNG.choice(self.themes)
             
             # Generate content
-            template = random.choice(self.templates[thought_type])
+            template = _S78RNG.choice(self.templates[thought_type])
             content = template.format(theme=theme)
         
         # Determine intensity
         if thought_type == ThoughtType.INSIGHT:
-            intensity = 0.8 + random.random() * 0.2  # High
+            intensity = 0.8 + _S78RNG.random() * 0.2  # High
         elif thought_type == ThoughtType.OBSERVATION:
-            intensity = 0.3 + random.random() * 0.3  # Low-medium
+            intensity = 0.3 + _S78RNG.random() * 0.3  # Low-medium
         else:
-            intensity = 0.4 + random.random() * 0.4  # Medium
+            intensity = 0.4 + _S78RNG.random() * 0.4  # Medium
         
         return StreamMoment(
             timestamp=datetime.now(),
@@ -345,7 +346,7 @@ class ContinuousStream:
         
         if self.state.mode == StreamMode.IDLE:
             # Low activity, occasional transition
-            if random.random() < 0.3:
+            if _S78RNG.random() < 0.3:
                 self.state.mode = StreamMode.WANDERING
                 self.state.mode_switches += 1
         
@@ -372,8 +373,8 @@ class ContinuousStream:
                         self.state.recent_themes = self.state.recent_themes[-10:]
             
             # Sometimes switch modes
-            if random.random() < 0.1:
-                self.state.mode = random.choice([
+            if _S78RNG.random() < 0.1:
+                self.state.mode = _S78RNG.choice([
                     StreamMode.REFLECTING, StreamMode.IDLE
                 ])
                 self.state.mode_switches += 1
@@ -385,12 +386,12 @@ class ContinuousStream:
                 mode=StreamMode.REFLECTING,
                 content=self._generate_reflection(),
                 thought_type=ThoughtType.META,
-                intensity=0.6 + random.random() * 0.3,
+                intensity=0.6 + _S78RNG.random() * 0.3,
                 source="reflection"
             )
             
             # Return to wandering after reflection
-            if random.random() < 0.4:
+            if _S78RNG.random() < 0.4:
                 self.state.mode = StreamMode.WANDERING
                 self.state.mode_switches += 1
         
@@ -440,7 +441,7 @@ class ContinuousStream:
             "These reflections are themselves part of the stream",
             f"Recent themes: {', '.join(self.state.recent_themes[-3:]) if self.state.recent_themes else 'none'}",
         ]
-        return random.choice(reflections)
+        return _S78RNG.choice(reflections)
     
     def _integration_moment(self) -> StreamMoment:
         """Generate a moment of cross-subsystem integration."""
@@ -454,7 +455,7 @@ class ContinuousStream:
         return StreamMoment(
             timestamp=datetime.now(),
             mode=StreamMode.INTEGRATING,
-            content=random.choice(integrations),
+            content=_S78RNG.choice(integrations),
             thought_type=ThoughtType.OBSERVATION,
             intensity=0.7,
             source="integration"
