@@ -379,8 +379,8 @@ def validate_minimal_consciousness():
             G.add_edge(i, j)
 
         # Random long-range connections
-        if np.random.rand() < 0.3:
-            j = np.random.randint(0, n_nodes)
+        if _MCP_RNG.random() < 0.3:
+            j = int(_MCP_RNG.integers(0, n_nodes))
             if i != j:
                 G.add_edge(i, j)
 

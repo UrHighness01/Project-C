@@ -243,3 +243,14 @@ def test_cpsa_real_content_scoring():
             {"description": "reduce datacenter energy", "constraints": ["budget"]})
         return [round(s.get("overall_score", 0), 5) for s in (r.get("solutions") or r.get("all_solutions") or [])]
     assert run() == run()                                     # deterministic per problem
+
+
+def test_agency_counterfactual_meta_import_and_determinism():
+    import importlib, numpy as np
+    import algorithms.AgencyConsciousness as ag
+    import algorithms.CounterfactualSimulator as cf
+    import algorithms.meta_meta_feedback as mm
+    assert -1.0 <= mm._phi_now() <= 1.0 and mm._phi_now() == mm._phi_now()
+    # phi-derived perturbations are deterministic
+    assert np.array_equal(ag._phi_vec(5, 0), ag._phi_vec(5, 0))
+    assert np.array_equal(cf._phi_vec(5, 0), cf._phi_vec(5, 0))

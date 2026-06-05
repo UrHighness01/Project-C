@@ -56,6 +56,24 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series as _pds, activity_matrix as _am
+except Exception:
+    def _pds(*a, **k): return np.zeros(0)
+    def _am(*a, **k): return np.zeros((8, 0))
+_RNG = np.random.default_rng(17)
+
+
+def _phi_vec(n, offset=0, scale=1.0):
+    """Deterministic perturbation vector from the real phi-increment series."""
+    d = _pds()
+    if d.size == 0:
+        return np.zeros(n)
+    idx = (np.arange(offset, offset + n)) % d.size
+    return scale * np.tanh(d[idx] * 50)
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -132,7 +150,7 @@ class AgencyConsciousnessModel:
         self.agency_loss_events: List[Tuple[float, str]] = []
 
         # Forward model (predicts action outcomes)
-        self.forward_model = np.random.randn(n_action_dimensions, n_action_dimensions) * 0.1
+        self.forward_model = _RNG.standard_normal((n_action_dimensions, n_action_dimensions)) * 0.1
         self.forward_model_confidence = 0.7
 
     def form_intention(self, goal_state: np.ndarray,
@@ -180,7 +198,7 @@ class AgencyConsciousnessModel:
         prediction_confidence = self.forward_model_confidence
 
         # Add uncertainty
-        predicted_outcome += np.random.randn(self.action_dims) * (1 - prediction_confidence) * 0.2
+        predicted_outcome += _phi_vec(self.action_dims, 1, (1 - prediction_confidence) * 0.2)
 
         prediction = MotorPrediction(
             action_id=len(self.action_history),
@@ -207,7 +225,7 @@ class AgencyConsciousnessModel:
         actual_outcome = self.forward_model @ action
 
         # Reality has noise
-        actual_outcome += np.random.randn(self.action_dims) * 0.15
+        actual_outcome += _RNG.standard_normal((self.action_dims)) * 0.15
 
         return actual_outcome
 
@@ -323,7 +341,7 @@ class AgencyConsciousnessModel:
         agency_traj = []
 
         for _ in range(n_actions):
-            action = np.random.randn(self.action_dims)
+            action = _phi_vec(self.action_dims, 23, 1.0)
 
             state = self.step_action(action, intention_clarity=intention_clarity)
             agency_traj.append(state.agency_attribution)
@@ -396,7 +414,7 @@ def validate_agency():
 
     # Force action without intention
     system.current_intention = None
-    action = np.random.randn(5)
+    action = _phi_vec(5, 31, 1.0)
     state = system.step_action(action, intention_clarity=0.1)
 
     print(f"  Without intention: agency = {state.agency_attribution:.3f}")

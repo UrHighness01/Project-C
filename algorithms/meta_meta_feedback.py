@@ -10,7 +10,7 @@ import math
 class RecursiveMetaFeedbackLoop:
     def __init__(self, meta_levels=3, initial_state=None):
         self.meta_levels = meta_levels
-        self.state = initial_state if initial_state is not None else random.uniform(-1, 1)
+        self.state = initial_state if initial_state is not None else _phi_now()
         self.histories = [[] for _ in range(meta_levels)]
         self.weights = self._default_weights(meta_levels)
         self.uncertainties = [1.0 for _ in range(meta_levels)]  # Track uncertainty at each level

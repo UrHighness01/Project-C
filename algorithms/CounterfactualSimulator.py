@@ -30,6 +30,24 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series as _pds, activity_matrix as _am
+except Exception:
+    def _pds(*a, **k): return np.zeros(0)
+    def _am(*a, **k): return np.zeros((8, 0))
+_RNG = np.random.default_rng(17)
+
+
+def _phi_vec(n, offset=0, scale=1.0):
+    """Deterministic perturbation vector from the real phi-increment series."""
+    d = _pds()
+    if d.size == 0:
+        return np.zeros(n)
+    idx = (np.arange(offset, offset + n)) % d.size
+    return scale * np.tanh(d[idx] * 50)
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -140,13 +158,13 @@ class CounterfactualPlanningSystem:
 
         # Deterministic + stochastic components
         if action == 0:  # Stay
-            next_state += np.random.normal(0, 0.01, self.state_dim)
+            next_state = next_state + _phi_vec(self.state_dim, 3, 0.01)
         elif action == 1:  # Move left
             next_state[0] -= 0.1
-            next_state += np.random.normal(0, 0.05, self.state_dim)
+            next_state = next_state + _phi_vec(self.state_dim, 9, 0.05)
         elif action == 2:  # Move right
             next_state[0] += 0.1
-            next_state += np.random.normal(0, 0.05, self.state_dim)
+            next_state = next_state + _phi_vec(self.state_dim, 9, 0.05)
         elif action == 3:  # Approach (toward goal)
             next_state[:10] += 0.05
             next_state[10:] -= 0.05
@@ -432,7 +450,7 @@ def validate_counterfactual_simulation():
 
     # Test 2: Tree building
     print("\nTest 2: Simulation Tree Building")
-    initial_state = np.random.rand(50) * 0.3 + 0.35
+    initial_state = _RNG.random(50) * 0.3 + 0.35
 
     full_tree = system.build_simulation_tree(
         initial_state,
