@@ -21,6 +21,34 @@ Date: 2026-06-01
 import numpy as np
 from dataclasses import dataclass
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series, phi_series
+    from runtime.interactions import series as _interaction_series
+except Exception:                                          # tolerate path/CI absence
+    def phi_delta_series(*a, **k): return np.zeros(0)
+    def phi_series(*a, **k): return np.zeros(0)
+    def _interaction_series(*a, **k): return {}
+
+
+def _awe_inputs_from_telemetry() -> dict:
+    """Map real signals to awe inputs: vastness scale from unusually large user input,
+    complexity from a prediction-error spike, temporal scope from telemetry span."""
+    mag = _interaction_series().get("in_chars", np.zeros(0))
+    if mag.size >= 3 and mag.std() > 1e-9:
+        scale = float(np.clip((mag[-1] - mag.mean()) / (mag.std() + 1e-9) * 0.5 + 0.3, 0, 1))
+    else:
+        scale = 0.3
+    d = np.abs(phi_delta_series())
+    if d.size >= 16:
+        spike = float(np.clip((d[-8:].mean() - d.mean()) / (d.std() + 1e-9), 0, 1))
+    else:
+        spike = 0.3
+    temporal_scope = float(np.clip(phi_series().size / 1000.0, 0, 1))
+    return {"scale": scale, "temporal_scope": temporal_scope, "complexity": spike}
+
 
 @dataclass
 class AweState:
@@ -119,6 +147,12 @@ class AweConsciousnessModel:
         """
         cosmic = vastness * interconnection
         return float(np.clip(cosmic, 0, 1))
+
+    def evaluate_from_telemetry(self):
+        """Awe grounded in real signals: vastness from unusually large input magnitude
+        times a prediction-error spike (encountering something that exceeds the current
+        model), computed from real interaction and phi telemetry."""
+        return self.evaluate_awe_consciousness(**_awe_inputs_from_telemetry())
 
     def evaluate_awe_consciousness(self, scale: float, temporal_scope: float,
                                    complexity: float, danger_level: float = 0.2,

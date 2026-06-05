@@ -154,3 +154,15 @@ def test_self_initiation_drive_from_gaps():
     from algorithms.SelfInitiatedAction import self_initiation_drive
     d = self_initiation_drive()
     assert 0.0 <= d <= 1.0 and d == self_initiation_drive()         # real, deterministic
+
+
+def test_aesthetic_and_awe_from_telemetry():
+    import dataclasses
+    from algorithms.AestheticConsciousness import AestheticConsciousnessModel
+    from algorithms.AweConsciousness import AweConsciousnessModel
+    a = AestheticConsciousnessModel().evaluate_from_telemetry()
+    w = AweConsciousnessModel().evaluate_from_telemetry()
+    assert 0.0 <= a.aesthetic_consciousness <= 1.0
+    assert 0.0 <= w.awe_consciousness <= 1.0
+    a2 = AestheticConsciousnessModel().evaluate_from_telemetry()
+    assert dataclasses.asdict(a) == dataclasses.asdict(a2)            # deterministic

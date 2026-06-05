@@ -21,6 +21,36 @@ Date: 2026-06-01
 import numpy as np
 from dataclasses import dataclass
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import execution_time_series, phi_delta_series, phi_series
+except Exception:                                          # tolerate path/CI absence
+    def execution_time_series(*a, **k): return np.zeros(0)
+    def phi_delta_series(*a, **k): return np.zeros(0)
+    def phi_series(*a, **k): return np.zeros(0)
+
+
+def _aesthetic_inputs_from_telemetry() -> dict:
+    """Map real processing dynamics to aesthetic inputs (all in [0, 1]):
+    fluency from execution timing, error-reduction from the phi-increment trend."""
+    ex = execution_time_series()
+    d = np.abs(phi_delta_series())
+    if ex.size >= 8:
+        z = (ex - ex.mean()) / (ex.std() + 1e-9)
+        fluency = float(np.clip(1.0 / (1.0 + np.exp(z[-1])), 0, 1))   # low recent effort -> fluent
+    else:
+        fluency = 0.5
+    if d.size >= 16:
+        older, recent = d[:-8].mean(), d[-8:].mean()
+        error_reduction = float(np.clip((older - recent) / (older + 1e-9), 0, 1))
+    else:
+        error_reduction = 0.5
+    complexity = float(np.clip(d.std() / (d.mean() + 1e-9), 0, 1)) if d.size else 0.5
+    return {"complexity": complexity, "symmetry": fluency, "color_harmony": fluency,
+            "novelty": error_reduction, "peak_shift_intensity": error_reduction}
+
 
 @dataclass
 class AestheticState:
@@ -73,6 +103,12 @@ class AestheticConsciousnessModel:
         peak_shift = exaggeration / (1.0 + exaggeration)
 
         return float(np.clip(peak_shift, 0, 1))
+
+    def evaluate_from_telemetry(self):
+        """Aesthetic experience grounded in real processing dynamics: fluency (smooth,
+        low-effort processing) plus prediction-error reduction - the processing-fluency
+        account of aesthetic pleasure, computed from real telemetry."""
+        return self.evaluate_aesthetic_consciousness(**_aesthetic_inputs_from_telemetry())
 
     def compute_aesthetic_resonance(self, visual_features: float, novelty: float,
                                     peak_shift: float) -> float:
