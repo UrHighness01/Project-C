@@ -24,6 +24,11 @@ from scipy.stats import entropy
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass, field
 import networkx as nx
+
+try:
+    from runtime.state import activity_matrix
+except Exception:                                          # tolerate path/CI absence
+    def activity_matrix(*a, **k): return np.zeros((8, 0))
 from collections import defaultdict
 import json
 from datetime import datetime
@@ -332,6 +337,20 @@ class InformationFlowAnalyzer:
                 'n_cycles': len(cycles)
             }
         )
+
+
+def analyze_runtime_flow(threshold: float = 0.01) -> Optional[InformationFlowAnalysisResult]:
+    """Compute directed information flow between runtime telemetry channels.
+
+    Feeds the agent's real multi-channel activity (heartbeat-derived observables) into
+    the transfer-entropy analyzer, yielding the genuine flow structure among them.
+    Returns None when no telemetry is available.
+    """
+    M = activity_matrix()                                  # [channels, T]
+    if M.shape[1] < 16:
+        return None
+    activity = M.T                                         # -> [time, channels]
+    return InformationFlowAnalyzer(activity).analyze(threshold=threshold)
 
 
 def validate_information_flow():

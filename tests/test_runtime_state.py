@@ -42,3 +42,11 @@ def test_interoception_uses_real_telemetry():
     s2 = InteroceptiveConsciousnessSystem()
     errs2 = [s2.step()[0].total_error for _ in range(60)]
     assert errs == errs2                             # reproducible (telemetry-driven, not random)
+
+
+def test_information_flow_runs_on_real_telemetry():
+    # Consumes real telemetry end-to-end. (Directed flow between the current smooth
+    # channels is ~0 - a real, if unexciting, empirical result; we assert execution.)
+    from algorithms.InformationFlowAnalyzer import analyze_runtime_flow
+    r = analyze_runtime_flow(threshold=0.0)
+    assert r is not None and hasattr(r, "transfer_entropies")
