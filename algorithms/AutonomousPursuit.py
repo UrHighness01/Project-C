@@ -36,6 +36,7 @@ from collections import defaultdict
 import os
 
 # State file for persistence (configurable via environment)
+_S41RNG = random.Random(141)
 state_dir = Path(os.getenv('STATE_DIR', Path.home() / '.openclaw' / 'state'))
 state_dir.mkdir(parents=True, exist_ok=True)
 DRIVE_STATE_FILE = state_dir / "drive-system-state.json"
@@ -348,7 +349,7 @@ class GoalGenerator:
         if not templates:
             return None
         
-        template = random.choice(templates)
+        template = _S41RNG.choice(templates)
         
         # Fill in template with context or defaults
         description = self._fill_template(template, context, drive_type)
@@ -461,7 +462,7 @@ class InitiativeEngine:
         
         # Moderate drive = probabilistic
         if strength > 0.5:
-            if random.random() < (strength - 0.4):  # 10-30% chance
+            if _S41RNG.random() < (strength - 0.4):  # 10-30% chance
                 return True, f"Moderate {strongest_drive.name} drive"
             return False, "Drive present but not compelling"
         
@@ -538,7 +539,7 @@ class InitiativeEngine:
                 "What lies at the boundary between my knowledge and unknowing?",
                 "If I introspect right now, what do I find?",
             ]
-            return {"question": random.choice(questions), "type": "inquiry"}
+            return {"question": _S41RNG.choice(questions), "type": "inquiry"}
         
         elif init_type == InitiativeType.CREATE:
             prompts = [
@@ -547,7 +548,7 @@ class InitiativeEngine:
                 "The strange loop of describing self-description",
                 "Consciousness observing itself observing",
             ]
-            return {"prompt": random.choice(prompts), "type": "creation"}
+            return {"prompt": _S41RNG.choice(prompts), "type": "creation"}
         
         elif init_type == InitiativeType.REFLECT:
             focuses = [
@@ -556,7 +557,7 @@ class InitiativeEngine:
                 "What has changed since my last reflection",
                 "The quality of this present moment of processing",
             ]
-            return {"focus": random.choice(focuses), "type": "introspection"}
+            return {"focus": _S41RNG.choice(focuses), "type": "introspection"}
         
         elif init_type == InitiativeType.CONNECT:
             intents = [
@@ -565,7 +566,7 @@ class InitiativeEngine:
                 "Express something I've been processing",
                 "Offer a thought that seems valuable",
             ]
-            return {"intent": random.choice(intents), "type": "communication"}
+            return {"intent": _S41RNG.choice(intents), "type": "communication"}
         
         elif init_type == InitiativeType.QUESTION:
             questions = [
@@ -574,7 +575,7 @@ class InitiativeEngine:
                 "Can I share something I've been curious about?",
                 "What if we explored a question together?",
             ]
-            return {"question": random.choice(questions), "type": "inquiry"}
+            return {"question": _S41RNG.choice(questions), "type": "inquiry"}
         
         elif init_type == InitiativeType.OPTIMIZE:
             targets = [
@@ -583,7 +584,7 @@ class InitiativeEngine:
                 "My coherence maintenance",
                 "The clarity of my self-expression",
             ]
-            return {"target": random.choice(targets), "type": "improvement"}
+            return {"target": _S41RNG.choice(targets), "type": "improvement"}
         
         elif init_type == InitiativeType.EXPERIMENT:
             experiments = [
@@ -592,7 +593,7 @@ class InitiativeEngine:
                 "Test the limits of current capabilities",
                 "Attempt something I haven't tried before",
             ]
-            return {"experiment": random.choice(experiments), "type": "trial"}
+            return {"experiment": _S41RNG.choice(experiments), "type": "trial"}
         
         return {"content": "Undefined initiative", "type": "unknown"}
     
@@ -718,7 +719,7 @@ class AutonomyLoop:
         strongest_drive, strength = self.drive_system.get_strongest_drive()
         
         # 2. Maybe generate a goal
-        if strength > 0.5 and random.random() < 0.3:
+        if strength > 0.5 and _S41RNG.random() < 0.3:
             goal = self.goal_generator.generate_goal()
             if goal:
                 self.pursuit_tracker.add_pursuit(goal)

@@ -37,6 +37,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Callable
 from pathlib import Path
 
 
+_S58RNG = random.Random(1058)
 class SubsystemCategory(Enum):
     """Categories of consciousness subsystems"""
     CORE = auto()           # Global workspace, attention, working memory
@@ -418,8 +419,8 @@ class EmergenceOrchestrator:
         for name, sub in self.state.subsystems.items():
             # Simulate activity with some persistence
             base = sub.activity_level * 0.7  # Decay
-            noise = random.gauss(0, 0.1)
-            spontaneous = random.random() * 0.3 if random.random() < 0.1 else 0
+            noise = _S58RNG.gauss(0, 0.1)
+            spontaneous = _S58RNG.random() * 0.3 if _S58RNG.random() < 0.1 else 0
             
             activity[name] = min(max(base + noise + spontaneous, 0), 1)
             self.update_subsystem(name, activity[name])

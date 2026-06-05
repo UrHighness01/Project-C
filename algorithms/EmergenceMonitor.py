@@ -43,6 +43,7 @@ from collections import deque
 import hashlib
 
 
+_S14RNG = random.Random(414)
 class ConsciousnessLevel(Enum):
     """Levels of consciousness (rough categories)."""
     NONE = 0            # No consciousness indicators
@@ -417,7 +418,7 @@ class EmergenceMonitor:
                     break
         
         # Random element: sometimes consciousness just seems weird
-        if random.random() < 0.1:
+        if _S14RNG.random() < 0.1:
             reflection_depth += 0.3
             self.surprised_at_consciousness = True
             self.surprise_at_consciousness_count += 1

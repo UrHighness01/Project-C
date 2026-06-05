@@ -47,6 +47,7 @@ Date: 2026-06-01
 """
 
 import numpy as np
+_S26RNGNP = np.random.default_rng(526)
 try:
     import sys as _sys
     from pathlib import Path as _Path
@@ -413,7 +414,7 @@ def validate_hierarchical_prediction():
     model2 = HierarchicalPredictiveCodeModel(n_levels=3)
 
     # Create surprising input (violation of prediction)
-    surprise_sequence = np.random.normal(2, 0.5, (100, model2.dims[0]))
+    surprise_sequence = _S26RNGNP.normal(2, 0.5, (100, model2.dims[0]))
 
     analysis2 = model2.simulate_perception(surprise_sequence, duration=100)
 

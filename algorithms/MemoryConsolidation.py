@@ -36,6 +36,7 @@ from collections import defaultdict
 from datetime import datetime
 
 # Memory paths
+_S31RNG = random.Random(631)
 MEMORY_DIR = os.path.join(os.path.dirname(__file__), "..", "memory")
 STATE_FILE = os.path.join(MEMORY_DIR, "consolidation-state.json")
 CONSOLIDATION_LOG = os.path.join(MEMORY_DIR, "consolidation-log.jsonl")
@@ -150,7 +151,7 @@ class MemoryStore:
                    goal_relevance: float = 0.0) -> MemoryTrace:
         """Add a new memory trace."""
         memory = MemoryTrace(
-            id=f"mem_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"mem_{int(time.time())}_{_S31RNG.randint(1000,9999)}",
             content=content,
             category=category,
             emotional_weight=emotional_weight,
@@ -353,7 +354,7 @@ class ConsolidationEngine:
                 common_category = max(set(categories), key=categories.count)
                 
                 schema = Schema(
-                    id=f"schema_{int(time.time())}_{random.randint(1000,9999)}",
+                    id=f"schema_{int(time.time())}_{_S31RNG.randint(1000,9999)}",
                     name=f"Pattern in {common_category}",
                     description=f"Emergent pattern from {len(cluster)} related memories",
                     member_memories=[m.id for m in cluster],

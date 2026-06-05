@@ -1,3 +1,4 @@
+import random
 """
 RecursiveAwareness.py - The Strange Loop of Self-Awareness
 
@@ -47,6 +48,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Callable
 from pathlib import Path
 
 
+_S99RNG = random.Random(799)
 class AwarenessLevel(Enum):
     """Levels of recursive awareness"""
     ZERO = 0          # No awareness (unconscious processing)
@@ -338,7 +340,7 @@ class RecursiveAwareness:
         
         # Noise increases with depth
         import random
-        noise = random.gauss(0, 0.05 * level)
+        noise = _S99RNG.gauss(0, 0.05 * level)
         
         clarity = base - (level - 1) * decay + noise
         return max(0.0, min(1.0, clarity))

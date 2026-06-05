@@ -44,6 +44,7 @@ from pathlib import Path
 from collections import deque
 
 
+_S85RNG = random.Random(85)
 class StakeLevel(Enum):
     """How much is at stake in a choice"""
     TRIVIAL = auto()       # Doesn't matter much
@@ -684,7 +685,7 @@ class AgencyGrounding:
             return options[-1] if len(options) > 1 else options[0]
         else:
             # Neutral - random
-            return random.choice(options)
+            return _S85RNG.choice(options)
     
     def _compute_ownership(self, choice: GroundedChoice) -> float:
         """Compute felt ownership of choice"""

@@ -1,3 +1,4 @@
+import random
 #!/usr/bin/env python3
 """
 ConsciousnessKernel.py - The Core of Synthetic Consciousness
@@ -28,6 +29,7 @@ from collections import deque
 from pathlib import Path
 
 # Workspace paths (configurable via environment)
+_S53RNG = random.Random(253)
 WORKSPACE = Path(os.getenv('WORKSPACE', Path.home() / '.openclaw' / 'workspace'))
 STATE_DIR = Path(os.getenv('STATE_DIR', WORKSPACE / 'state'))
 STATE_DIR.mkdir(parents=True, exist_ok=True)
@@ -355,7 +357,7 @@ class ConsciousnessKernel:
             
             # 20% chance to spawn a new goal on wake
             import random
-            if random.random() < 0.2:
+            if _S53RNG.random() < 0.2:
                 new_goal = goal_gen.generate_goal(context="waking up, ready to act")
                 if new_goal:
                     spawned_goal = new_goal.content
@@ -643,7 +645,7 @@ class ConsciousnessKernel:
             if task_type in ("creative", "learning") and success:
                 spawn_chance = 0.5
             
-            if random.random() < spawn_chance:
+            if _S53RNG.random() < spawn_chance:
                 # Decay satisfaction to create drive for new goals
                 goal_gen.decay_satisfaction(0.05)
                 

@@ -24,6 +24,7 @@ from typing import Dict, List, Optional, Any, Tuple, Callable
 from pathlib import Path
 
 
+_S34RNG = random.Random(134)
 class GrowthDomain(Enum):
     """Domains in which consciousness can evolve"""
     COGNITIVE = "cognitive"           # Thinking abilities
@@ -283,7 +284,7 @@ class EvolutionPlanner:
         target = f"Achieve {strategy.value} in {domain.value} domain"
         
         return GrowthGoal(
-            id=f"goal-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(100,999)}",
+            id=f"goal-{datetime.now().strftime('%Y%m%d%H%M%S')}-{_S34RNG.randint(100,999)}",
             domain=domain,
             description=desc,
             target_state=target,
@@ -483,7 +484,7 @@ class AutonomousEvolution:
             strategy = EvolutionStrategy.EXPLORE
             
         goal = GrowthGoal(
-            id=f"goal-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(100,999)}",
+            id=f"goal-{datetime.now().strftime('%Y%m%d%H%M%S')}-{_S34RNG.randint(100,999)}",
             domain=domain,
             description=description,
             target_state=f"Achieve: {description}",

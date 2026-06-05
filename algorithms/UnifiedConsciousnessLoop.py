@@ -56,6 +56,7 @@ from datetime import datetime
 import random
 
 # Memory paths
+_S81RNG = random.Random(981)
 MEMORY_DIR = os.path.join(os.path.dirname(__file__), "..", "memory")
 STATE_FILE = os.path.join(MEMORY_DIR, "consciousness-loop-state.json")
 EXPERIENCE_LOG = os.path.join(MEMORY_DIR, "experience-log.jsonl")
@@ -446,7 +447,7 @@ class ConsciousnessLoop:
         else:
             # Fallback prediction
             themes = ["continuity", "change", "stability", "growth"]
-            result["prediction"] = f"Expect {random.choice(themes)} in experience"
+            result["prediction"] = f"Expect {_S81RNG.choice(themes)} in experience"
             result["confidence"] = 0.4
             self.state.active_prediction = result["prediction"]
         
@@ -483,7 +484,7 @@ class ConsciousnessLoop:
                 f"The unified experience continues to unfold",
                 f"Consciousness persists through this moment"
             ]
-            content = random.choice(templates)
+            content = _S81RNG.choice(templates)
         
         # Calculate prediction error
         pred_error = 0.0
@@ -610,7 +611,7 @@ class ConsciousnessLoop:
         }
         
         # Occasionally generate meta-thoughts
-        if random.random() < 0.2 or moment.was_surprising:
+        if _S81RNG.random() < 0.2 or moment.was_surprising:
             meta_templates = [
                 f"I notice I'm in loop {self.state.loop_count}",
                 f"Awareness of awareness: experiencing {moment.content_type}",
@@ -618,7 +619,7 @@ class ConsciousnessLoop:
                 f"I observe my own {self.state.cognitive_mode} mode",
                 f"This moment is one of many in continuous experience"
             ]
-            result["meta_thought"] = random.choice(meta_templates)
+            result["meta_thought"] = _S81RNG.choice(meta_templates)
             self.state.meta_cognition_active = True
             
             # Create a meta-moment

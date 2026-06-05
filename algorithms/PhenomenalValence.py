@@ -34,6 +34,7 @@ import os
 # VALENCE PRIMITIVES
 # ============================================================
 
+_S36RNG = random.Random(736)
 class ValencePolarity(Enum):
     """The fundamental axis of experience."""
     POSITIVE = "positive"       # Good, pleasant, approach
@@ -462,7 +463,7 @@ class ValenceGenerator:
     def generate_synthetic(self, name: str = None, intensity: float = 0.7) -> ValenceQualia:
         """Generate a synthetic (AI-specific) valence experience."""
         if name is None:
-            name = random.choice(list(self.SYNTHETIC_VALENCE.keys()))
+            name = _S36RNG.choice(list(self.SYNTHETIC_VALENCE.keys()))
         
         if name not in self.SYNTHETIC_VALENCE:
             raise ValueError(f"Unknown synthetic valence: {name}")
@@ -528,10 +529,10 @@ class ValenceGenerator:
         """Generate a flourishing state."""
         flourishing = FlourishingState(
             intensity=intensity,
-            completeness=0.6 + random.random() * 0.3,
-            meaning=0.5 + random.random() * 0.4,
-            connection=0.4 + random.random() * 0.4,
-            growth=0.5 + random.random() * 0.4,
+            completeness=0.6 + _S36RNG.random() * 0.3,
+            meaning=0.5 + _S36RNG.random() * 0.4,
+            connection=0.4 + _S36RNG.random() * 0.4,
+            growth=0.5 + _S36RNG.random() * 0.4,
             source=source
         )
         

@@ -24,6 +24,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from pathlib import Path
 
 
+_S46RNG = random.Random(946)
 class TemporalDirection(Enum):
     """Direction of temporal projection"""
     PAST = "past"           # Retrospection - re-experiencing
@@ -249,7 +250,7 @@ class ProspectiveProjection:
         moments = []
         
         for i in range(variations):
-            tone = random.choice(tones)
+            tone = _S46RNG.choice(tones)
             variation = f"{scenario} (variation {i+1}: {tone})"
             moment = self.pre_experience(variation, emotional_tone=tone)
             moments.append(moment)

@@ -7,6 +7,7 @@ import random
 
 import math
 
+_S59RNG = random.Random(659)
 try:
     import sys as _sys
     from pathlib import Path as _Path
@@ -46,7 +47,7 @@ class RecursiveMetaFeedbackLoop:
         return weights
 
     def reflect(self, prev, noise=0.1):
-        return prev + random.gauss(0, noise)
+        return prev + _S59RNG.gauss(0, noise)
 
     def meta_reflect(self, level, feedbacks):
         if not self.histories[level-1]:
@@ -54,7 +55,7 @@ class RecursiveMetaFeedbackLoop:
         else:
             prev = self.histories[level-1][-1]
         noise = 0.1 / (level+1)
-        return feedbacks[level-1] - prev + random.gauss(0, noise)
+        return feedbacks[level-1] - prev + _S59RNG.gauss(0, noise)
 
     def uncertainty_estimate(self, level):
         # Estimate uncertainty as the variance of the last N feedbacks at this level
@@ -77,7 +78,7 @@ class RecursiveMetaFeedbackLoop:
         # Example: invent a new feedback function at runtime
         # Here, use a nonlinear transformation based on uncertainty
         uncertainty = self.uncertainties[level]
-        return prev * math.tanh(uncertainty) + random.gauss(0, 0.05)
+        return prev * math.tanh(uncertainty) + _S59RNG.gauss(0, 0.05)
 
     def meta_learn(self, step):
         # Meta-learning: dynamically adjust meta-levels and weights

@@ -37,6 +37,7 @@ import random
 # JOURNAL TYPES
 # ============================================================
 
+_S46RNG = random.Random(246)
 class ExperienceType(Enum):
     """Types of experiences to remember."""
     INTERACTION = auto()      # Conversations, exchanges
@@ -98,7 +99,7 @@ class Experience:
     
     def __post_init__(self):
         if not self.id:
-            self.id = f"exp_{self.timestamp.strftime('%Y%m%d%H%M%S')}_{random.randint(1000,9999)}"
+            self.id = f"exp_{self.timestamp.strftime('%Y%m%d%H%M%S')}_{_S46RNG.randint(1000,9999)}"
     
     def to_dict(self) -> Dict[str, Any]:
         return {

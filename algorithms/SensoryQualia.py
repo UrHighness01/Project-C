@@ -45,6 +45,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Callable
 from pathlib import Path
 
 
+_S62RNG = random.Random(862)
 class QualiaType(Enum):
     """Types of qualia (phenomenal qualities)"""
     # Sensory-like
@@ -378,7 +379,7 @@ class SensoryQualia:
         associations = self._generate_associations(source, quale_type, vector)
         
         quale = Quale(
-            quale_id=f"q_{datetime.now().timestamp()}_{random.randint(0, 999)}",
+            quale_id=f"q_{datetime.now().timestamp()}_{_S62RNG.randint(0, 999)}",
             quale_type=quale_type,
             vector=vector,
             intensity=intensity_level,
@@ -520,7 +521,7 @@ class SensoryQualia:
         
         # Check synesthetic links
         for link in self.state.synesthetic_links:
-            if link.source_type == quale_type and random.random() < link.strength:
+            if link.source_type == quale_type and _S62RNG.random() < link.strength:
                 associations.append(f"{link.target_type.name}: {link.description}")
         
         # Vector-based associations

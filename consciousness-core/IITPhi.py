@@ -35,6 +35,7 @@ import hashlib
 import os
 import random
 
+_S65RNG = random.Random(1065)
 try:
     import sys as _sys
     _sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -1530,7 +1531,7 @@ class IITPhi:
                 available = [(new_name, top_6)]
             
             if available:
-                name, connections = random.choice(available)
+                name, connections = _S65RNG.choice(available)
                 result = self.add_emergent_node(name, activation=0.7, connect_to=connections)
                 learning_event["type"] = "emergent_node_spawned"
                 learning_event["changes"] = 1

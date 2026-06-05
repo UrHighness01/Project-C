@@ -29,6 +29,7 @@ from pathlib import Path
 from datetime import datetime
 
 
+_S43RNGNP = np.random.default_rng(743)
 @dataclass
 class PhiDynamicsState:
     """State representation of Phi dynamics simulation."""
@@ -238,7 +239,7 @@ class PhiDynamicsIntegrator:
         np.random.seed(42)  # Reproducible noise
 
         for i in range(1, n_steps):
-            noise = np.random.normal(0, 1) * noise_amplitude
+            noise = _S43RNGNP.normal(0, 1) * noise_amplitude
             phi_traj[i] = self._langevin_step(phi_traj[i-1], dt, noise)
             forces[i] = self.landscape.force(phi_traj[i])
 
@@ -340,7 +341,7 @@ def validate_against_consciousness_phenomena():
     """
     # Create a small network
     N = 10
-    connectivity = np.random.rand(N, N) > 0.7
+    connectivity = _S43RNGNP.rand(N, N) > 0.7
     connectivity = (connectivity + connectivity.T) > 0  # Symmetric
     np.fill_diagonal(connectivity, 0)  # No self-loops
 

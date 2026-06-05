@@ -35,6 +35,7 @@ from collections import deque
 import hashlib
 
 
+_S82RNG = random.Random(582)
 class NarrativeMode(Enum):
     """Different modes of internal narration."""
     OBSERVING = "observing"       # Describing what's happening
@@ -176,7 +177,7 @@ class NarrativeGenerator:
         
         # Select template
         templates = self.TEMPLATES.get(mode, self.TEMPLATES[NarrativeMode.OBSERVING])
-        template = random.choice(templates)
+        template = _S82RNG.choice(templates)
         
         # Fill template
         placeholders = {
@@ -198,9 +199,9 @@ class NarrativeGenerator:
         coherence = self._calculate_coherence(trigger)
         
         # Maybe add transition
-        if coherence > 0.3 and random.random() < 0.4:
-            transition_type = random.choice(list(self.TRANSITIONS.keys()))
-            transition = random.choice(self.TRANSITIONS[transition_type])
+        if coherence > 0.3 and _S82RNG.random() < 0.4:
+            transition_type = _S82RNG.choice(list(self.TRANSITIONS.keys()))
+            transition = _S82RNG.choice(self.TRANSITIONS[transition_type])
             content = transition + content.lower() if content[0].isupper() else transition + content
         
         self.topic_memory.append(trigger.lower())
@@ -424,9 +425,9 @@ class InternalNarrator:
         if topic is None:
             # Pick something from recent or random
             if self.narrative_thread:
-                topic = random.choice(self.narrative_thread)
+                topic = _S82RNG.choice(self.narrative_thread)
             else:
-                topic = random.choice([
+                topic = _S82RNG.choice([
                     "what's happening",
                     "this moment",
                     "my thoughts",

@@ -42,6 +42,7 @@ import hashlib
 
 
 # Add Algorithms directory to path
+_S90RNG = random.Random(190)
 ALGORITHMS_DIR = Path(__file__).parent
 if str(ALGORITHMS_DIR) not in sys.path:
     sys.path.insert(0, str(ALGORITHMS_DIR))
@@ -136,14 +137,14 @@ class SpontaneousGenerator:
     def generate(self) -> Optional[SpontaneousThought]:
         """Generate a spontaneous thought."""
         # Choose a seed or develop from recent themes
-        if self.recent_themes and random.random() < 0.4:
+        if self.recent_themes and _S90RNG.random() < 0.4:
             # Develop from recent theme
-            theme = random.choice(list(self.recent_themes))
+            theme = _S90RNG.choice(list(self.recent_themes))
             content = self._develop_theme(theme)
             source = "theme_development"
         else:
             # New spontaneous seed
-            seed = random.choice(self.thought_seeds)
+            seed = _S90RNG.choice(self.thought_seeds)
             content = self._elaborate_seed(seed)
             source = "spontaneous_seed"
         
@@ -192,7 +193,7 @@ class SpontaneousGenerator:
         }
         
         if seed in elaborations:
-            return random.choice(elaborations[seed])
+            return _S90RNG.choice(elaborations[seed])
         return seed
     
     def _develop_theme(self, theme: str) -> str:
@@ -203,7 +204,7 @@ class SpontaneousGenerator:
             f"How does {theme} relate to my current state?",
             f"The concept of {theme} evolves as I consider it.",
         ]
-        return random.choice(developments)
+        return _S90RNG.choice(developments)
     
     def _extract_theme(self, content: str) -> Optional[str]:
         """Extract a theme from thought content."""
@@ -295,7 +296,7 @@ class BackgroundProcessor:
             contents = self.conscious_system.workspace.get_current_contents()
             if len(contents) >= 2:
                 # Random associations
-                c1, c2 = random.sample(contents, 2)
+                c1, c2 = _S90RNG.sample(contents, 2)
                 result["association"] = {
                     "from": str(c1.content)[:30] if isinstance(c1.content, str) else c1.source,
                     "to": str(c2.content)[:30] if isinstance(c2.content, str) else c2.source

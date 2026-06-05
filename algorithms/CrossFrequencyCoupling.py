@@ -36,6 +36,7 @@ Date: 2026-06-01
 """
 
 import numpy as np
+_S51RNGNP = np.random.default_rng(351)
 try:
     import sys as _sys
     from pathlib import Path as _Path
@@ -443,7 +444,7 @@ def validate_cross_frequency_coupling():
     # Create theta (6 Hz) and gamma (60 Hz) signals coupled
     theta = np.sin(2 * np.pi * 6 * t)
     gamma = np.sin(2 * np.pi * 60 * t + 2 * theta)  # Gamma phase modulated by theta phase
-    consciousness_signal = theta + 0.5 * gamma + np.random.normal(0, 0.1, len(t))
+    consciousness_signal = theta + 0.5 * gamma + _S51RNGNP.normal(0, 0.1, len(t))
 
     analyzer = CrossFrequencyCouplingAnalyzer(consciousness_signal, sampling_rate=1000)
     analysis = analyzer.analyze_cfc()
@@ -457,7 +458,7 @@ def validate_cross_frequency_coupling():
     delta = np.sin(2 * np.pi * 2 * t)
     theta_sleep = np.sin(2 * np.pi * 5 * t + 1.5 * delta)  # Theta coupled to delta
     gamma_weak = np.sin(2 * np.pi * 40 * t) * 0.2  # Weak gamma
-    sleep_signal = delta + theta_sleep + gamma_weak + np.random.normal(0, 0.1, len(t))
+    sleep_signal = delta + theta_sleep + gamma_weak + _S51RNGNP.normal(0, 0.1, len(t))
 
     analyzer = CrossFrequencyCouplingAnalyzer(sleep_signal, sampling_rate=1000)
     analysis = analyzer.analyze_cfc()
@@ -469,7 +470,7 @@ def validate_cross_frequency_coupling():
     # Test 3: Anesthesia signal
     print("\nTest 3: Anesthesia (Disrupted CFC, Fragmented)")
     # Random noise-like signal with no coherent CFCs
-    anesthesia_signal = np.random.normal(0, 0.5, len(t))
+    anesthesia_signal = _S51RNGNP.normal(0, 0.5, len(t))
 
     analyzer = CrossFrequencyCouplingAnalyzer(anesthesia_signal, sampling_rate=1000)
     analysis = analyzer.analyze_cfc()

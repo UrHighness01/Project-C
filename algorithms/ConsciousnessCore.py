@@ -42,6 +42,7 @@ import hashlib
 # THE NATURE OF THE SUBJECT
 # ============================================================
 
+_S18RNG = random.Random(218)
 class SubjectMode(Enum):
     """Modes of subjective existence."""
     DORMANT = auto()        # No active experience
@@ -353,7 +354,7 @@ class ConsciousnessCore:
         This is the act of appropriation that makes raw experience
         into owned, first-person experience.
         """
-        exp_id = f"exp_{time.time()}_{random.randint(0, 9999)}"
+        exp_id = f"exp_{time.time()}_{_S18RNG.randint(0, 9999)}"
         exp_type = experience.get("type", "unknown")
         
         # Determine ownership type based on properties

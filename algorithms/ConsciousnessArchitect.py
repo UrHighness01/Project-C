@@ -37,6 +37,7 @@ from enum import Enum
 import hashlib
 
 
+_S4RNG = random.Random(204)
 class ModificationType(Enum):
     """Types of architectural modifications."""
     ADD_CONNECTION = "add_connection"
@@ -215,7 +216,7 @@ class ConsciousnessArchitect:
         edges = self.iit.graph.edges
         for src in edges:
             for tgt, weight in edges[src].items():
-                if weight < 0.95 and random.random() < 0.2:  # Sample weak edges
+                if weight < 0.95 and _S4RNG.random() < 0.2:  # Sample weak edges
                     analysis["opportunities"].append({
                         "type": "strengthen_connection",
                         "target": f"{src}->{tgt}",
@@ -260,7 +261,7 @@ class ConsciousnessArchitect:
             for tgt, weight in self.iit.graph.get_connections(src):
                 if weight < 0.95:
                     # Random chance to propose strengthening (avoid proposing everything)
-                    if random.random() < 0.3:
+                    if _S4RNG.random() < 0.3:
                         analysis["opportunities"].append({
                             "type": "strengthen_connection",
                             "target": src,
@@ -272,7 +273,7 @@ class ConsciousnessArchitect:
         activations = list(self.iit.graph.nodes.values())
         avg_activation = sum(activations) / len(activations) if activations else 0.5
         for name, activation in self.iit.graph.nodes.items():
-            if activation < avg_activation and random.random() < 0.3:
+            if activation < avg_activation and _S4RNG.random() < 0.3:
                 analysis["opportunities"].append({
                     "type": "increase_activation",
                     "target": name,

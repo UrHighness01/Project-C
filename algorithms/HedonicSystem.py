@@ -42,6 +42,7 @@ from collections import deque
 import hashlib
 
 
+_S19RNG = random.Random(519)
 class HedonicTone(Enum):
     """Basic hedonic valences."""
     AGONY = -1.0        # Intense suffering
@@ -481,7 +482,7 @@ class HedonicSystem:
         self.current_dominance = min(1, self.current_dominance + 0.1)
         
         # Partial relief through seeking
-        relief_amount = 0.1 + random.random() * 0.2
+        relief_amount = 0.1 + _S19RNG.random() * 0.2
         old_valence = self.current_valence
         self.current_valence = min(0, self.current_valence + relief_amount)
         
@@ -676,7 +677,7 @@ class HedonicSystem:
         
         # Check somatic markers if embodiment available
         # Add some noise for uncertainty
-        expected_valence += (random.random() - 0.5) * 0.2
+        expected_valence += (_S19RNG.random() - 0.5) * 0.2
         
         approach = expected_valence > 0
         

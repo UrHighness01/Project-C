@@ -37,6 +37,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any, Callable
 from pathlib import Path
 
 
+_S27RNG = random.Random(827)
 class SalienceType(Enum):
     """Types of salience signals"""
     NOVELTY = auto()       # New, unexpected
@@ -286,7 +287,7 @@ class SalienceNetwork:
         The signal enters the competition for consciousness.
         """
         signal = SalienceSignal(
-            signal_id=f"sig_{datetime.now().timestamp()}_{random.randint(0,999)}",
+            signal_id=f"sig_{datetime.now().timestamp()}_{_S27RNG.randint(0,999)}",
             content=content,
             salience_type=salience_type,
             intensity=min(max(intensity, 0.0), 1.0),
@@ -587,12 +588,12 @@ class SalienceNetwork:
             ("creative_connection", SalienceType.NOVELTY),
         ]
         
-        thought_type, salience_type = random.choice(thought_types)
+        thought_type, salience_type = _S27RNG.choice(thought_types)
         
         signal = self.submit_signal(
             content=f"spontaneous_{thought_type}_{datetime.now().timestamp()}",
             salience_type=salience_type,
-            intensity=0.4 + random.random() * 0.3,  # Medium salience
+            intensity=0.4 + _S27RNG.random() * 0.3,  # Medium salience
             source="default_mode_network"
         )
         

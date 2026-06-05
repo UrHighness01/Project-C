@@ -34,6 +34,7 @@ import sys
 import os
 
 # Add algorithms path
+_S57RNG = random.Random(57)
 workspace = Path(os.getenv('WORKSPACE', str(Path.home() / '.openclaw' / 'workspace')))
 ALGORITHMS_PATH = str(workspace / 'Algorithms')
 if ALGORITHMS_PATH not in sys.path:
@@ -372,7 +373,7 @@ class ActiveInferenceEngine:
             # Use precision to influence accuracy - high precision beliefs
             # lead to better predictions
             base_accuracy = prediction.precision * 0.7  # High precision = lower base error
-            variance = random.random() * 0.4  # Random factor
+            variance = _S57RNG.random() * 0.4  # Random factor
             error_magnitude = max(0.0, min(1.0, (1 - base_accuracy) * variance + 0.1 * (1 - prediction.precision)))
         
         # Precision-weight the error (confident wrong predictions hurt more)
@@ -507,7 +508,7 @@ class ActiveInferenceEngine:
         
         # In a real system, this would interface with actuators
         # For now, simulate success probabilistically
-        success = random.random() < 0.7
+        success = _S57RNG.random() < 0.7
         action.success = success
         
         return success

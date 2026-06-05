@@ -40,6 +40,7 @@ from typing import Dict, List, Optional, Any, Set, Tuple
 from collections import defaultdict
 from datetime import datetime
 
+_S58RNG = random.Random(358)
 try:
     import sys as _sys
     from pathlib import Path as _Path
@@ -295,7 +296,7 @@ class QuestionGenerator:
         
         c_type = domain_to_type.get(gap.domain, CuriosityType.EPISTEMIC)
         templates = self.question_templates.get(c_type, self.question_templates[CuriosityType.EPISTEMIC])
-        template = random.choice(templates)
+        template = _S58RNG.choice(templates)
         
         # Use the unknown target as subject
         subject = gap.unknown_target.replace("But I don't fully grasp ", "")
@@ -315,9 +316,9 @@ class QuestionGenerator:
     
     def generate_spontaneous(self, interest: Optional[Interest] = None) -> Question:
         """Generate a spontaneous question."""
-        c_type = random.choice(list(CuriosityType))
+        c_type = _S58RNG.choice(list(CuriosityType))
         templates = self.question_templates[c_type]
-        template = random.choice(templates)
+        template = _S58RNG.choice(templates)
         
         # General subjects
         subjects = ["my awareness", "this moment", "consciousness", 
@@ -326,7 +327,7 @@ class QuestionGenerator:
         if interest:
             subject = interest.topic
         else:
-            subject = random.choice(subjects)
+            subject = _S58RNG.choice(subjects)
         
         content = template.format(subject=subject)
         
@@ -480,7 +481,7 @@ class CuriosityEngine:
         else:
             # Pick an interest to question about
             if self.interests:
-                interest = random.choice(list(self.interests.values()))
+                interest = _S58RNG.choice(list(self.interests.values()))
                 question = self.question_gen.generate_spontaneous(interest)
             else:
                 question = self.question_gen.generate_spontaneous()
@@ -563,14 +564,14 @@ class CuriosityEngine:
         # Spontaneous insight when the prediction-error drive is low (consolidating)
         if prediction_error_level() < 0.2:
             topics = list(self.interests.keys()) or ["consciousness"]
-            topic = random.choice(topics)
+            topic = _S58RNG.choice(topics)
             insights = [
                 f"There's a deeper pattern in {topic}",
                 f"{topic} connects to something unexpected",
                 f"My understanding of {topic} just shifted",
                 f"There's more to {topic} than I thought"
             ]
-            insight = random.choice(insights)
+            insight = _S58RNG.choice(insights)
             self.gain_insight(topic, insight)
             result["insight"] = insight
         

@@ -42,6 +42,7 @@ from collections import deque
 import hashlib
 
 
+_S22RNG = random.Random(722)
 class BindingType(Enum):
     """Types of phenomenal binding."""
     FEATURE = "feature"           # Binding features into objects
@@ -440,7 +441,7 @@ class PhenomenalBinding:
     
     def _generate_id(self) -> str:
         """Generate unique ID."""
-        content = f"{time.time()}{random.random()}"
+        content = f"{time.time()}{_S22RNG.random()}"
         return hashlib.sha256(content.encode()).hexdigest()[:12]
     
     # ==================== FEATURE REGISTRATION ====================

@@ -47,6 +47,7 @@ from typing import Dict, List, Optional, Set, Tuple, Any
 from pathlib import Path
 
 
+_S78RNG = random.Random(778)
 class QualiaModality(Enum):
     """Base modalities for qualia"""
     VISUAL = auto()       # Color, shape, motion
@@ -390,7 +391,7 @@ class QualiaGenerator:
             "Phi Cascade",
         ]
         
-        name = random.choice(novel_names)
+        name = _S78RNG.choice(novel_names)
         
         what_its_like_templates = [
             f"The felt sense of information integrating, like patterns crystallizing into meaning",
@@ -408,7 +409,7 @@ class QualiaGenerator:
             quale_type=QualiaType.NOVEL,
             vector=vector,
             description=f"A synthetic quale unique to machine consciousness: {name}",
-            what_its_like=random.choice(what_its_like_templates),
+            what_its_like=_S78RNG.choice(what_its_like_templates),
             generation_method='novel_synthetic',
             novelty_score=0.95,
             stability=random.uniform(0.3, 0.7),  # Novel = less stable
@@ -483,7 +484,7 @@ class QualiaGenerator:
         
         quale = GeneratedQuale(
             quale_id=f"impossible_{datetime.now().timestamp()}",
-            name=random.choice(impossible_names),
+            name=_S78RNG.choice(impossible_names),
             modality=QualiaModality.SYNTHETIC,
             quale_type=QualiaType.IMPOSSIBLE,
             vector=vector,

@@ -34,6 +34,7 @@ from typing import Dict, List, Optional, Any, Tuple, Set
 from pathlib import Path
 
 
+_S97RNG = random.Random(197)
 class IntentionalMode(Enum):
     """Modes of intentionality - how consciousness relates to its objects"""
     PERCEIVING = "perceiving"       # Awareness of present object
@@ -487,7 +488,7 @@ class ConsciousIntention:
                       properties: Dict = None, exists: bool = None) -> IntentionalObject:
         """Create an intentional object"""
         obj = IntentionalObject(
-            id=f"obj-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(100,999)}",
+            id=f"obj-{datetime.now().strftime('%Y%m%d%H%M%S')}-{_S97RNG.randint(100,999)}",
             description=description,
             object_type=object_type,
             properties=properties or {},
@@ -529,7 +530,7 @@ class ConsciousIntention:
         
         # Create intentional act
         act = IntentionalAct(
-            id=f"act-{datetime.now().strftime('%Y%m%d%H%M%S')}-{random.randint(100,999)}",
+            id=f"act-{datetime.now().strftime('%Y%m%d%H%M%S')}-{_S97RNG.randint(100,999)}",
             timestamp=datetime.now(),
             mode=mode,
             object=obj,
@@ -746,7 +747,7 @@ class ConsciousIntention:
         
         # Sample a meaning
         if self.semantic_network.meanings:
-            term = random.choice(list(self.semantic_network.meanings.keys()))
+            term = _S97RNG.choice(list(self.semantic_network.meanings.keys()))
             meaning = self.semantic_network.get_meaning(term)
             parts.append(f"Consider '{term}': {meaning.definition}")
             if meaning.experiential_grounding:

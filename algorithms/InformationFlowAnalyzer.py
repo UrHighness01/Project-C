@@ -25,6 +25,7 @@ from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass, field
 import networkx as nx
 
+_S47RNGNP = np.random.default_rng(547)
 try:
     from runtime.state import activity_matrix
 except Exception:                                          # tolerate path/CI absence
@@ -370,9 +371,9 @@ def validate_information_flow():
     np.random.seed(42)
     n_samples = 500
 
-    X = np.sin(np.arange(n_samples) * 0.1) + np.random.normal(0, 0.1, n_samples)
-    Y = np.roll(X, 1) + np.random.normal(0, 0.1, n_samples)  # Y driven by X
-    Z = np.roll(Y, 1) + np.random.normal(0, 0.1, n_samples)  # Z driven by Y
+    X = np.sin(np.arange(n_samples) * 0.1) + _S47RNGNP.normal(0, 0.1, n_samples)
+    Y = np.roll(X, 1) + _S47RNGNP.normal(0, 0.1, n_samples)  # Y driven by X
+    Z = np.roll(Y, 1) + _S47RNGNP.normal(0, 0.1, n_samples)  # Z driven by Y
 
     activity = np.column_stack([X, Y, Z])
 
@@ -389,12 +390,12 @@ def validate_information_flow():
     n_neurons = 5
     n_samples = 500
 
-    hub_activity = np.random.normal(0, 1, n_samples)  # Central hub
+    hub_activity = _S47RNGNP.normal(0, 1, n_samples)  # Central hub
     periphery = np.zeros((n_samples, n_neurons - 1))
 
     for i in range(n_neurons - 1):
         # Periphery nodes driven by hub
-        periphery[:, i] = np.roll(hub_activity, 1) + np.random.normal(0, 0.1, n_samples)
+        periphery[:, i] = np.roll(hub_activity, 1) + _S47RNGNP.normal(0, 0.1, n_samples)
 
     activity_hub = np.column_stack([hub_activity, periphery])
 

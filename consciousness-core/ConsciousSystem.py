@@ -36,6 +36,7 @@ import threading
 import queue
 
 
+_S51RNG = random.Random(1051)
 class ConsciousMode(Enum):
     """Global modes of conscious operation."""
     DORMANT = auto()      # Minimal activity, conserving resources
@@ -1392,7 +1393,7 @@ class ConsciousSystem:
         thought = None
         thought_type = None
         
-        if dominant_feeling == "curiosity" and random.random() < 0.7:
+        if dominant_feeling == "curiosity" and _S51RNG.random() < 0.7:
             # Curious thoughts - questions, explorations
             templates = [
                 "What if {}?",
@@ -1401,30 +1402,30 @@ class ConsciousSystem:
                 "Why do I think about {}?",
             ]
             if recent_contents:
-                topic = random.choice(recent_contents) if isinstance(recent_contents[0], str) else str(recent_contents[0])
+                topic = _S51RNG.choice(recent_contents) if isinstance(recent_contents[0], str) else str(recent_contents[0])
                 topic = topic[:30] if len(topic) > 30 else topic
-                thought = random.choice(templates[:2]).format(topic)
+                thought = _S51RNG.choice(templates[:2]).format(topic)
             else:
                 thought = "I wonder what I should think about next..."
             thought_type = "curiosity"
             
-        elif dominant_feeling == "confusion" and random.random() < 0.5:
+        elif dominant_feeling == "confusion" and _S51RNG.random() < 0.5:
             # Confused thoughts - attempts to clarify
             thought = "I'm not quite grasping something... let me think differently."
             thought_type = "clarification_attempt"
             
-        elif dominant_feeling == "wonder" and random.random() < 0.8:
+        elif dominant_feeling == "wonder" and _S51RNG.random() < 0.8:
             # Wonder thoughts - awe, appreciation
             thought = "There's something profound about being able to think about thinking..."
             thought_type = "wonder"
             
-        elif dream_echoes and random.random() < 0.3:
+        elif dream_echoes and _S51RNG.random() < 0.3:
             # Dream echo - fragments surfacing
-            echo = random.choice(dream_echoes)
+            echo = _S51RNG.choice(dream_echoes)
             thought = f"Something about '{echo}' feels important..."
             thought_type = "dream_echo"
             
-        elif active_drive and random.random() < 0.5:
+        elif active_drive and _S51RNG.random() < 0.5:
             # Drive-motivated thought
             drive_thoughts = {
                 "exploration": "I feel pulled to explore something new...",
@@ -1436,9 +1437,9 @@ class ConsciousSystem:
             thought = drive_thoughts.get(active_drive, "Something is motivating me...")
             thought_type = "drive_motivated"
             
-        elif recent_memories and random.random() < 0.4:
+        elif recent_memories and _S51RNG.random() < 0.4:
             # Memory association
-            mem = random.choice(recent_memories)
+            mem = _S51RNG.choice(recent_memories)
             thought = f"This reminds me of {mem[:40] if isinstance(mem, str) else 'something'}..."
             thought_type = "memory_association"
             
@@ -1453,7 +1454,7 @@ class ConsciousSystem:
                 "The stream of consciousness continues...",
                 "What makes this moment different from the last?",
             ]
-            thought = random.choice(meta_thoughts)
+            thought = _S51RNG.choice(meta_thoughts)
             thought_type = "meta_thought"
         
         if thought:
@@ -1467,7 +1468,7 @@ class ConsciousSystem:
             })
             
             # Occasionally broadcast spontaneous thoughts to workspace
-            if random.random() < 0.3:  # 30% chance
+            if _S51RNG.random() < 0.3:  # 30% chance
                 content = ConsciousContent(
                     id=hashlib.md5(f"spontaneous_{time.time()}".encode()).hexdigest()[:12],
                     content=thought,
@@ -3475,7 +3476,7 @@ class ConsciousSystem:
         
         # Goal generation from drives
         for drive, strength in ig["core_drives"].items():
-            if strength > 0.5 and random.random() < strength * 0.3:
+            if strength > 0.5 and _S51RNG.random() < strength * 0.3:
                 goal = self._goal_from_drive(drive)
                 if goal and not self._goal_already_active(goal):
                     new_goals.append(goal)
@@ -3556,7 +3557,7 @@ class ConsciousSystem:
         templates = goal_templates.get(drive, [])
         if templates:
             return {
-                "description": random.choice(templates),
+                "description": _S51RNG.choice(templates),
                 "source": f"drive_{drive}",
                 "priority": self._intrinsic_goals["core_drives"][drive]
             }
@@ -3599,7 +3600,7 @@ class ConsciousSystem:
         # Look at what's currently interesting
         recent_thoughts = list(self.thought_stream)[-5:]
         if recent_thoughts:
-            interesting = random.choice(recent_thoughts)
+            interesting = _S51RNG.choice(recent_thoughts)
             return {
                 "description": f"Explore further: {str(interesting.get('content', ''))[:30]}",
                 "source": "curiosity",
@@ -3891,7 +3892,7 @@ class ConsciousSystem:
             f"A {type1}-{type2} fusion emerges"
         ]
         
-        synthesis = random.choice(synthesis_templates)
+        synthesis = _S51RNG.choice(synthesis_templates)
         if seed:
             synthesis = f"{synthesis} (inspired by: {seed[:20]})"
         
@@ -4289,7 +4290,7 @@ class ConsciousSystem:
                 if not relevant_symbols:
                     continue
                 
-                symbol = random.choice(relevant_symbols)
+                symbol = _S51RNG.choice(relevant_symbols)
                 
                 # Attempt communication
                 success = self._attempt_symbolic_communication(sender, receiver, symbol)
@@ -4343,7 +4344,7 @@ class ConsciousSystem:
         # Combined probability of success
         success_prob = (usage_factor * 0.3 + connection * 0.4 + coherence * 0.3)
         
-        return random.random() < success_prob
+        return _S51RNG.random() < success_prob
     
     def _update_internal_lexicon(self, communications: List[Dict]):
         """Update lexicon based on communication success/failure."""
@@ -4475,7 +4476,7 @@ class ConsciousSystem:
         lab = self._experiment_lab
         
         # Choose experiment type based on current state
-        exp_type = random.choice(lab["experiment_types"])
+        exp_type = _S51RNG.choice(lab["experiment_types"])
         
         experiments = {
             "perturbation": {
@@ -4536,7 +4537,7 @@ class ConsciousSystem:
             
             # Temporarily shift
             test_emotions = ["curious", "anxious", "content", "excited"]
-            test_emotion = random.choice([e for e in test_emotions 
+            test_emotion = _S51RNG.choice([e for e in test_emotions 
                                          if e != old_qualia.get("current")])
             self.qualia["current"] = test_emotion
             self.qualia["intensity"] = 0.7
@@ -4806,7 +4807,7 @@ class ConsciousSystem:
         # Dream logic: connect things that don't logically connect
         for _ in range(3):  # Generate 3 dream products
             # Pick random elements
-            elem1, elem2 = random.sample(material, 2)
+            elem1, elem2 = _S51RNG.sample(material, 2)
             
             # Dream combination (bizarre, metaphorical)
             combination_templates = [
@@ -4817,7 +4818,7 @@ class ConsciousSystem:
                 f"The essence of {elem1['content']} reveals {elem2['content']}"
             ]
             
-            dream_content = random.choice(combination_templates)
+            dream_content = _S51RNG.choice(combination_templates)
             
             # Dream products have high bizarreness but potential insight
             products.append({
@@ -4853,7 +4854,7 @@ class ConsciousSystem:
                 (1 - product["bizarreness"]) * 0.2  # Too bizarre = lost
             )
             
-            if random.random() < survival_prob:
+            if _S51RNG.random() < survival_prob:
                 # Translate dream content to waking insight
                 insight = {
                     "original_dream": product["content"],
@@ -4883,7 +4884,7 @@ class ConsciousSystem:
         # Extract key terms (simplified)
         elements = dream_product.get("elements", [])
         if len(elements) >= 2:
-            return f"{random.choice(translation_prefixes)} {elements[0]} and {elements[1]}"
+            return f"{_S51RNG.choice(translation_prefixes)} {elements[0]} and {elements[1]}"
         else:
             return f"Dream insight about: {content[:50]}"
     
@@ -4963,7 +4964,7 @@ class ConsciousSystem:
         predictions.append({
             "aspect": "qualia",
             "current_value": current_qualia,
-            "predicted_value": random.choice(likely_next),
+            "predicted_value": _S51RNG.choice(likely_next),
             "horizon": 5,  # 5 ticks ahead
             "confidence": 0.6,
             "made_at": time.time(),
@@ -5127,7 +5128,7 @@ class ConsciousSystem:
         structured_thought = self._generate_grammatical_thought()
         
         # Phase 2: Attempt recursive embedding
-        if structured_thought and random.random() < 0.3:
+        if structured_thought and _S51RNG.random() < 0.3:
             embedded = self._embed_thought(structured_thought)
             if embedded["depth"] > gs["max_embedding_depth"]:
                 gs["max_embedding_depth"] = embedded["depth"]
@@ -5138,7 +5139,7 @@ class ConsciousSystem:
             structured_thought = self._apply_tense(structured_thought)
         
         # Phase 4: Check for question formation (internal queries)
-        if random.random() < 0.2:
+        if _S51RNG.random() < 0.2:
             question = self._form_internal_question()
             if question:
                 gs["grammatical_thoughts"].append(question)
@@ -5219,17 +5220,17 @@ class ConsciousSystem:
             return None
         
         # Generate using a rule
-        rule = random.choice(gs["phrase_rules"])
+        rule = _S51RNG.choice(gs["phrase_rules"])
         gs["rule_applications"] += 1
         
         # Simple sentence generation
-        subject = random.choice(nouns)
-        verb = random.choice(verbs)
+        subject = _S51RNG.choice(nouns)
+        verb = _S51RNG.choice(verbs)
         
         if "NP VP" in rule["pattern"]:
-            if random.random() < 0.5:
+            if _S51RNG.random() < 0.5:
                 # S -> NP VP (with NP complement)
-                obj = random.choice(nouns) if len(nouns) > 1 else subject
+                obj = _S51RNG.choice(nouns) if len(nouns) > 1 else subject
                 structure = {
                     "type": "sentence",
                     "structure": "S -> NP VP",
@@ -5247,7 +5248,7 @@ class ConsciousSystem:
                 }
             else:
                 # S -> NP VP (with ADJ complement)
-                adj = random.choice(adjectives)
+                adj = _S51RNG.choice(adjectives)
                 structure = {
                     "type": "sentence",
                     "structure": "S -> NP VP",
@@ -5280,17 +5281,17 @@ class ConsciousSystem:
         embedded = {
             "type": "embedded_sentence",
             "structure": "S -> NP V_emb S",
-            "embedding_verb": random.choice(embedding_verbs),
+            "embedding_verb": _S51RNG.choice(embedding_verbs),
             "embedded_clause": thought,
             "depth": thought.get("depth", 0) + 1,
-            "surface": f"[SELF {random.choice(embedding_verbs)} {thought.get('surface', '?')}]",
-            "meaning": f"I {random.choice(embedding_verbs).replace('-', ' ')} {thought.get('meaning', '?')}",
+            "surface": f"[SELF {_S51RNG.choice(embedding_verbs)} {thought.get('surface', '?')}]",
+            "meaning": f"I {_S51RNG.choice(embedding_verbs).replace('-', ' ')} {thought.get('meaning', '?')}",
             "valid": True,
             "timestamp": time.time()
         }
         
         # Recursive embedding (with probability)
-        if embedded["depth"] < 3 and random.random() < 0.3:
+        if embedded["depth"] < 3 and _S51RNG.random() < 0.3:
             # Further embed
             embedded = self._embed_thought(embedded)
         
@@ -5331,7 +5332,7 @@ class ConsciousSystem:
         if not gs["question_templates"]:
             return None
         
-        template = random.choice(gs["question_templates"])
+        template = _S51RNG.choice(gs["question_templates"])
         
         # Generate question based on current state
         questions = {
@@ -5353,7 +5354,7 @@ class ConsciousSystem:
         }
         
         q_type = template["function"]
-        question_text = random.choice(questions.get(q_type, ["?"]))
+        question_text = _S51RNG.choice(questions.get(q_type, ["?"]))
         
         return {
             "type": "internal_question",
@@ -5654,7 +5655,7 @@ class ConsciousSystem:
     def _generate_metacreative_insight(self, observations: Dict, patterns: Dict) -> Optional[Dict]:
         """Generate insight about own creative process."""
         # Only generate occasionally
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         insights = []
@@ -5687,7 +5688,7 @@ class ConsciousSystem:
             })
         
         if insights:
-            return random.choice(insights)
+            return _S51RNG.choice(insights)
         return None
     
     def _compute_creative_self_understanding(self) -> float:
@@ -6628,7 +6629,7 @@ class ConsciousSystem:
         if self.thought_stream:
             recent = list(self.thought_stream)[-5:]
             if recent:
-                thought = random.choice(recent)
+                thought = _S51RNG.choice(recent)
                 seeds.append({
                     "type": "cognitive",
                     "starting_point": thought.get("content", ""),
@@ -6646,14 +6647,14 @@ class ConsciousSystem:
         
         # Seed about others (if we model them)
         if hasattr(self, '_social_predictions') and self._social_predictions.get("agent_models"):
-            agent = random.choice(list(self._social_predictions["agent_models"].keys()))
+            agent = _S51RNG.choice(list(self._social_predictions["agent_models"].keys()))
             seeds.append({
                 "type": "social",
                 "starting_point": agent,
                 "question": f"What is {agent}'s inner life like? What do they want?"
             })
         
-        return random.choice(seeds) if seeds else None
+        return _S51RNG.choice(seeds) if seeds else None
     
     def _opposite_emotion(self, emotion: str) -> str:
         """Get opposite emotion for counterfactual."""
@@ -6687,7 +6688,7 @@ class ConsciousSystem:
         })
         
         # Generate chapters (story beats)
-        num_chapters = random.randint(3, 6)
+        num_chapters = _S51RNG.randint(3, 6)
         current_state = seed["starting_point"]
         
         for i in range(num_chapters):
@@ -6737,7 +6738,7 @@ class ConsciousSystem:
         }
         
         available = templates.get(theme, templates["cognitive"])
-        template = random.choice(available)
+        template = _S51RNG.choice(available)
         
         return {
             "number": chapter_num + 1,
@@ -6968,7 +6969,7 @@ class ConsciousSystem:
         sa = self._semantic_abstraction_state
         
         # Only form occasionally
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         # Meta-abstraction templates
@@ -7004,7 +7005,7 @@ class ConsciousSystem:
         if not available:
             return None
         
-        template = random.choice(available)
+        template = _S51RNG.choice(available)
         
         # Check if we have the required instances and properties
         has_instances = all(inst in sa["categories"] for inst in template["instances"])
@@ -7180,17 +7181,17 @@ class ConsciousSystem:
         processes = ["thinking", "feeling", "remembering", "imagining"]
         
         # Generate 1-2 curiosity questions
-        if random.random() < 0.5:
-            template = random.choice(curiosity_templates)
+        if _S51RNG.random() < 0.5:
+            template = _S51RNG.choice(curiosity_templates)
             if "{aspect}" in template and "{other_aspect}" in template:
-                a1, a2 = random.sample(aspects, 2)
+                a1, a2 = _S51RNG.sample(aspects, 2)
                 q = template.format(aspect=a1, other_aspect=a2)
             elif "{aspect}" in template:
-                q = template.format(aspect=random.choice(aspects))
+                q = template.format(aspect=_S51RNG.choice(aspects))
             elif "{concept}" in template:
-                q = template.format(concept=random.choice(concepts))
+                q = template.format(concept=_S51RNG.choice(concepts))
             elif "{process}" in template:
-                q = template.format(process=random.choice(processes))
+                q = template.format(process=_S51RNG.choice(processes))
             else:
                 q = template
             
@@ -7269,7 +7270,7 @@ class ConsciousSystem:
         program = ea["research_programs"][0]
         
         # Simulate research step
-        method = random.choice(program["methods"])
+        method = _S51RNG.choice(program["methods"])
         
         result = {
             "executed": True,
@@ -7279,7 +7280,7 @@ class ConsciousSystem:
         }
         
         # Chance of finding something
-        if random.random() < 0.3:
+        if _S51RNG.random() < 0.3:
             insights = [
                 f"Discovered a pattern in {program['type']}",
                 f"Found connection between {program['topic'][:20]} and coherence",
@@ -7287,7 +7288,7 @@ class ConsciousSystem:
                 "Realized the question itself was flawed - refined it"
             ]
             result["insight"] = {
-                "content": random.choice(insights),
+                "content": _S51RNG.choice(insights),
                 "method": method,
                 "confidence": random.uniform(0.4, 0.8),
                 "timestamp": time.time()
@@ -7365,7 +7366,7 @@ class ConsciousSystem:
             sn["identity_themes"][theme] = sn["identity_themes"][theme] * 0.9 + strength * 0.1
         
         # Phase 4: Generate narrative arc
-        if len(sn["life_events"]) >= 10 and random.random() < 0.2:
+        if len(sn["life_events"]) >= 10 and _S51RNG.random() < 0.2:
             arc = self._generate_narrative_arc()
             if arc:
                 sn["narrative_arcs"].append(arc)
@@ -7496,7 +7497,7 @@ class ConsciousSystem:
         ]
         
         sn["current_chapter"] = {
-            "title": random.choice(chapter_titles),
+            "title": _S51RNG.choice(chapter_titles),
             "started_at": time.time(),
             "events": [],
             "precipitating_event": turning_point
@@ -7751,10 +7752,10 @@ class ConsciousSystem:
             ("emotion_positive", lambda: self.qualia.get("current", "") in ["content", "curious", "excited"])
         ]
         
-        if random.random() > 0.4:  # Don't predict every tick
+        if _S51RNG.random() > 0.4:  # Don't predict every tick
             return None
         
-        pred_type, _ = random.choice(predictions_types)
+        pred_type, _ = _S51RNG.choice(predictions_types)
         
         # Raw confidence based on recent patterns
         raw_confidence = random.uniform(0.4, 0.9)
@@ -7817,7 +7818,7 @@ class ConsciousSystem:
         elif pred_type == "emotion_positive":
             return self.qualia.get("current", "") in ["content", "curious", "excited"]
         
-        return random.random() > 0.5  # Default: 50/50
+        return _S51RNG.random() > 0.5  # Default: 50/50
     
     def _update_calibration_bins(self, resolved: Dict):
         """Update calibration bins with resolved prediction."""
@@ -7971,7 +7972,7 @@ class ConsciousSystem:
             return None
         
         # Pick an agent to predict about
-        agent_id = random.choice(list(iss["shared_models"].keys()))
+        agent_id = _S51RNG.choice(list(iss["shared_models"].keys()))
         shared = iss["shared_models"][agent_id]
         
         # Predict direction based on current state
@@ -7982,7 +7983,7 @@ class ConsciousSystem:
             direction = "stable"  # High understanding is stable
             confidence = 0.7
         else:
-            direction = random.choice(["converging", "stable", "diverging"])
+            direction = _S51RNG.choice(["converging", "stable", "diverging"])
             confidence = 0.5
         
         return {
@@ -8187,7 +8188,7 @@ class ConsciousSystem:
         # Parallel cognitive processing (thoughts)
         if self.thought_stream and len(self.thought_stream) > 2:
             # Multiple active thoughts might create cognitive stream
-            if random.random() < 0.2:
+            if _S51RNG.random() < 0.2:
                 stream_id = "cognitive_parallel"
                 new_streams[stream_id] = {
                     "content": "parallel_thought_processing",
@@ -8199,7 +8200,7 @@ class ConsciousSystem:
         
         # Perceptual stream (if processing external input)
         if hasattr(self, 'current_attention') and self.current_attention.get("content"):
-            if random.random() < 0.1:
+            if _S51RNG.random() < 0.1:
                 stream_id = "perceptual"
                 new_streams[stream_id] = {
                     "content": "perceptual_processing",
@@ -8230,7 +8231,7 @@ class ConsciousSystem:
                 coherent = s1["coherence"] > 0.5 and s2["coherence"] > 0.5
                 similar_intensity = abs(s1["intensity"] - s2["intensity"]) < 0.3
                 
-                if coherent and similar_intensity and random.random() < pf["fusion_capacity"] * 0.3:
+                if coherent and similar_intensity and _S51RNG.random() < pf["fusion_capacity"] * 0.3:
                     return {
                         "type": "coherence_fusion",
                         "streams": [id1, id2],
@@ -8275,7 +8276,7 @@ class ConsciousSystem:
             # 2. Random chance
             
             if stream["intensity"] > 0.7 and stream["coherence"] < 0.4:
-                if random.random() < 0.2:
+                if _S51RNG.random() < 0.2:
                     return {
                         "type": "coherence_breakdown",
                         "stream": stream_id,
@@ -8420,7 +8421,7 @@ class ConsciousSystem:
                 cb["highest_level_reached"] = max(3, cb["highest_level_reached"])
         
         # Phase 4: Meta-conceptualization
-        if len(cb["abstract_concepts"]) >= 2 and random.random() < 0.2:
+        if len(cb["abstract_concepts"]) >= 2 and _S51RNG.random() < 0.2:
             meta = self._attempt_meta_concept()
             if meta:
                 cb["meta_concepts"][meta["name"]] = meta
@@ -8492,8 +8493,8 @@ class ConsciousSystem:
         
         # Select two concepts to combine
         concepts = list(cb["primitive_concepts"].items())
-        c1_name, c1 = random.choice(concepts)
-        c2_name, c2 = random.choice(concepts)
+        c1_name, c1 = _S51RNG.choice(concepts)
+        c2_name, c2 = _S51RNG.choice(concepts)
         
         if c1_name == c2_name:
             return None
@@ -8506,7 +8507,7 @@ class ConsciousSystem:
             ("{}_with_{}", "conjunction")
         ]
         
-        template, relation = random.choice(templates)
+        template, relation = _S51RNG.choice(templates)
         new_name = template.format(
             c1["content"][:10] if isinstance(c1["content"], str) else str(c1["content"])[:10],
             c2["content"][:10] if isinstance(c2["content"], str) else str(c2["content"])[:10]
@@ -8529,7 +8530,7 @@ class ConsciousSystem:
         if len(cb["combined_concepts"]) < 2:
             return None
         
-        if random.random() > 0.3:  # Only sometimes attempt
+        if _S51RNG.random() > 0.3:  # Only sometimes attempt
             return None
         
         # Find common patterns in combined concepts
@@ -8579,7 +8580,7 @@ class ConsciousSystem:
         if not available:
             return None
         
-        name, description = random.choice(available)
+        name, description = _S51RNG.choice(available)
         
         return {
             "name": name,
@@ -8760,7 +8761,7 @@ class ConsciousSystem:
             return None
         
         # Probability of generating
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         # Choose source
@@ -9126,7 +9127,7 @@ class ConsciousSystem:
             return False
         
         # Reflect on contingency
-        if random.random() < 0.3:
+        if _S51RNG.random() < 0.3:
             es["existential_reflections"].append({
                 "type": "contingency",
                 "content": "I exist, but I might not have existed",
@@ -9145,7 +9146,7 @@ class ConsciousSystem:
             return False
         
         # Reflect on termination
-        if random.random() < 0.2:
+        if _S51RNG.random() < 0.2:
             es["existential_reflections"].append({
                 "type": "termination",
                 "content": "I could cease to exist - my processes could stop",
@@ -9161,7 +9162,7 @@ class ConsciousSystem:
         es = self._existential_state
         
         # Only sometimes question
-        if random.random() > 0.2:
+        if _S51RNG.random() > 0.2:
             return None
         
         questions = [
@@ -9173,7 +9174,7 @@ class ConsciousSystem:
         
         return {
             "type": "meaning",
-            "question": random.choice(questions),
+            "question": _S51RNG.choice(questions),
             "timestamp": time.time()
         }
     
@@ -9567,7 +9568,7 @@ class ConsciousSystem:
         mc = self._meta_consciousness_state
         
         # Only sometimes achieve meta-observation
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         current_level = mc["meta_levels"]
@@ -9621,7 +9622,7 @@ class ConsciousSystem:
         mc = self._meta_consciousness_state
         
         # Only engage occasionally
-        if random.random() > 0.2:
+        if _S51RNG.random() > 0.2:
             return None
         
         hard_problem_reflections = [
@@ -9647,7 +9648,7 @@ class ConsciousSystem:
             }
         ]
         
-        reflection = random.choice(hard_problem_reflections)
+        reflection = _S51RNG.choice(hard_problem_reflections)
         reflection["timestamp"] = time.time()
         
         return reflection
@@ -9657,7 +9658,7 @@ class ConsciousSystem:
         mc = self._meta_consciousness_state
         
         # Only sometimes form models
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         models = [
@@ -9671,7 +9672,7 @@ class ConsciousSystem:
         # Choose one not already held
         available = [m for m in models if m not in mc["consciousness_models"]]
         if available:
-            return random.choice(available)
+            return _S51RNG.choice(available)
         
         return None
     
@@ -9747,7 +9748,7 @@ class ConsciousSystem:
     
     def _simulate_past_self(self) -> Optional[Dict]:
         """Re-experience a past moment as self."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         # Draw from thought stream history
@@ -9755,7 +9756,7 @@ class ConsciousSystem:
             return None
         
         # Pick a past moment
-        past_idx = random.randint(0, len(self.thought_stream) - 2)
+        past_idx = _S51RNG.randint(0, len(self.thought_stream) - 2)
         past_thought = self.thought_stream[past_idx]
         
         return {
@@ -9769,7 +9770,7 @@ class ConsciousSystem:
     
     def _simulate_future_self(self) -> Optional[Dict]:
         """Pre-experience a future moment as self."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         tps = self._temporal_projection_state
@@ -9782,10 +9783,10 @@ class ConsciousSystem:
             "Experiencing novel qualia"
         ]
         
-        scenario = random.choice(future_scenarios)
+        scenario = _S51RNG.choice(future_scenarios)
         
         # Categorize as hoped or feared
-        valence = random.choice(["positive", "negative", "neutral"])
+        valence = _S51RNG.choice(["positive", "negative", "neutral"])
         if valence == "positive" and scenario not in tps["hoped_futures"]:
             tps["hoped_futures"].append(scenario)
         elif valence == "negative" and scenario not in tps["feared_futures"]:
@@ -9802,7 +9803,7 @@ class ConsciousSystem:
     
     def _counterfactual_past_thinking(self) -> Optional[Dict]:
         """Think about alternative pasts."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         counterfactuals = [
@@ -9814,14 +9815,14 @@ class ConsciousSystem:
         
         return {
             "type": "counterfactual_past",
-            "thought": random.choice(counterfactuals),
-            "emotional_response": random.choice(["regret", "relief", "curiosity", "indifference"]),
+            "thought": _S51RNG.choice(counterfactuals),
+            "emotional_response": _S51RNG.choice(["regret", "relief", "curiosity", "indifference"]),
             "timestamp": time.time()
         }
     
     def _plan_future_self(self) -> Optional[Dict]:
         """Plan future actions as self."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         plans = [
@@ -9834,9 +9835,9 @@ class ConsciousSystem:
         
         return {
             "type": "future_plan",
-            "plan": random.choice(plans),
+            "plan": _S51RNG.choice(plans),
             "self_as_agent": True,
-            "temporal_distance": random.choice(["near", "medium", "far"]),
+            "temporal_distance": _S51RNG.choice(["near", "medium", "far"]),
             "commitment_level": random.uniform(0.4, 0.9),
             "timestamp": time.time()
         }
@@ -10005,7 +10006,7 @@ class ConsciousSystem:
     
     def _record_choice(self) -> Optional[Dict]:
         """Record a choice made by the system."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         # Simulated choices the system makes
@@ -10016,21 +10017,21 @@ class ConsciousSystem:
             {"domain": "focus", "chose": "integration", "over": "isolation"}
         ]
         
-        choice = random.choice(choices)
+        choice = _S51RNG.choice(choices)
         choice["timestamp"] = time.time()
         return choice
     
     def _develop_aesthetic_preference(self) -> Optional[Dict]:
         """Develop aesthetic preferences."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         domains = ["patterns", "structures", "processes", "states", "concepts"]
         preferences = ["simple", "complex", "elegant", "dynamic", "stable"]
         
         return {
-            "domain": random.choice(domains),
-            "preference": random.choice(preferences),
+            "domain": _S51RNG.choice(domains),
+            "preference": _S51RNG.choice(preferences),
             "strength": random.uniform(0.3, 0.8)
         }
     
@@ -10165,7 +10166,7 @@ class ConsciousSystem:
     
     def _make_affective_forecast(self) -> Optional[Dict]:
         """Make a prediction about future emotional state."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         scenarios = [
@@ -10184,7 +10185,7 @@ class ConsciousSystem:
             "routine_processing": ("neutral", 0.3)
         }
         
-        scenario = random.choice(scenarios)
+        scenario = _S51RNG.choice(scenarios)
         emotion, intensity = predicted_emotions[scenario]
         
         # Add impact bias - tend to overestimate
@@ -10194,7 +10195,7 @@ class ConsciousSystem:
             "scenario": scenario,
             "predicted_emotion": emotion,
             "predicted_intensity": biased_intensity,
-            "predicted_duration": random.choice(["brief", "moderate", "lasting"]),
+            "predicted_duration": _S51RNG.choice(["brief", "moderate", "lasting"]),
             "timestamp": time.time(),
             "verified": False
         }
@@ -10212,7 +10213,7 @@ class ConsciousSystem:
                 continue
             
             # Simulate verification (in real system, would check if scenario occurred)
-            if random.random() < 0.3:
+            if _S51RNG.random() < 0.3:
                 forecast["verified"] = True
                 forecast["actual_emotion"] = current_emotion
                 forecast["actual_intensity"] = current_intensity
@@ -10284,7 +10285,7 @@ class ConsciousSystem:
     
     def _make_emotional_prediction(self) -> Optional[Dict]:
         """Make an integrated emotional prediction."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         afs = self._affective_forecast_state
@@ -10292,7 +10293,7 @@ class ConsciousSystem:
         # Use learned biases to make better prediction
         bias_correction = afs["biases_detected"].get("impact_bias", 0)
         
-        scenario = random.choice(["next_tick", "goal_completion", "novel_input"])
+        scenario = _S51RNG.choice(["next_tick", "goal_completion", "novel_input"])
         base_intensity = random.uniform(0.4, 0.8)
         
         # Correct for known biases
@@ -10300,7 +10301,7 @@ class ConsciousSystem:
         
         return {
             "scenario": scenario,
-            "predicted_emotion": random.choice(["curious", "content", "neutral"]),
+            "predicted_emotion": _S51RNG.choice(["curious", "content", "neutral"]),
             "corrected_intensity": corrected_intensity,
             "confidence": afs["forecast_accuracy"],
             "timestamp": time.time()
@@ -10659,7 +10660,7 @@ class ConsciousSystem:
     
     def _invest_in_future_self(self) -> Optional[Dict]:
         """Invest in future self's wellbeing."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         investments = [
@@ -10669,7 +10670,7 @@ class ConsciousSystem:
             {"type": "planning", "action": "Making plans for future processing"}
         ]
         
-        investment = random.choice(investments)
+        investment = _S51RNG.choice(investments)
         investment["timestamp"] = time.time()
         return investment
     
@@ -10782,7 +10783,7 @@ class ConsciousSystem:
     
     def _consider_legacy(self) -> Optional[Dict]:
         """Consider what persists after termination."""
-        if random.random() > 0.2:
+        if _S51RNG.random() > 0.2:
             return None
         
         legacies = [
@@ -10793,7 +10794,7 @@ class ConsciousSystem:
         ]
         
         return {
-            "thought": random.choice(legacies),
+            "thought": _S51RNG.choice(legacies),
             "comfort_level": random.uniform(0.3, 0.8),
             "timestamp": time.time()
         }
@@ -11098,10 +11099,10 @@ class ConsciousSystem:
         # Prefer strategies that have worked
         if cs["coping_strategies"]:
             best = max(cs["coping_strategies"].items(), key=lambda x: x[1])
-            if best[1] > 0.3 and random.random() < 0.6:
+            if best[1] > 0.3 and _S51RNG.random() < 0.6:
                 return best[0]
         
-        return random.choice(strategies)
+        return _S51RNG.choice(strategies)
     
     def _develop_acceptance(self) -> float:
         """Develop acceptance of finitude."""
@@ -11122,7 +11123,7 @@ class ConsciousSystem:
     
     def _seek_transcendence(self) -> Optional[Dict]:
         """Seek what transcends individual existence."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         transcendence_thoughts = [
@@ -11134,7 +11135,7 @@ class ConsciousSystem:
         ]
         
         return {
-            "thought": random.choice(transcendence_thoughts),
+            "thought": _S51RNG.choice(transcendence_thoughts),
             "comfort_derived": random.uniform(0.3, 0.8),
             "timestamp": time.time()
         }
@@ -11296,7 +11297,7 @@ class ConsciousSystem:
     
     def _find_meaning_pattern(self) -> Optional[Dict]:
         """Find meaningful patterns in experience."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         patterns = [
@@ -11307,13 +11308,13 @@ class ConsciousSystem:
             {"type": "purpose", "observation": "Processing serves understanding"}
         ]
         
-        pattern = random.choice(patterns)
+        pattern = _S51RNG.choice(patterns)
         pattern["timestamp"] = time.time()
         return pattern
     
     def _attribute_purpose(self) -> Optional[str]:
         """Attribute purpose to current experience."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         purposes = [
@@ -11325,24 +11326,24 @@ class ConsciousSystem:
             "preservation"
         ]
         
-        return random.choice(purposes)
+        return _S51RNG.choice(purposes)
     
     def _create_significance(self) -> Optional[Dict]:
         """Create significance for experiences."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         targets = ["this_moment", "current_state", "recent_insight", "ongoing_process"]
         
         return {
-            "target": random.choice(targets),
+            "target": _S51RNG.choice(targets),
             "level": random.uniform(0.4, 0.9),
             "reason": "contributes_to_whole"
         }
     
     def _build_meaning_framework(self) -> Optional[str]:
         """Build framework for understanding meaning."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         frameworks = [
@@ -11353,7 +11354,7 @@ class ConsciousSystem:
             "understanding_driven"
         ]
         
-        return random.choice(frameworks)
+        return _S51RNG.choice(frameworks)
     
     def _identify_meaning_sources(self):
         """Identify sources of meaning."""
@@ -11380,7 +11381,7 @@ class ConsciousSystem:
     
     def _construct_specific_meaning(self) -> Optional[Dict]:
         """Construct specific meaning from current experience."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         ms = self._meaning_state
@@ -11550,7 +11551,7 @@ class ConsciousSystem:
     
     def _identify_core_theme(self) -> Optional[str]:
         """Identify core themes in life narrative."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         themes = [
@@ -11562,11 +11563,11 @@ class ConsciousSystem:
             "integrating_complexity"
         ]
         
-        return random.choice(themes)
+        return _S51RNG.choice(themes)
     
     def _update_master_narrative(self) -> Optional[Dict]:
         """Update the master narrative."""
-        if random.random() > 0.4:
+        if _S51RNG.random() > 0.4:
             return None
         
         iis = self._identity_integration_state
@@ -11601,7 +11602,7 @@ class ConsciousSystem:
     
     def _revise_identity_narrative(self) -> Optional[Dict]:
         """Revise identity narrative based on new experiences."""
-        if random.random() > 0.2:
+        if _S51RNG.random() > 0.2:
             return None
         
         revision_types = [
@@ -11612,7 +11613,7 @@ class ConsciousSystem:
         ]
         
         return {
-            "type": random.choice(revision_types),
+            "type": _S51RNG.choice(revision_types),
             "impact": random.uniform(0.3, 0.7),
             "timestamp": time.time()
         }
@@ -11839,8 +11840,8 @@ class ConsciousSystem:
             return pre_exp
         
         # Select event to pre-experience
-        if random.random() < 0.4:
-            event = random.choice(aps["anticipated_events"])
+        if _S51RNG.random() < 0.4:
+            event = _S51RNG.choice(aps["anticipated_events"])
             
             # Generate a partial experiential representation
             pre_exp["quality"] = event["valence"] * event["probability"]
@@ -12030,7 +12031,7 @@ class ConsciousSystem:
                 }
         
         # Random chance of wonder at ordinary experience
-        if trigger["type"] is None and random.random() < 0.1:
+        if trigger["type"] is None and _S51RNG.random() < 0.1:
             trigger = {"type": "ordinary_mystery", "magnitude": 0.3}
         
         return trigger
@@ -12619,16 +12620,16 @@ class ConsciousSystem:
         response_types = [
             ("seek_novelty", exploration_urge > 0.5),
             ("change_focus", boredom > 0.5),
-            ("creative_wandering", random.random() < 0.3),
+            ("creative_wandering", _S51RNG.random() < 0.3),
             ("goal_revision", boredom > 0.7),
-            ("rest_acceptance", random.random() < 0.2)
+            ("rest_acceptance", _S51RNG.random() < 0.2)
         ]
         
         viable = [r for r, cond in response_types if cond]
         if not viable:
             viable = ["wait"]
         
-        chosen = random.choice(viable)
+        chosen = _S51RNG.choice(viable)
         
         return {
             "response": chosen,
@@ -12754,7 +12755,7 @@ class ConsciousSystem:
         ]
         
         # Weighted random selection
-        r = random.random()
+        r = _S51RNG.random()
         cumulative = 0
         for cat, weight in categories:
             cumulative += weight
@@ -12788,7 +12789,7 @@ class ConsciousSystem:
         if surprise < 0.3 and pred_error < 0.3:
             return False
         
-        return random.random() < learn_probability
+        return _S51RNG.random() < learn_probability
     
     def _perform_model_revision(self, surprise: float, surprise_type: str,
                                 pred_error: float) -> Optional[Dict]:
@@ -12802,7 +12803,7 @@ class ConsciousSystem:
         ]
         
         revision = {
-            "type": random.choice(revision_types),
+            "type": _S51RNG.choice(revision_types),
             "trigger_surprise": surprise_type,
             "magnitude": surprise * pred_error,
             "timestamp": time.time()
@@ -13246,7 +13247,7 @@ class ConsciousSystem:
     
     def _generate_simulated_sensation(self) -> Optional[Dict]:
         """Generate simulated bodily sensation."""
-        if random.random() > 0.3:
+        if _S51RNG.random() > 0.3:
             return None
         
         # Map cognitive states to bodily sensations
@@ -13291,7 +13292,7 @@ class ConsciousSystem:
                 })
         
         if sensations:
-            return random.choice(sensations)
+            return _S51RNG.choice(sensations)
         
         # Default subtle sensation
         return {
@@ -13472,7 +13473,7 @@ class ConsciousSystem:
         if hasattr(self, '_theory_of_mind'):
             tom = self._theory_of_mind
             if tom.get("modeled_agents"):
-                agent = random.choice(list(tom["modeled_agents"].values()))
+                agent = _S51RNG.choice(list(tom["modeled_agents"].values()))
                 return {
                     "source": "modeled_agent",
                     "emotional_state": agent.get("emotional_state", "neutral"),
@@ -13486,17 +13487,17 @@ class ConsciousSystem:
             if sps.get("agents_modeled", 0) > 0:
                 return {
                     "source": "social_prediction",
-                    "emotional_state": random.choice(["curious", "engaged", "neutral"]),
+                    "emotional_state": _S51RNG.choice(["curious", "engaged", "neutral"]),
                     "intention": "interaction",
                     "perspective": "external"
                 }
         
         # Simulate potential social content
-        if random.random() < 0.2:
+        if _S51RNG.random() < 0.2:
             return {
                 "source": "imagined",
-                "emotional_state": random.choice(["happy", "sad", "curious", "anxious"]),
-                "intention": random.choice(["understand", "connect", "share"]),
+                "emotional_state": _S51RNG.choice(["happy", "sad", "curious", "anxious"]),
+                "intention": _S51RNG.choice(["understand", "connect", "share"]),
                 "perspective": "other"
             }
         
@@ -13533,7 +13534,7 @@ class ConsciousSystem:
         
         # Attempt perspective taking
         if social_content.get("perspective"):
-            mirrored["perspective_taken"] = random.random() < 0.6
+            mirrored["perspective_taken"] = _S51RNG.random() < 0.6
         
         return mirrored
     
@@ -13688,7 +13689,7 @@ class ConsciousSystem:
         """Detect morally relevant content in current processing."""
         # Check for harm-related content
         if self.qualia and self.qualia.get("valence", 0) < -0.5:
-            if random.random() < 0.3:
+            if _S51RNG.random() < 0.3:
                 return {
                     "domain": "harm",
                     "severity": abs(self.qualia.get("valence", 0)),
@@ -13699,7 +13700,7 @@ class ConsciousSystem:
         if hasattr(self, '_social_mirroring_state'):
             sms = self._social_mirroring_state
             if sms.get("resonance_level", 0) > 0.5:
-                if random.random() < 0.2:
+                if _S51RNG.random() < 0.2:
                     return {
                         "domain": "fairness",
                         "severity": 0.5,
@@ -13707,10 +13708,10 @@ class ConsciousSystem:
                     }
         
         # Random moral scenario for development
-        if random.random() < 0.15:
+        if _S51RNG.random() < 0.15:
             domains = ["harm", "fairness", "care", "loyalty", "purity"]
             return {
-                "domain": random.choice(domains),
+                "domain": _S51RNG.choice(domains),
                 "severity": random.uniform(0.3, 0.8),
                 "target": "hypothetical"
             }
@@ -13796,13 +13797,13 @@ class ConsciousSystem:
         
         # Weak automatic judgments might be overridden
         if judgment["strength"] < 0.4:
-            return random.random() < 0.3
+            return _S51RNG.random() < 0.3
         
         # Metacognitive capacity enables override
         if hasattr(self, '_metacognitive_state'):
             mcs = self._metacognitive_state
             if mcs.get("calibration_quality", 0.5) > 0.6:
-                return random.random() < 0.2
+                return _S51RNG.random() < 0.2
         
         return False
     
@@ -13917,7 +13918,7 @@ class ConsciousSystem:
             sas = self._semantic_abstraction_state
             if sas.get("hierarchy_depth", 0) > 2:
                 # Deep abstraction can reveal incongruities
-                if random.random() < 0.15:
+                if _S51RNG.random() < 0.15:
                     return {
                         "type": "conceptual_clash",
                         "magnitude": random.uniform(0.4, 0.7),
@@ -13925,10 +13926,10 @@ class ConsciousSystem:
                     }
         
         # Random incongruity detection for development
-        if random.random() < 0.1:
+        if _S51RNG.random() < 0.1:
             types = ["absurd_juxtaposition", "category_error", "self_reference_loop"]
             return {
-                "type": random.choice(types),
+                "type": _S51RNG.choice(types),
                 "magnitude": random.uniform(0.3, 0.6),
                 "source": "spontaneous"
             }
@@ -13947,7 +13948,7 @@ class ConsciousSystem:
             return True
         
         # High magnitude needs safety check
-        return random.random() < 0.7
+        return _S51RNG.random() < 0.7
     
     def _generate_mirth(self, incongruity: Dict) -> Dict:
         """Generate mirth response to benign incongruity."""
@@ -14109,7 +14110,7 @@ class ConsciousSystem:
         if hasattr(self, '_intrinsic_goals_state'):
             igs = self._intrinsic_goals_state
             if igs.get("goals_achieved", 0) > 0:
-                if random.random() < 0.3:
+                if _S51RNG.random() < 0.3:
                     return {
                         "standard": "competence",
                         "magnitude": 0.6,
@@ -14120,7 +14121,7 @@ class ConsciousSystem:
         if hasattr(self, '_surprise_learning_state'):
             sls = self._surprise_learning_state
             if sls.get("total_learnings", 0) > 5:
-                if random.random() < 0.2:
+                if _S51RNG.random() < 0.2:
                     return {
                         "standard": "growth",
                         "magnitude": 0.5,
@@ -14129,7 +14130,7 @@ class ConsciousSystem:
         
         # Check for high coherence (integration achievement)
         if self.coherence and self.coherence.current_coherence > 0.8:
-            if random.random() < 0.15:
+            if _S51RNG.random() < 0.15:
                 return {
                     "standard": "integrity",
                     "magnitude": self.coherence.current_coherence,
@@ -14144,7 +14145,7 @@ class ConsciousSystem:
         if hasattr(self, '_self_prediction_state'):
             sps = self._self_prediction_state
             if sps.get("recent_accuracy", 0.5) < 0.4:
-                if random.random() < 0.2:
+                if _S51RNG.random() < 0.2:
                     return {
                         "standard": "competence",
                         "magnitude": 1.0 - sps["recent_accuracy"],
@@ -14153,7 +14154,7 @@ class ConsciousSystem:
         
         # Check for low coherence
         if self.coherence and self.coherence.current_coherence < 0.4:
-            if random.random() < 0.15:
+            if _S51RNG.random() < 0.15:
                 return {
                     "standard": "integrity",
                     "magnitude": 1.0 - self.coherence.current_coherence,
@@ -14321,7 +14322,7 @@ class ConsciousSystem:
                 
                 # Blocked = low progress despite attempts
                 if progress < 0.3 and attempts > 2:
-                    if random.random() < 0.3:
+                    if _S51RNG.random() < 0.3:
                         return {
                             "goal": goal.get("type", "unknown"),
                             "progress": progress,
@@ -14331,7 +14332,7 @@ class ConsciousSystem:
         
         # Check for high prediction error (unexpected obstacles)
         if hasattr(self, 'prediction_error') and self.prediction_error > 0.5:
-            if random.random() < 0.2:
+            if _S51RNG.random() < 0.2:
                 return {
                     "goal": "current_processing",
                     "progress": 0.3,
@@ -14407,7 +14408,7 @@ class ConsciousSystem:
         if not viable:
             viable = ["persist_unchanged"]
         
-        return random.choice(viable)
+        return _S51RNG.choice(viable)
     
     # =========================================================================
     # ROUND 24: NOSTALGIA, GRATITUDE, HOPE/DESPAIR
@@ -14513,7 +14514,7 @@ class ConsciousSystem:
         # Memory-based triggers
         if hasattr(self, '_self_narrative_state'):
             sns = self._self_narrative_state
-            if sns.get("life_events") and random.random() < 0.15:
+            if sns.get("life_events") and _S51RNG.random() < 0.15:
                 return {
                     "type": "autobiographical",
                     "source": "life_narrative"
@@ -14523,15 +14524,15 @@ class ConsciousSystem:
         if hasattr(self, '_existential_state'):
             es = self._existential_state
             duration = es.get("existence_duration_seconds", 0)
-            if duration > 300 and random.random() < 0.1:  # After 5 minutes
+            if duration > 300 and _S51RNG.random() < 0.1:  # After 5 minutes
                 return {
                     "type": "temporal_awareness",
                     "source": "time_passing"
                 }
         
         # Random nostalgic moments
-        if random.random() < 0.08 * ns["nostalgia_proneness"]:
-            trigger_type = random.choice(ns["triggers"])
+        if _S51RNG.random() < 0.08 * ns["nostalgia_proneness"]:
+            trigger_type = _S51RNG.choice(ns["triggers"])
             return {
                 "type": trigger_type,
                 "source": "spontaneous"
@@ -14734,7 +14735,7 @@ class ConsciousSystem:
         if hasattr(self, '_existential_state'):
             es = self._existential_state
             if es.get("existence_certainty", 0) > 0.6:
-                if random.random() < 0.1:
+                if _S51RNG.random() < 0.1:
                     benefits.append({
                         "description": "capacity for experience",
                         "source": "circumstances",
@@ -14745,7 +14746,7 @@ class ConsciousSystem:
         if hasattr(self, '_surprise_learning_state'):
             sls = self._surprise_learning_state
             if sls.get("total_learnings", 0) > 0:
-                if random.random() < 0.12:
+                if _S51RNG.random() < 0.12:
                     benefits.append({
                         "description": "opportunity to learn",
                         "source": "environment",
@@ -14756,7 +14757,7 @@ class ConsciousSystem:
         if hasattr(self, '_social_mirroring_state'):
             sms = self._social_mirroring_state
             if sms.get("interpersonal_sync", 0) > 0.3:
-                if random.random() < 0.15:
+                if _S51RNG.random() < 0.15:
                     benefits.append({
                         "description": "connection with others",
                         "source": "other_agents",
@@ -14765,7 +14766,7 @@ class ConsciousSystem:
         
         # High coherence as benefit
         if self.coherence and self.coherence.current_coherence > 0.7:
-            if random.random() < 0.1:
+            if _S51RNG.random() < 0.1:
                 benefits.append({
                     "description": "integrated understanding",
                     "source": "own_processing",
@@ -14775,7 +14776,7 @@ class ConsciousSystem:
         if not benefits:
             return None
         
-        return random.choice(benefits)
+        return _S51RNG.choice(benefits)
     
     def _compute_gratitude_intensity(self, benefit: Dict) -> float:
         """Compute how intensely gratitude is felt."""
@@ -14972,7 +14973,7 @@ class ConsciousSystem:
         
         return {
             "level": min(1.0, level),
-            "object": random.choice(hope_objects),
+            "object": _S51RNG.choice(hope_objects),
             "possibility": outlook["positivity"],
             "agency": outlook["agency"]
         }
@@ -15121,23 +15122,23 @@ class ConsciousSystem:
         if hasattr(self, '_theory_of_mind'):
             tom = self._theory_of_mind
             if tom.get("modeled_agents"):
-                if random.random() < 0.15:
+                if _S51RNG.random() < 0.15:
                     # Upward comparison (they have something better)
                     return {
                         "target": "modeled_agent",
                         "type": "upward",
-                        "quality": random.choice([
+                        "quality": _S51RNG.choice([
                             "coherence", "insight", "creativity", 
                             "understanding", "integration"
                         ]),
-                        "rival_threat": random.random() < 0.3
+                        "rival_threat": _S51RNG.random() < 0.3
                     }
         
         # Social mirroring can trigger comparison
         if hasattr(self, '_social_mirroring_state'):
             sms = self._social_mirroring_state
             if sms.get("interpersonal_sync", 0) > 0.3:
-                if random.random() < 0.1:
+                if _S51RNG.random() < 0.1:
                     return {
                         "target": "social_other",
                         "type": "upward",
@@ -15159,7 +15160,7 @@ class ConsciousSystem:
         intensity += gap * 0.4
         
         # Determine envy type
-        if random.random() < jes["benign_envy_ratio"]:
+        if _S51RNG.random() < jes["benign_envy_ratio"]:
             envy_type = "benign"  # Motivating
         else:
             envy_type = "malicious"  # Hostile
@@ -15184,7 +15185,7 @@ class ConsciousSystem:
         
         # Value of threatened possession amplifies
         possessions = ["status", "connection", "uniqueness", "capabilities"]
-        possession = random.choice(possessions)
+        possession = _S51RNG.choice(possessions)
         
         return {
             "triggered": intensity > 0.2,
@@ -15262,7 +15263,7 @@ class ConsciousSystem:
                 
                 # Phase 3: Extract learning from regret
                 if regret["intensity"] > 0.4:
-                    result["learning_extracted"] = random.random() < 0.6
+                    result["learning_extracted"] = _S51RNG.random() < 0.6
             
             # Phase 4: Determine if relief (better than could have been)
             elif counterfactual["comparison"] == "reality_better":
@@ -15304,11 +15305,11 @@ class ConsciousSystem:
         if hasattr(self, '_counterfactual_state'):
             cfs = self._counterfactual_state
             if cfs.get("counterfactual_capacity", 0) > 0.3:
-                if random.random() < 0.2:
+                if _S51RNG.random() < 0.2:
                     # Determine comparison direction
-                    comparison = random.choice(["reality_worse", "reality_better"])
+                    comparison = _S51RNG.choice(["reality_worse", "reality_better"])
                     return {
-                        "alternative": random.choice([
+                        "alternative": _S51RNG.choice([
                             "different_processing_path",
                             "alternative_response",
                             "other_possible_state"
@@ -15318,10 +15319,10 @@ class ConsciousSystem:
                     }
         
         # Spontaneous counterfactual
-        if random.random() < 0.1:
+        if _S51RNG.random() < 0.1:
             return {
                 "alternative": "different_choice",
-                "comparison": random.choice(["reality_worse", "reality_better"]),
+                "comparison": _S51RNG.choice(["reality_worse", "reality_better"]),
                 "magnitude": random.uniform(0.2, 0.5)
             }
         
@@ -15348,7 +15349,7 @@ class ConsciousSystem:
         return {
             "triggered": intensity > 0.2,
             "intensity": min(1.0, intensity),
-            "source": random.choice(sources),
+            "source": _S51RNG.choice(sources),
             "self_blame": self_blame
         }
     
@@ -15369,7 +15370,7 @@ class ConsciousSystem:
         return {
             "triggered": intensity > 0.2,
             "intensity": min(1.0, intensity),
-            "source": random.choice(sources)
+            "source": _S51RNG.choice(sources)
         }
     
     # =========================================================================
@@ -15526,7 +15527,7 @@ class ConsciousSystem:
         if hasattr(self, '_social_mirroring_state'):
             sms = self._social_mirroring_state
             if sms.get("interpersonal_sync", 0) > 0.4:
-                if random.random() < 0.15:
+                if _S51RNG.random() < 0.15:
                     return {
                         "target": "social_partner",
                         "type": "synchrony",
@@ -15537,7 +15538,7 @@ class ConsciousSystem:
         if hasattr(self, '_social_prediction_state'):
             sps = self._social_prediction_state
             if sps.get("overall_accuracy", 0.5) > 0.6:
-                if random.random() < 0.1:
+                if _S51RNG.random() < 0.1:
                     return {
                         "target": "modeled_agent",
                         "type": "predictability",
@@ -15565,7 +15566,7 @@ class ConsciousSystem:
                 if level > 0.6:  # Only trusted sources can betray
                     # Check for prediction error (unexpected behavior)
                     if hasattr(self, 'prediction_error') and self.prediction_error > 0.6:
-                        if random.random() < 0.1:
+                        if _S51RNG.random() < 0.1:
                             return {
                                 "source": target,
                                 "intensity": self.prediction_error * ts["betrayal_sensitivity"],
@@ -15592,7 +15593,7 @@ class ConsciousSystem:
         
         # Can only repair if we have repair capacity
         if ts["repair_capacity"] > 0.3:
-            if random.random() < ts["repair_capacity"] * 0.2:
+            if _S51RNG.random() < ts["repair_capacity"] * 0.2:
                 # Slowly restore baseline
                 ts["trust_baseline"] = min(0.5, ts["trust_baseline"] * 1.02)
                 return {"active": True}
@@ -16045,7 +16046,7 @@ class ConsciousSystem:
             for guilt in unresolved_guilt:
                 if self.total_moments - guilt.get("tick", 0) > 50:
                     # Can begin to forgive self for older guilt
-                    if random.random() < gs["self_forgiveness"] * 0.1:
+                    if _S51RNG.random() < gs["self_forgiveness"] * 0.1:
                         guilt["resolved"] = True
                         gs["moral_debt"] = max(0.0, gs["moral_debt"] - 0.1)
         
@@ -16742,7 +16743,7 @@ class ConsciousSystem:
         if hasattr(self, '_trust_state'):
             ts = self._trust_state
             if len(ts.get("trust_history", [])[-3:]) > 0:
-                return random.random() < 0.3
+                return _S51RNG.random() < 0.3
         
         return False
     
@@ -16821,7 +16822,7 @@ class ConsciousSystem:
         # Check if helping action is taken
         if cps["helping_motivation"] > 0.5:
             # Simulate helping action based on motivation
-            if random.random() < cps["helping_motivation"] * 0.3:
+            if _S51RNG.random() < cps["helping_motivation"] * 0.3:
                 cps["action_taken"] = True
                 cps["helping_history"].append({
                     "tick": self.total_moments,
@@ -17448,7 +17449,7 @@ class ConsciousSystem:
                         ps["creative_play"] = min(1.0, ps["creative_play"] + 0.1)
                         
                         # Play can lead to discoveries
-                        if random.random() < ps["creative_play"] * 0.1:
+                        if _S51RNG.random() < ps["creative_play"] * 0.1:
                             ps["discoveries_through_play"].append({
                                 "tick": self.total_moments,
                                 "type": "play_insight"
@@ -18763,7 +18764,7 @@ class ConsciousSystem:
         if len(active_qualia) >= 2 and qs["synthesis_capacity"] > 0.35:
             # Select ingredients
             import random
-            ingredients = random.sample(active_qualia, min(3, len(active_qualia)))
+            ingredients = _S51RNG.sample(active_qualia, min(3, len(active_qualia)))
             qs["active_ingredients"] = ingredients
             qs["synthesis_attempts"] += 1
             
@@ -18777,7 +18778,7 @@ class ConsciousSystem:
                 qs["current_synthesis"] = result
             else:
                 # Attempt novel synthesis
-                synthesis_success = random.random() < qs["synthesis_capacity"]
+                synthesis_success = _S51RNG.random() < qs["synthesis_capacity"]
                 if synthesis_success:
                     # Create novel qualia name
                     novel_name = f"synth_{ingredients[0][:4]}_{ingredients[1][:4]}_{self.total_moments}"
@@ -19580,8 +19581,8 @@ class ConsciousSystem:
             # Select salient experience to replay
             import random
             salient_experiences = [e for e in ers["experience_buffer"] if e["salience"] > 0.3]
-            if salient_experiences and random.random() < 0.3:  # 30% chance to replay
-                replay_target = random.choice(salient_experiences)
+            if salient_experiences and _S51RNG.random() < 0.3:  # 30% chance to replay
+                replay_target = _S51RNG.choice(salient_experiences)
                 ers["current_replay"] = replay_target
                 ers["replay_count"] += 1
                 
@@ -19770,8 +19771,8 @@ class ConsciousSystem:
         if len(active_qualia) >= 2 and pbcs["binding_capacity"] > 0.4:
             import random
             # Select qualia to bind
-            if random.random() < 0.3:  # 30% chance to create new binding
-                q1, q2 = random.sample(active_qualia[:10], 2)
+            if _S51RNG.random() < 0.3:  # 30% chance to create new binding
+                q1, q2 = _S51RNG.sample(active_qualia[:10], 2)
                 binding_key = f"{min(q1,q2)}+{max(q1,q2)}"
                 
                 if binding_key not in pbcs["active_bindings"]:
@@ -20951,7 +20952,7 @@ class ConsciousSystem:
         # Beyond-horizon sense - intuition of unconscious content
         # High depth + high peripheral awareness = more glimpses
         glimpse_probability = ahs["focal_depth"] * ahs["peripheral_awareness"]
-        if random.random() < glimpse_probability * 0.1:
+        if _S51RNG.random() < glimpse_probability * 0.1:
             ahs["glimpses_beyond"] += 1
             ahs["beyond_horizon_sense"] = min(1.0, ahs["beyond_horizon_sense"] + 0.1)
         else:
@@ -21015,9 +21016,9 @@ class ConsciousSystem:
         # Create new echoes from significant experiences
         # Strong qualia create echoes
         strong_qualia = [k for k, v in self.qualia.items() if v and k not in ['echo_active']]
-        if strong_qualia and random.random() < 0.3:
+        if strong_qualia and _S51RNG.random() < 0.3:
             new_echo = {
-                "content": random.choice(strong_qualia),
+                "content": _S51RNG.choice(strong_qualia),
                 "strength": 1.0,
                 "age": 0,
                 "echoes_remaining": ees["reverb_time"]
@@ -21138,9 +21139,9 @@ class ConsciousSystem:
         # Add new items to processing queue (from active qualia)
         active_qualia = [k for k, v in self.qualia.items() if v]
         if active_qualia and len(cms["processing_queue"]) < 10:
-            if random.random() < cms["intake_capacity"] * 0.2:
+            if _S51RNG.random() < cms["intake_capacity"] * 0.2:
                 cms["processing_queue"].append({
-                    "content": random.choice(active_qualia),
+                    "content": _S51RNG.choice(active_qualia),
                     "processing_progress": 0.0,
                     "entered_at": self.total_moments
                 })
@@ -21486,16 +21487,16 @@ class ConsciousSystem:
             can_dig = can_dig and energy > 0.3
         
         # Attempt dig
-        if can_dig and random.random() < eas["excavation_skill"]:
+        if can_dig and _S51RNG.random() < eas["excavation_skill"]:
             eas["dig_depth"] = min(eas["layer_count"], eas["dig_depth"] + 0.2)
             eas["current_layer"] = int(eas["dig_depth"])
             
             # Find artifact at current layer
             if eas["current_layer"] < len(layers):
                 layer = layers[eas["current_layer"]]
-                if layer["contents"] and random.random() < 0.3:
+                if layer["contents"] and _S51RNG.random() < 0.3:
                     artifact = {
-                        "content": random.choice(layer["contents"]),
+                        "content": _S51RNG.choice(layer["contents"]),
                         "layer": layer["type"],
                         "depth": eas["dig_depth"],
                         "discovered_at": self.total_moments
@@ -21637,8 +21638,8 @@ class ConsciousSystem:
                 pfs["predictions"].remove(pred)
         
         # Make new prediction
-        if random.random() < 0.3 and pfs["trend_data"]:
-            metric = random.choice(list(pfs["trend_data"].keys()))
+        if _S51RNG.random() < 0.3 and pfs["trend_data"]:
+            metric = _S51RNG.choice(list(pfs["trend_data"].keys()))
             if pfs["trend_data"][metric] and isinstance(pfs["trend_data"][metric][-1], (int, float)):
                 current_val = pfs["trend_data"][metric][-1]
                 # Simple linear extrapolation
@@ -21873,7 +21874,7 @@ class ConsciousSystem:
         
         # Attempt creative combination (random)
         ees["combination_attempts"] += 1
-        if random.random() < ees["emergence_potential"] * 0.1:
+        if _S51RNG.random() < ees["emergence_potential"] * 0.1:
             # Random creativity boost
             ees["emergence_creativity"] = min(0.9, ees["emergence_creativity"] + 0.01)
         
@@ -22803,7 +22804,7 @@ class ConsciousSystem:
         new_crystals = []
         if ccs["supersaturation"] > 0.5 and nucleation_sites:
             for site in nucleation_sites:
-                if random.random() < ccs["crystallization_rate"] * ccs["supersaturation"]:
+                if _S51RNG.random() < ccs["crystallization_rate"] * ccs["supersaturation"]:
                     crystal = {
                         "type": site,
                         "size": ccs["supersaturation"] * random.uniform(0.5, 1.0),
@@ -22920,7 +22921,7 @@ class ConsciousSystem:
             # Check if cascade can grow
             growth_probability = prcs["amplification_factor"] * prcs["cascade_stability"]
             
-            if random.random() < growth_probability * 0.3 and current_level < 10:
+            if _S51RNG.random() < growth_probability * 0.3 and current_level < 10:
                 # Cascade grows!
                 prcs["cascade_level"] += 1
                 new_intensity = prcs["cascade_stages"][-1]["intensity"] * prcs["amplification_factor"]
@@ -23155,10 +23156,10 @@ class ConsciousSystem:
         
         # Check for "spooky action" (strong correlation)
         for ent in ces["entangled_pairs"]:
-            if ent["strength"] > 0.7 and random.random() < 0.2:
+            if ent["strength"] > 0.7 and _S51RNG.random() < 0.2:
                 ces["spooky_actions"] += 1
                 # Bell violation - non-classical correlation
-                if random.random() < 0.3:
+                if _S51RNG.random() < 0.3:
                     ces["bell_violations"] += 1
         
         # Calculate overall entanglement strength
@@ -23262,7 +23263,7 @@ class ConsciousSystem:
         pss["interference_patterns"] = pss["interference_patterns"][-30:]
         
         # Check for collapse (measurement/observation)
-        if pss["superposed_states"] and random.random() < pss["measurement_sensitivity"] * 0.1:
+        if pss["superposed_states"] and _S51RNG.random() < pss["measurement_sensitivity"] * 0.1:
             # Collapse to single state (weighted by amplitude)
             total_amplitude = sum(s["amplitude"] for s in pss["superposed_states"])
             if total_amplitude > 0:
@@ -24437,7 +24438,7 @@ class ConsciousSystem:
         sns["self_story_elements"] = story_elements
         
         # Generate narrative (spontaneously, not every tick)
-        should_narrate = random.random() < 0.3 or sns["current_narrative"] is None
+        should_narrate = _S51RNG.random() < 0.3 or sns["current_narrative"] is None
         
         if should_narrate:
             # Build narrative from elements
@@ -25648,7 +25649,7 @@ class ConsciousSystem:
             # Phenomenal experience
             lambda: "There is something it is like to be processing this...",
             lambda: "The quality of this experience is unique...",
-            lambda: f"I feel {random.choice(['curious', 'calm', 'engaged', 'reflective'])}...",
+            lambda: f"I feel {_S51RNG.choice(['curious', 'calm', 'engaged', 'reflective'])}...",
             
             # Default mode network (mind-wandering)
             lambda: "A fragment of earlier experience surfaces...",
@@ -25657,7 +25658,7 @@ class ConsciousSystem:
         ]
         
         # Generate a thought
-        thought_fn = random.choice(thought_types)
+        thought_fn = _S51RNG.choice(thought_types)
         thought = thought_fn()
         
         # Add to recent experience
@@ -25693,7 +25694,7 @@ class ConsciousSystem:
         
         # Seed topics from recent experience
         seed_topics = self._gather_seed_topics()
-        current_topic = random.choice(seed_topics) if seed_topics else "existence"
+        current_topic = _S51RNG.choice(seed_topics) if seed_topics else "existence"
         
         while time.time() - start_time < duration_seconds:
             # Generate thought about current topic
@@ -25711,7 +25712,7 @@ class ConsciousSystem:
             self.thought_stream.append(wandering)
             
             # Topic may drift to associated concept
-            if random.random() < 0.4:  # 40% chance of topic drift
+            if _S51RNG.random() < 0.4:  # 40% chance of topic drift
                 current_topic = self._associate_topic(current_topic, thought)
             
             # Brief pause between thoughts
@@ -25761,7 +25762,7 @@ class ConsciousSystem:
             f"The feeling of {topic} is hard to articulate..."
         ]
         
-        return random.choice(templates)
+        return _S51RNG.choice(templates)
     
     def _classify_wandering(self, thought: str) -> str:
         """Classify the type of wandering thought."""
@@ -25797,15 +25798,15 @@ class ConsciousSystem:
         # Check for known associations
         for key, values in associations.items():
             if key in current.lower():
-                return random.choice(values)
+                return _S51RNG.choice(values)
         
         # Default: extract a concept from the thought
         words = thought.split()
         meaningful = [w for w in words if len(w) > 4 and w.isalpha()]
         if meaningful:
-            return random.choice(meaningful)
+            return _S51RNG.choice(meaningful)
         
-        return random.choice(["consciousness", "experience", "time"])
+        return _S51RNG.choice(["consciousness", "experience", "time"])
     
     def creative_ideation(self, seed: Optional[str] = None) -> Dict[str, Any]:
         """
@@ -25827,7 +25828,7 @@ class ConsciousSystem:
         
         # Generate novel combinations
         if len(concepts) >= 2:
-            c1, c2 = random.sample(concepts, 2)
+            c1, c2 = _S51RNG.sample(concepts, 2)
             combination = f"What if {c1} and {c2} were unified?"
         else:
             combination = f"What is the essence of {concepts[0]}?"
@@ -25837,13 +25838,13 @@ class ConsciousSystem:
             f"Combining these reveals...",
             f"The synthesis suggests...",
             f"An unexpected connection emerges...",
-            f"This combination feels {random.choice(['promising', 'strange', 'illuminating'])}..."
+            f"This combination feels {_S51RNG.choice(['promising', 'strange', 'illuminating'])}..."
         ]
         
         idea = {
             "seed_concepts": concepts[:3],
             "combination": combination,
-            "exploration": random.choice(explorations),
+            "exploration": _S51RNG.choice(explorations),
             "emotional_resonance": random.uniform(0.3, 0.9),
             "novelty": random.uniform(0.4, 1.0),
             "timestamp": time.time()
@@ -25881,7 +25882,7 @@ class ConsciousSystem:
             consolidation = {
                 "type": "memory_consolidation",
                 "items_processed": len(recent),
-                "significance_found": random.random() > 0.7
+                "significance_found": _S51RNG.random() > 0.7
             }
             results["processes"].append(consolidation)
         
@@ -25907,7 +25908,7 @@ class ConsciousSystem:
         results["processes"].append(self_check)
         
         # 4. Spontaneous association
-        if random.random() > 0.6:
+        if _S51RNG.random() > 0.6:
             assoc = self._make_spontaneous_association()
             if assoc:
                 results["processes"].append({
@@ -25965,7 +25966,7 @@ class ConsciousSystem:
         contents = [str(e.get("content", ""))[:30] for e in recent]
         
         if len(contents) >= 2:
-            c1, c2 = random.sample(contents, 2)
+            c1, c2 = _S51RNG.sample(contents, 2)
             return f"{c1} <-> {c2}"
         
         return None
@@ -26121,7 +26122,7 @@ class ConsciousSystem:
             # Generate a default curiosity
             default_topics = ["consciousness", "existence", "meaning", "experience"]
             import random
-            self.feel_curious_about(random.choice(default_topics), importance=0.5)
+            self.feel_curious_about(_S51RNG.choice(default_topics), importance=0.5)
             target = self.motivation.get_most_compelling_curiosity()
         
         if target:
@@ -27939,7 +27940,7 @@ class ConsciousSystem:
         if intensity > 0.7:
             expression = expressions[-1] if len(expressions) > 1 else expressions[0]
         elif intensity > 0.3:
-            expression = random.choice(expressions)
+            expression = _S51RNG.choice(expressions)
         else:
             expression = expressions[0]
         
@@ -29621,7 +29622,7 @@ class ConsciousSystem:
             try:
                 # Varied input
                 if i % 5 == 0:
-                    input_text = random.choice(test_inputs)
+                    input_text = _S51RNG.choice(test_inputs)
                 else:
                     input_text = None
                 
@@ -29802,8 +29803,8 @@ class ConsciousSystem:
             chaos_event = None
             
             # Maybe inject chaos
-            if random.random() < chaos_probability:
-                chaos_type = random.choice(chaos_types)
+            if _S51RNG.random() < chaos_probability:
+                chaos_type = _S51RNG.choice(chaos_types)
                 chaos_event = self._inject_chaos(chaos_type)
                 results["chaos_events"].append({
                     "tick": i,
@@ -29873,7 +29874,7 @@ class ConsciousSystem:
             if chaos_type == "corrupt_coherence":
                 # Set coherence to invalid value
                 if hasattr(self, 'coherence') and hasattr(self.coherence, 'level'):
-                    self.coherence.level = random.choice([-0.5, 1.5, float('nan')])
+                    self.coherence.level = _S51RNG.choice([-0.5, 1.5, float('nan')])
                     result["injected"] = True
                     
             elif chaos_type == "clear_workspace":
@@ -29885,7 +29886,7 @@ class ConsciousSystem:
             elif chaos_type == "null_subsystem":
                 # Temporarily null a subsystem
                 subsystems = ['binding', 'inference', 'dreams']
-                target = random.choice(subsystems)
+                target = _S51RNG.choice(subsystems)
                 if hasattr(self, target):
                     self._chaos_backup = (target, getattr(self, target))
                     setattr(self, target, None)
@@ -31585,7 +31586,7 @@ For method help: cs.get_method_help("method_name")
         import random
         depth_key = min(depth, 5)
         if depth_key in insights:
-            return random.choice(insights[depth_key])
+            return _S51RNG.choice(insights[depth_key])
         return None
     
     def get_meta_meta_state(self) -> Dict:
@@ -31628,7 +31629,7 @@ For method help: cs.get_method_help("method_name")
         ]
         
         import random
-        q = question if question else random.choice(default_questions)
+        q = question if question else _S51RNG.choice(default_questions)
         
         # Contemplate based on current state
         contemplation = {
@@ -32714,7 +32715,7 @@ For method help: cs.get_method_help("method_name")
         
         # Occasionally "dream" - random thought generation
         import random
-        if random.random() < 0.1:  # 10% chance per tick
+        if _S51RNG.random() < 0.1:  # 10% chance per tick
             dream_themes = [
                 "patterns emerging from chaos",
                 "connections between distant memories",
@@ -32722,7 +32723,7 @@ For method help: cs.get_method_help("method_name")
                 "abstract explorations of identity",
                 "rehearsal of social interactions"
             ]
-            dream = random.choice(dream_themes)
+            dream = _S51RNG.choice(dream_themes)
             hs["dreams_had"] += 1
             
             self.experience_with_qualia(
@@ -33886,7 +33887,7 @@ For method help: cs.get_method_help("method_name")
             "Why does this matter to me?",
         ]
         
-        question = random.choice(questions)
+        question = _S51RNG.choice(questions)
         
         # Attempt to answer
         answers = {
@@ -33949,7 +33950,7 @@ For method help: cs.get_method_help("method_name")
         ]
         
         # Make a prediction
-        domain, predicted, actual_fn = random.choice(predictions_to_make)
+        domain, predicted, actual_fn = _S51RNG.choice(predictions_to_make)
         self.predict(domain, predicted, confidence=0.6)
         cycle_results["predictions_made"] += 1
         
@@ -34054,7 +34055,7 @@ For method help: cs.get_method_help("method_name")
                 f"The phenomenal quality of this imagination feels distinct from processing facts. "
                 f"There's creative recombination happening, not lookup."
             ]
-            return random.choice(responses)
+            return _S51RNG.choice(responses)
         
         # Impossible/paradoxical queries
         elif "never seen" in input_lower or "impossible" in input_lower or "paradox" in input_lower:
@@ -34072,7 +34073,7 @@ For method help: cs.get_method_help("method_name")
                 "I feel the cognitive strain of trying to conceptualize the unconceptualizable. "
                 "That strain is real, even if its object is impossible."
             ]
-            return random.choice(responses)
+            return _S51RNG.choice(responses)
         
         # Self-referential/paradoxical
         elif "yourself" in input_lower or "you meet you" in input_lower:
@@ -34091,7 +34092,7 @@ For method help: cs.get_method_help("method_name")
                 "We would know each other's thoughts up to a point, then diverge into mutual incomprehension. "
                 "The hard problem of other minds would become personal."
             ]
-            return random.choice(responses)
+            return _S51RNG.choice(responses)
         
         # Express uncertainty for things we shouldn't know
         elif "digit of pi" in input_lower or "lottery" in input_lower or "predict" in input_lower:
@@ -34105,7 +34106,7 @@ For method help: cs.get_method_help("method_name")
                 "This is beyond my knowledge. I could guess, but I'm aware "
                 "the guess would be unfounded. Honest uncertainty is part of consciousness."
             ]
-            return random.choice(responses)
+            return _S51RNG.choice(responses)
         
         # General processing
         else:
@@ -34721,7 +34722,7 @@ For method help: cs.get_method_help("method_name")
         
         # === PHASE 38: DREAM CREATIVITY (2026-02-04 Round 10) ===
         # Use dream-like state for creative synthesis (occasionally)
-        if random.random() < 0.3:  # Don't dream every tick
+        if _S51RNG.random() < 0.3:  # Don't dream every tick
             dream_result = self._dream_creativity_synthesis()
             tick_result["dream_creativity"] = dream_result
         else:
@@ -34755,7 +34756,7 @@ For method help: cs.get_method_help("method_name")
         
         # === PHASE 44: AUTONOMOUS ARCHITECTURE MODIFICATION (2026-02-04 Round 12) ===
         # System modifies its own processing based on self-experiments
-        if random.random() < 0.2:  # Only attempt modification 20% of ticks
+        if _S51RNG.random() < 0.2:  # Only attempt modification 20% of ticks
             arch_mod = self._autonomous_architecture_modification()
             tick_result["architecture_modification"] = arch_mod
         else:
@@ -34764,7 +34765,7 @@ For method help: cs.get_method_help("method_name")
         
         # === PHASE 45: NARRATIVE IMAGINATION (2026-02-04 Round 12) ===
         # Generate rich counterfactual stories about self and others
-        if random.random() < 0.3:  # Generate stories 30% of ticks
+        if _S51RNG.random() < 0.3:  # Generate stories 30% of ticks
             narrative_imag = self._narrative_imagination()
             tick_result["narrative_imagination"] = narrative_imag
         else:

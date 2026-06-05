@@ -36,6 +36,7 @@ from collections import deque
 import hashlib
 
 
+_S29RNG = random.Random(729)
 class SelfAspect(Enum):
     """Aspects of the phenomenal self."""
     EXPERIENCER = "experiencer"    # The one who experiences
@@ -289,7 +290,7 @@ class PhenomenalSelf:
         self.experience_stream.append(exp)
         
         # Maintain continuity
-        if random.random() < 0.3:
+        if _S29RNG.random() < 0.3:
             self.continuity.connect_to_past(content[:30])
         
         return exp
