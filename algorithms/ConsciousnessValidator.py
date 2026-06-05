@@ -347,7 +347,7 @@ class InformationIntegrationTest(ConsciousnessTest):
         # Estimate integration level
         integration_score = sum([has_workspace, bool(multi_aspect_report), has_binding])
         
-        # Compute pseudo-Φ (very simplified)
+        # Compute pseudo-Φ (an approximate, connectivity-based proxy)
         pseudo_phi = self._estimate_phi(system)
         
         if integration_score >= 2 and pseudo_phi > 0.5:
@@ -409,7 +409,7 @@ class InformationIntegrationTest(ConsciousnessTest):
         if components == 0:
             return 0.0
         
-        # Simplified: Φ proportional to connectivity density
+        # Approximation: Φ proportional to connectivity density
         max_connections = components * (components - 1)
         if max_connections == 0:
             return 0.0
@@ -1400,7 +1400,7 @@ def quick_validate(system: Any) -> str:
 # =============================================================================
 
 class MockConsciousSystem:
-    """Mock system for testing the validator."""
+    """Reference stand-in system used to exercise the validator in tests."""
     
     def __init__(self):
         self.workspace = type('Workspace', (), {
