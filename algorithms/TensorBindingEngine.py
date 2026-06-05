@@ -29,7 +29,51 @@ from typing import Dict, Tuple, List, Optional, Set
 from dataclasses import dataclass
 from collections import defaultdict
 import itertools
+import hashlib
 from datetime import datetime
+
+# Source feature/region activity from runtime telemetry (reproducible) -------------
+try:
+    from runtime.state import activity_matrix, collective_phi, have_live_state
+except Exception:                                          # tolerate path/CI absence
+    def activity_matrix(*a, **k): return np.zeros((8, 0))
+    def collective_phi(*a, **k): return {}
+    def have_live_state(): return False
+
+_TELEMETRY = {"M": None}
+
+
+def _telemetry_activity():
+    """Cached [C, T] activity from runtime telemetry."""
+    if _TELEMETRY["M"] is None:
+        _TELEMETRY["M"] = activity_matrix()
+    return _TELEMETRY["M"]
+
+
+def _phase_from(name: str) -> int:
+    return int(hashlib.sha1(name.encode()).hexdigest(), 16)
+
+
+def feature_activity_tensor(name: str, shape: Tuple[int, ...],
+                            activity_level: float) -> np.ndarray:
+    """Build an activity tensor of the given shape from runtime telemetry.
+
+    A telemetry channel supplies the fluctuation structure when available; otherwise a
+    deterministic structured field is used. The mean is centred on ``activity_level``
+    and the result is reproducible for a given (name, shape).
+    """
+    n = int(np.prod(shape))
+    M = _telemetry_activity()
+    if M.shape[1] >= 4:
+        ch = M[_phase_from(name) % M.shape[0]]
+        reps = int(np.ceil(n / ch.size))
+        vals = np.tile(ch, reps)[:n]
+        vals = 0.1 * (vals - vals.mean()) / (vals.std() + 1e-9)
+    else:
+        idx = np.arange(n)
+        phase = (_phase_from(name) % 1000) / 1000.0 * 2 * np.pi
+        vals = 0.1 * np.sin(0.3 * idx + phase)
+    return (activity_level + vals).reshape(shape)
 
 
 @dataclass
@@ -80,7 +124,8 @@ class TensorNetwork:
         self.n_tensors = 0
 
     def add_tensor(self, name: str, shape: Tuple[int, ...],
-                   activity_level: float = 0.5) -> int:
+                   activity_level: float = 0.5,
+                   data: Optional[np.ndarray] = None) -> int:
         """
         Add a tensor representing a feature or brain region.
 
@@ -88,14 +133,19 @@ class TensorNetwork:
             name: Name of feature (e.g., "color", "motion")
             shape: Shape of activity tensor
             activity_level: Mean activation level (0-1)
+            data: Optional activity array (any shape with prod == prod(shape)).
+                  If omitted, the tensor is built from runtime telemetry.
 
         Returns:
             Tensor index for use in contractions
         """
         tensor_idx = self.n_tensors
 
-        # Create tensor with activity
-        tensor_data = np.random.normal(activity_level, 0.1, shape)
+        # Activity comes from caller-supplied data, else from runtime telemetry
+        if data is not None:
+            tensor_data = np.asarray(data, dtype=float).reshape(shape)
+        else:
+            tensor_data = feature_activity_tensor(name, shape, activity_level)
         self.tensors[tensor_idx] = tensor_data
 
         self.tensor_names[tensor_idx] = name
@@ -304,11 +354,18 @@ class ConsciousMomentFormation:
         # Features: color, motion, location, depth, orientation
         feature_names = ["color", "motion", "location", "depth", "orientation"]
 
+        # Per-feature baseline activity derived from runtime telemetry channels,
+        # mapped into a plausible [0.3, 0.6] cortical range.
+        M = _telemetry_activity()
         for i in range(min(self.n_features, len(feature_names))):
             name = feature_names[i]
             # Each feature has activity across multiple brain regions
             shape = (self.n_brain_regions, 10)  # 10 neurons per region per feature
-            activity = 0.3 + 0.3 * np.random.rand()
+            if M.shape[1] >= 4:
+                chan = M[_phase_from(name) % M.shape[0]]
+                activity = 0.3 + 0.3 * float(1 / (1 + np.exp(-chan.mean())))  # sigmoid of channel mean
+            else:
+                activity = 0.3 + 0.3 * ((_phase_from(name) % 1000) / 1000.0)   # deterministic
             self.network.add_tensor(name, shape, activity)
 
     def simulate_conscious_moment(self) -> BindingAnalysis:
@@ -321,12 +378,14 @@ class ConsciousMomentFormation:
         # Get optimal binding sequence
         optimal = self.network.find_optimal_contraction()
 
-        # Generate alternatives (suboptimal contraction orders)
+        # Generate alternatives (suboptimal contraction orders). Deterministic,
+        # reproducible permutations (rotations) instead of random shuffles — same
+        # purpose (compare against non-optimal orders), reproducibly.
         alternatives = []
-        for _ in range(3):
-            # Random contraction order
-            tensors = list(range(self.network.n_tensors))
-            np.random.shuffle(tensors)
+        n_t = self.network.n_tensors
+        base = list(range(n_t))
+        for r in range(1, 4):
+            tensors = base[r:] + base[:r] if n_t else base   # distinct rotations
 
             alt_cost = 0
             alt_steps = []
