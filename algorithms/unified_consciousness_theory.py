@@ -52,7 +52,7 @@ class UnifiedConsciousnessTheory:
         self.temporal_resolution = 50
 
         # Coupling matrix - learns optimal interactions between subsystems
-        self.coupling_matrix = xp.random.normal(0.0, 0.1, (num_subsystems, num_subsystems))
+        self.coupling_matrix = xp.random.default_rng(31).normal(0.0, 0.1, (num_subsystems, num_subsystems))
         # Make coupling matrix symmetric
         self.coupling_matrix = (self.coupling_matrix + self.coupling_matrix.T) / 2
 
@@ -74,8 +74,8 @@ class UnifiedConsciousnessTheory:
     def _initialize_unified_field(self) -> Any:
         """Initialize the unified consciousness field."""
         # Create a complex field representing unified consciousness dynamics
-        field = xp.random.normal(0.0, 0.1, (self.field_dimension, self.field_dimension))
-        field = field + 1j * xp.random.normal(0.0, 0.1, (self.field_dimension, self.field_dimension))
+        field = xp.random.default_rng(33).normal(0.0, 0.1, (self.field_dimension, self.field_dimension))
+        field = field + 1j * xp.random.default_rng(35).normal(0.0, 0.1, (self.field_dimension, self.field_dimension))
 
         # Normalize to ensure unitarity-like properties
         field = field / xp.linalg.norm(field)

@@ -37,6 +37,7 @@ Date: 2026-06-01
 """
 
 import numpy as np
+_DR_RNG = np.random.default_rng(29)
 import networkx as nx
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
@@ -138,7 +139,7 @@ class BrainNetworkDamageModel:
         damaged_network = self.original_network.copy()
 
         # Remove node(s) representing stroke damage
-        if np.random.rand() < damage_extent:
+        if _DR_RNG.random() < damage_extent:
             damaged_network.remove_node(damaged_region)
 
         original_phi = self.compute_approximate_phi(self.original_network)
@@ -352,7 +353,7 @@ class BrainNetworkDamageModel:
         critical_scores = []
 
         # Sample nodes for efficiency
-        sample_nodes = np.random.choice(self.n_nodes, min(20, self.n_nodes), replace=False)
+        sample_nodes = _DR_RNG.choice(self.n_nodes, min(20, self.n_nodes), replace=False)
 
         for node in sample_nodes:
             test_network = self.original_network.copy()

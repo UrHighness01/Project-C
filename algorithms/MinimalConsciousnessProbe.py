@@ -158,7 +158,7 @@ class NetworkPerturbationAnalyzer:
         redundant = []
 
         edges = list(self.original_network.edges())
-        np.random.shuffle(edges)
+        _MCP_RNG.shuffle(edges)
 
         # Sample subset of edges for efficiency
         sample_size = min(20, len(edges))
@@ -193,7 +193,7 @@ class NetworkPerturbationAnalyzer:
 
         edges = list(network.edges())
         np.random.seed(42)
-        np.random.shuffle(edges)
+        _MCP_RNG.shuffle(edges)
 
         # Keep only small subset for efficiency
         edges = edges[:min(5, len(edges))]

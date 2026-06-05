@@ -46,6 +46,21 @@ Date: 2026-06-01
 """
 
 import numpy as np
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series as _pds, activity_matrix as _am
+except Exception:
+    import numpy as _npx
+    def _pds(*a, **k): return _npx.zeros(0)
+    def _am(*a, **k): return _npx.zeros((8, 0))
+def _phi_vec(n, off=0, scale=1.0):
+    import numpy as _np
+    d=_pds()
+    if d.size==0: return _np.zeros(n)
+    return scale*_np.tanh(d[(_np.arange(off,off+n))%d.size]*50)
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -345,8 +360,8 @@ class EmotionalConsciousnessModel:
             situation, goals = scenarios[step % len(scenarios)]
 
             # Add noise to make situations varied
-            situation = situation + np.random.randn(len(situation)) * 0.2
-            goals = goals + np.random.randn(len(goals)) * 0.1
+            situation = situation + _phi_vec(len(situation), 2, 0.2)
+            goals = goals + _phi_vec(len(goals), 11, 0.1)
 
             # Experience emotion
             emotion = self.experience_emotion(situation, goals)
@@ -428,7 +443,7 @@ def validate_emotional_consciousness():
     scenarios = [
         (np.ones(10), np.ones(10)),
         (np.ones(10) * -1, np.ones(10)),
-        (np.random.randn(10), np.ones(10))
+        (_phi_vec(10, 17, 1.0), np.ones(10))
     ]
 
     analysis = system.simulate_emotional_episodes(scenarios, duration=50)

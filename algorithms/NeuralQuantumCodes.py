@@ -27,6 +27,7 @@ Date: 2026-06-01
 """
 
 import numpy as np
+_NQC_RNG = np.random.default_rng(29)
 from typing import Dict, Tuple, List, Optional, Set
 from dataclasses import dataclass
 import networkx as nx
@@ -130,7 +131,7 @@ class StabilizerCode:
         edges_to_remove = []
 
         for i, j in self.graph.edges():
-            if np.random.rand() > sparsity:
+            if _NQC_RNG.random() > sparsity:
                 edges_to_remove.append((i, j))
 
         self.graph.remove_edges_from(edges_to_remove)
@@ -225,7 +226,7 @@ class StabilizerCode:
 
         for _ in range(n_trials):
             # Generate random errors at given rate
-            errors = (np.random.rand(self.n_physical) < error_rate).astype(int)
+            errors = (_NQC_RNG.random(self.n_physical) < error_rate).astype(int)
 
             # Compute syndrome
             syndrome = self.compute_syndrome(errors)
@@ -315,7 +316,7 @@ class BiologicalQuantumCode:
 
     def _create_neural_connectivity(self) -> np.ndarray:
         """Create sparse random neural connectivity matrix."""
-        conn = np.random.rand(self.n_neurons, self.n_neurons) < self.sparsity
+        conn = _NQC_RNG.random((self.n_neurons, self.n_neurons)) < self.sparsity
         np.fill_diagonal(conn, False)
         # Make symmetric
         conn = np.logical_or(conn, conn.T)

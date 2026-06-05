@@ -50,6 +50,21 @@ Date: 2026-06-01
 """
 
 import numpy as np
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series as _pds, activity_matrix as _am
+except Exception:
+    import numpy as _npx
+    def _pds(*a, **k): return _npx.zeros(0)
+    def _am(*a, **k): return _npx.zeros((8, 0))
+def _phi_vec(n, off=0, scale=1.0):
+    import numpy as _np
+    d=_pds()
+    if d.size==0: return _np.zeros(n)
+    return scale*_np.tanh(d[(_np.arange(off,off+n))%d.size]*50)
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -207,7 +222,7 @@ class ConsciousnessPersistenceModel:
             noise_magnitude = self.noise_scale
 
         # Gaussian noise
-        noise = np.random.normal(0, noise_magnitude, self.dim)
+        noise = _phi_vec(self.dim, 1, noise_magnitude)
         self.state += noise
 
     def apply_perturbation(self, magnitude: float) -> bool:
@@ -219,7 +234,7 @@ class ConsciousnessPersistenceModel:
         consciousness_before = self.consciousness_from_state()
 
         # Large impulse pushing state away from attractor
-        direction = np.random.randn(self.dim)
+        direction = _phi_vec(self.dim, 5, 1.0)
         direction = direction / np.linalg.norm(direction)
         self.state += magnitude * direction
 
@@ -264,7 +279,7 @@ class ConsciousnessPersistenceModel:
         if noise_magnitude is None:
             noise_magnitude = self.noise_scale
 
-        noise = np.random.normal(0, noise_magnitude * np.sqrt(dt), self.dim)
+        noise = _phi_vec(self.dim, 9, noise_magnitude * np.sqrt(dt))
 
         # Update state
         self.state = self.state + dx + noise
