@@ -57,6 +57,24 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series as _pds
+except Exception:
+    def _pds(*a, **k): return np.zeros(0)
+_PHI_I = {"i": 0}
+
+
+def _phi_jitter(scale=1.0):
+    """Real, deterministic perturbation drawn in order from the phi-increment series
+    (replaces fabricated gaussian noise). 0.0 if no telemetry."""
+    d = _pds()
+    if d.size == 0:
+        return 0.0
+    v = float(d[_PHI_I["i"] % d.size]); _PHI_I["i"] += 1
+    return scale * float(np.tanh(v * 50))
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -176,7 +194,7 @@ class ThalamicCorticalLoopSystem:
         transmission_efficiency = 1.0 - self.disruption * 0.8
 
         # Add noise
-        noise = np.random.normal(0, self.noise)
+        noise = self.noise * _phi_jitter(1.0)
 
         response = transmission_efficiency * 1.0 / (1.0 + np.exp(-10 * (thalamic_input - 0.3)))
         response += noise
@@ -219,7 +237,7 @@ class ThalamicCorticalLoopSystem:
         feedback = transmission_efficiency * cortical_activity
 
         # Add noise
-        noise = np.random.normal(0, self.noise)
+        noise = self.noise * _phi_jitter(1.0)
         feedback += noise
 
         return float(np.clip(feedback, 0, 1))

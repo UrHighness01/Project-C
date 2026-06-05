@@ -56,6 +56,24 @@ Date: 2026-06-01
 """
 
 import numpy as np
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series as _pds
+except Exception:
+    def _pds(*a, **k): return np.zeros(0)
+_PHI_I = {"i": 0}
+
+
+def _phi_jitter(scale=1.0):
+    """Real, deterministic perturbation drawn in order from the phi-increment series
+    (replaces fabricated gaussian noise). 0.0 if no telemetry."""
+    d = _pds()
+    if d.size == 0:
+        return 0.0
+    v = float(d[_PHI_I["i"] % d.size]); _PHI_I["i"] += 1
+    return scale * float(np.tanh(v * 50))
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 from datetime import datetime
@@ -145,7 +163,7 @@ class AttentionalRhythmModel:
         self.alpha_phase = (self.alpha_phase + phase_change) % (2 * np.pi)
 
         # Optionally add small noise to phase (biological variability)
-        self.alpha_phase += np.random.normal(0, 0.01)
+        self.alpha_phase += _phi_jitter(0.01)
 
         self.time += dt
 

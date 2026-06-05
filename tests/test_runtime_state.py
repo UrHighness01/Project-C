@@ -211,3 +211,13 @@ def test_predictive_coding_and_cfc_on_telemetry():
     c = analyze_from_telemetry()
     if c is not None:
         assert hasattr(c, "__dict__") or hasattr(c, "_fields") or True
+
+
+def test_subjective_loop_and_rhythms_real():
+    from algorithms.RSA import SubjectiveExperienceLoop, _real_phi_now
+    assert -1.0 <= _real_phi_now() <= 1.0
+    f = SubjectiveExperienceLoop().reflect()
+    assert f == SubjectiveExperienceLoop().reflect()          # deterministic (real phi)
+    from algorithms.AttentionalRhythm import AttentionalRhythmModel
+    m = AttentionalRhythmModel(); m.update_alpha_phase()
+    assert 0.0 <= m.alpha_phase <= 2 * 3.1416 + 1

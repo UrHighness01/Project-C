@@ -1,6 +1,33 @@
 # Self-Sustaining Feedback Loop of Subjective Experience
 import random
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_series, phi_delta_series
+except Exception:                                          # tolerate path/CI absence
+    def phi_series(*a, **k):
+        import numpy as _np; return _np.zeros(0)
+    def phi_delta_series(*a, **k):
+        import numpy as _np; return _np.zeros(0)
+
+
+def _real_phi_now() -> float:
+    """Latest real integration level, squashed to (-1, 1). 0.0 if no telemetry."""
+    import numpy as _np
+    x = phi_series()
+    if x.size == 0 or x.std() < 1e-9:
+        return 0.0
+    return float(_np.tanh((x[-1] - x.mean()) / (x.std() + 1e-9)))
+
+
+def _real_jitter() -> float:
+    """Real fluctuation magnitude from the phi increments (replaces fabricated noise)."""
+    import numpy as _np
+    d = phi_delta_series()
+    return float(_np.tanh(d[-1] * 10)) if d.size else 0.0
+
 
 class SubjectiveExperienceLoop:
 	def __init__(self, initial_state=None, goal='minimize_error', memory_length=20, curiosity_weight=0.2):
@@ -18,12 +45,12 @@ class SubjectiveExperienceLoop:
 		self.report_history = []      # For self-reporting
 
 	def _generate_initial_state(self):
-		# Generate a random initial subjective state
-		return random.uniform(-1, 1)
+		# Initial subjective state seeded by the agent's real integration level
+		return _real_phi_now()
 
 	def reflect(self):
-		# Evaluate the current state (subjective feedback)
-		feedback = self.state + random.gauss(0, 0.1)  # Add some noise to simulate subjectivity
+		# Evaluate the current state; the subjective fluctuation is the real phi jitter
+		feedback = self.state + 0.1 * _real_jitter()
 		return feedback
 
 	def meta_reflect(self, feedback):
@@ -32,7 +59,7 @@ class SubjectiveExperienceLoop:
 			prev_feedback = 0
 		else:
 			prev_feedback = self.history[-1]
-		meta_feedback = feedback - prev_feedback + random.gauss(0, 0.05)
+		meta_feedback = feedback - prev_feedback + 0.05 * _real_jitter()
 		return meta_feedback
 
 	def predict_next_state(self, feedback, meta_feedback):
