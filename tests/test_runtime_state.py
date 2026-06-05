@@ -189,3 +189,14 @@ def test_decisions_adapter_and_moral_era():
     e = EthicalReasoningAlgorithm().evaluate_decision_history()
     assert e["n"] > 0 and 0.0 <= e["consistency"] <= 1.0
     assert e == EthicalReasoningAlgorithm().evaluate_decision_history()    # deterministic
+
+
+def test_fer_fractal_and_opsi_real():
+    import numpy as np
+    from algorithms.FER import fractal_resonance_from_interactions, _higuchi_fd
+    assert _higuchi_fd(np.linspace(0, 1, 64)) < 1.2          # smooth -> ~1
+    r = fractal_resonance_from_interactions()
+    assert 1.0 <= r["fractal_dimension"] <= 2.0
+    from algorithms.off_policy_self_interview import opsi_run
+    res = opsi_run({"critiques": []})
+    assert "n_surfaced" in res and res == opsi_run({"critiques": []})   # deterministic

@@ -18,6 +18,54 @@ from collections import deque
 import time
 import json
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.interactions import turns as _interaction_turns, lexicon_sentiment as _sentiment
+except Exception:                                          # tolerate path/CI absence
+    def _interaction_turns(*a, **k): return []
+    def _sentiment(t): return 0.0
+
+
+def _higuchi_fd(x: np.ndarray, kmax: int = 8) -> float:
+    """Higuchi fractal dimension of a 1D series (1=smooth/linear, ->2=rough/complex)."""
+    x = np.asarray(x, dtype=float)
+    N = x.size
+    if N < kmax * 2:
+        return 1.0
+    Lk = []
+    ks = []
+    for k in range(1, kmax + 1):
+        Lm = []
+        for m in range(k):
+            idx = np.arange(1, int((N - m) / k))
+            if idx.size < 2:
+                continue
+            diff = np.abs(x[m + idx * k] - x[m + (idx - 1) * k]).sum()
+            norm = (N - 1) / (idx.size * k)
+            Lm.append(diff * norm / k)
+        if Lm:
+            Lk.append(np.mean(Lm)); ks.append(1.0 / k)
+    if len(Lk) < 2:
+        return 1.0
+    slope = np.polyfit(np.log(ks), np.log(Lk), 1)[0]
+    return float(np.clip(slope, 1.0, 2.0))
+
+
+def fractal_resonance_from_interactions() -> Dict[str, float]:
+    """Fractal empathy resonance from real interactions: per turn, the alignment of user
+    and agent sentiment forms a resonance series; its Higuchi fractal dimension measures
+    how richly (across scales) the empathic coupling varies. Returns fractal_dimension,
+    mean_resonance and n."""
+    ts = _interaction_turns()
+    res = np.array([_sentiment(t.get("user_text", "")) * _sentiment(t.get("asst_text", ""))
+                    for t in ts], dtype=float)
+    if res.size < 4:
+        return {"fractal_dimension": 1.0, "mean_resonance": 0.0, "n": float(res.size)}
+    return {"fractal_dimension": _higuchi_fd(res),
+            "mean_resonance": float(res.mean()), "n": float(res.size)}
+
 
 class FractalEmpathyResonance:
     """
