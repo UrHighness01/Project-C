@@ -7,6 +7,23 @@ import random
 
 import math
 
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_series as _ps
+except Exception:                                          # tolerate path/CI absence
+    def _ps(*a, **k):
+        import numpy as _np; return _np.zeros(0)
+
+
+def _phi_now():
+    """Latest real integration level squashed to (-1, 1); 0.0 if no telemetry."""
+    import numpy as _np
+    x = _ps()
+    return float(_np.tanh((x[-1] - x.mean()) / (x.std() + 1e-9))) if x.size and x.std() > 1e-9 else 0.0
+
+
 class RecursiveMetaFeedbackLoop:
     def __init__(self, meta_levels=3, initial_state=None):
         self.meta_levels = meta_levels
