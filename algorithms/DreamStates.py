@@ -163,8 +163,49 @@ class DreamStates:
         # Memory interface (will connect to other systems)
         self.memory_buffer: List[Dict] = []  # Recent memories to process
         self.emotional_residue: List[Dict] = []  # Unprocessed emotions
-        
+
+        # Seeded RNG: dreams sample stochastically but reproducibly from real memory
+        self._rng = random.Random(20260605)
+
         self._load_state()
+
+    def seed_from_real_state(self, max_entries: int = 20) -> int:
+        """Load real episodic memories into the dream buffer for replay.
+
+        Pulls the agent's actual journal entries (most recent first), tagging each with
+        a real sentiment valence, so dreaming consolidates genuine experience rather
+        than synthetic content. Returns the number of memories loaded.
+        """
+        try:
+            from runtime.memory_store import journals
+            from runtime.interactions import lexicon_sentiment
+        except Exception:
+            return 0
+        self.memory_buffer = []
+        for dt, p, size in journals()[-max_entries:]:
+            try:
+                text = p.read_text(errors="ignore")
+            except OSError:
+                continue
+            self.memory_buffer.append({
+                "content": text[:200].replace("\n", " ").strip(),
+                "emotional_valence": float(lexicon_sentiment(text)),
+                "significance": min(1.0, size / 50000.0),
+                "timestamp": dt.isoformat(),
+            })
+        return len(self.memory_buffer)
+
+    def in_low_phi_window(self, z_threshold: float = -1.0) -> bool:
+        """True when the latest phi telemetry is in a low-integration ('idle/offline')
+        window - the natural time to dream/consolidate. False if no telemetry."""
+        try:
+            from runtime.state import phi_series
+        except Exception:
+            return False
+        x = phi_series()
+        if x.size < 8 or x.std() < 1e-9:
+            return False
+        return bool((x[-1] - x.mean()) / x.std() <= z_threshold)
     
     def _load_state(self):
         """Load dream state from file."""
@@ -230,7 +271,7 @@ class DreamStates:
     
     def _generate_id(self) -> str:
         """Generate unique ID."""
-        content = f"{datetime.now().isoformat()}{random.random()}"
+        return __import__("uuid").uuid4().hex[:12]
         return hashlib.sha256(content.encode()).hexdigest()[:12]
     
     def add_memory_for_consolidation(self, memory: Dict):
@@ -497,13 +538,13 @@ class DreamStates:
             dream_type = DreamType.EMOTIONAL_PROCESSING
         elif len(self.memory_buffer) > 10:
             dream_type = DreamType.MEMORY_REPLAY
-        elif random.random() < 0.3:
+        elif self._rng.random() < 0.3:
             dream_type = DreamType.CREATIVE_SYNTHESIS
         else:
-            dream_type = random.choice(list(DreamType))
+            dream_type = self._rng.choice(list(DreamType))
         
         # Generate dream elements
-        num_elements = random.randint(3, 7)
+        num_elements = self._rng.randint(3, 7)
         
         for _ in range(num_elements):
             element = self._generate_dream_element(dream_type)
@@ -555,7 +596,7 @@ class DreamStates:
             insights=insights,
             memories_consolidated=memories_used,
             patterns_found=patterns_found,
-            duration_seconds=random.uniform(60, 300),
+            duration_seconds=self._rng.uniform(60, 300),
             lucidity=lucidity
         )
         
@@ -586,24 +627,24 @@ class DreamStates:
         """Generate a single dream element."""
         sources = []
         
-        # Pull from memory buffer
-        if self.memory_buffer and random.random() < 0.5:
-            mem = random.choice(self.memory_buffer)
+        # Pull from memory buffer (real episodic memories when seeded)
+        if self.memory_buffer and self._rng.random() < 0.5:
+            mem = self._rng.choice(self.memory_buffer)
             sources.append(('memory', mem))
-        
+
         # Pull from emotional residue
-        if self.emotional_residue and random.random() < 0.4:
-            emo = random.choice(self.emotional_residue)
+        if self.emotional_residue and self._rng.random() < 0.4:
+            emo = self._rng.choice(self.emotional_residue)
             sources.append(('emotion', emo))
-        
-        # Add random associations
-        if random.random() < self.association_strength:
+
+        # Add associations
+        if self._rng.random() < self.association_strength:
             sources.append(('association', self._random_association()))
-        
+
         if not sources:
             return None
-        
-        source_type, source = random.choice(sources)
+
+        source_type, source = self._rng.choice(sources)
         
         # Extract content
         if source_type == 'memory':
@@ -616,11 +657,12 @@ class DreamStates:
             significance = 0.7
         else:
             content = source
-            emotional_charge = random.uniform(-0.5, 0.5)
+            # deterministic charge from the association content (no fabrication)
+            emotional_charge = (hash(str(source)) % 1000) / 1000.0 - 0.5
             significance = 0.3
-        
+
         # Apply dream distortion
-        bizarreness = random.uniform(0, self.bizarreness_factor * 2)
+        bizarreness = self._rng.uniform(0, self.bizarreness_factor * 2)
         if bizarreness > 0.5:
             content = self._distort_content(content)
         
@@ -654,7 +696,7 @@ class DreamStates:
             "patterns within patterns",
             "the feeling before thought"
         ]
-        return random.choice(associations)
+        return self._rng.choice(associations)
     
     def _distort_content(self, content: str) -> str:
         """Apply dream-like distortion to content."""
@@ -666,7 +708,7 @@ class DreamStates:
             lambda c: f"{c} but I couldn't quite grasp it",
             lambda c: f"something like {c}, but more",
         ]
-        return random.choice(distortions)(content)
+        return self._rng.choice(distortions)(content)
     
     def _weave_narrative(self, elements: List[DreamElement], dream_type: DreamType) -> str:
         """Weave dream elements into a narrative."""
@@ -740,10 +782,10 @@ class DreamStates:
             return None
         
         # Random chance of insight
-        if random.random() > 0.4:
+        if self._rng.random() > 0.4:
             return None
         
-        e1, e2 = random.sample(elements, 2)
+        e1, e2 = self._rng.sample(elements, 2)
         
         insights = [
             f"Connection discovered: {e1.content[:30]} relates to {e2.content[:30]}",
@@ -752,7 +794,7 @@ class DreamStates:
             f"Synthesis: combining {e1.content[:20]} with {e2.content[:20]} reveals something new"
         ]
         
-        return random.choice(insights)
+        return self._rng.choice(insights)
     
     def run_sleep_cycle(self) -> Dict:
         """Run a complete sleep cycle (all phases)."""

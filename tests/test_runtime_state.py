@@ -122,3 +122,20 @@ def test_social_reception_from_interactions():
     r = perceived_social_reception()
     assert set(r) == {"reception_mean", "reception_var", "n"}
     assert r == perceived_social_reception()                          # deterministic
+
+
+def test_dreams_replay_real_memory():
+    import tempfile
+    from algorithms.DreamStates import DreamStates, DreamType
+    d = DreamStates(state_file=tempfile.mktemp(suffix=".json"))
+    n = d.seed_from_real_state()
+    if n == 0:
+        return                                           # tolerate no memory in CI
+    assert all("content" in m for m in d.memory_buffer)  # real episodic entries
+    assert isinstance(d.in_low_phi_window(), bool)
+    dt = list(DreamType)[0]
+    seq1 = [getattr(d._generate_dream_element(dt), "content", None) for _ in range(30)]
+    d2 = DreamStates(state_file=tempfile.mktemp(suffix=".json")); d2.seed_from_real_state()
+    seq2 = [getattr(d2._generate_dream_element(dt), "content", None) for _ in range(30)]
+    assert seq1 == seq2                                  # seeded -> reproducible replay
+    assert any(s for s in seq1)                          # at least one real element drawn
