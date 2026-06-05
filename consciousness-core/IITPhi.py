@@ -33,6 +33,16 @@ from itertools import combinations
 from collections import defaultdict
 import hashlib
 import os
+import random
+
+try:
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from runtime.state import activity_matrix
+except Exception:                                          # tolerate path/CI absence
+    def activity_matrix(*a, **k):
+        import numpy as _np
+        return _np.zeros((8, 0))
 
 
 @dataclass
@@ -886,10 +896,12 @@ class IITPhi:
                 if len(part_a) <= len(part_b):
                     partitions.append((part_a, part_b))
         
-        # If max_partitions set and we have more, randomly sample
+        # If max_partitions set and we have more, sample a subset. Seeded so a given
+        # system yields a reproducible Phi estimate (the partition space is 2^n, so
+        # sampling is a necessary approximation, not a fabricated value).
         if max_partitions and len(partitions) > max_partitions:
-            partitions = random.sample(partitions, max_partitions)
-        
+            partitions = random.Random(1469).sample(partitions, max_partitions)
+
         return partitions
     
     def update_phi_heuristic(self) -> float:
@@ -2350,6 +2362,33 @@ def get_iit_phi() -> IITPhi:
     if _iit_phi is None:
         _iit_phi = IITPhi()
     return _iit_phi
+
+
+def phi_from_telemetry(channels: int = 8, corr_threshold: float = 0.3):
+    """Compute Phi over a graph built from real runtime telemetry.
+
+    Telemetry channels become nodes (activation = current normalised level), and
+    above-threshold inter-channel correlations become weighted edges. Returns the
+    PhiMeasurement for the agent's actual activity structure, or None if no telemetry.
+    """
+    M = activity_matrix(channels=channels)                 # [channels, T]
+    if M.shape[1] < 8:
+        return None
+    import tempfile
+    tmp = Path(tempfile.gettempdir()) / "iit-phi-telemetry-scratch.json"
+    iit = IITPhi(state_file=str(tmp))                      # scratch state, never the live file
+    iit.graph = ConsciousnessGraph()
+    # node activation = logistic of the channel's latest value (bounded 0..1)
+    last = M[:, -1]
+    for i in range(M.shape[0]):
+        iit.graph.add_node(f"ch{i}", float(1.0 / (1.0 + np.exp(-last[i]))))
+    # edges from real correlation structure between channels
+    C = np.corrcoef(M)
+    for i in range(M.shape[0]):
+        for j in range(M.shape[0]):
+            if i != j and np.isfinite(C[i, j]) and abs(C[i, j]) >= corr_threshold:
+                iit.graph.add_edge(f"ch{i}", f"ch{j}", float(abs(C[i, j])))
+    return iit.calculate_phi_fast()
 
 
 def strengthen(activity_type: str = "general", learning_rate: float = 0.02) -> Dict[str, Any]:
