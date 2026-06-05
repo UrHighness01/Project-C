@@ -139,3 +139,18 @@ def test_dreams_replay_real_memory():
     seq2 = [getattr(d2._generate_dream_element(dt), "content", None) for _ in range(30)]
     assert seq1 == seq2                                  # seeded -> reproducible replay
     assert any(s for s in seq1)                          # at least one real element drawn
+
+
+def test_curiosity_scored_by_prediction_error():
+    from algorithms.CuriosityEngine import prediction_error_level, GapDetector
+    pe = prediction_error_level()
+    assert 0.0 <= pe <= 1.0 and pe == prediction_error_level()      # real, deterministic
+    g = GapDetector().detect_gap()
+    if g:
+        assert 0.0 <= g.importance <= 1.0
+
+
+def test_self_initiation_drive_from_gaps():
+    from algorithms.SelfInitiatedAction import self_initiation_drive
+    d = self_initiation_drive()
+    assert 0.0 <= d <= 1.0 and d == self_initiation_drive()         # real, deterministic

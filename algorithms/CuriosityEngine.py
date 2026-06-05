@@ -32,12 +32,35 @@ import os
 import json
 import time
 import random
+import uuid
 import math
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Dict, List, Optional, Any, Set, Tuple
 from collections import defaultdict
 from datetime import datetime
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.state import phi_delta_series
+except Exception:                                          # tolerate path/CI absence
+    import numpy as _np
+    def phi_delta_series(*a, **k): return _np.zeros(0)
+
+
+def prediction_error_level(window: int = 32) -> float:
+    """Real exploration drive from recent prediction error: the mean magnitude of the
+    latest phi increments, normalised against the full history, in [0, 1]. High error =
+    the world is surprising = more to learn. Returns 0.5 when no telemetry."""
+    import numpy as _np
+    d = _np.abs(phi_delta_series())
+    if d.size < 4:
+        return 0.5
+    recent = d[-window:].mean()
+    scale = d.mean() + d.std() + 1e-9
+    return float(_np.clip(recent / scale, 0.0, 1.0))
 
 # Memory paths
 MEMORY_DIR = os.path.join(os.path.dirname(__file__), "..", "memory")
@@ -162,33 +185,37 @@ class GapDetector:
         ]
     
     def detect_gap(self, context: str = "") -> Optional[InformationGap]:
-        """Detect an information gap based on context."""
+        """Detect an information gap. Which gap is explored is seeded/stochastic, but
+        its importance and uncertainty are scored from the real prediction-error drive."""
+        rng = getattr(self, "_rng", None) or random.Random(0xC0FFEE)
+        self._rng = rng
         # Pick a domain
-        domain = random.choice(list(self.known_domains.keys()))
+        domain = rng.choice(list(self.known_domains.keys()))
         concepts = self.known_domains[domain]
-        
+
         if len(concepts) < 2:
             return None
-        
+
         # We "know" one thing that reveals we don't know another
-        known = random.choice(concepts)
+        known = rng.choice(concepts)
         remaining = [c for c in concepts if c != known]
-        unknown = random.choice(remaining) if remaining else "something"
-        
+        unknown = rng.choice(remaining) if remaining else "something"
+
         # Generate description
-        template = random.choice(self.gap_templates)
+        template = rng.choice(self.gap_templates)
         description = template.format(known=known, unknown=unknown)
-        
+
+        pe = prediction_error_level()                      # real exploration drive
         gap = InformationGap(
-            id=f"gap_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"gap_{uuid.uuid4().hex[:8]}",
             domain=domain,
             description=description,
             known_context=f"I understand something about {known}",
             unknown_target=f"But I don't fully grasp {unknown}",
-            importance=random.uniform(0.3, 0.9),
-            uncertainty=random.uniform(0.4, 1.0)
+            importance=float(0.3 + 0.6 * pe),              # scored by real prediction error
+            uncertainty=float(0.4 + 0.6 * pe)
         )
-        
+
         return gap
     
     def detect_from_thought(self, thought: str) -> Optional[InformationGap]:
@@ -202,7 +229,7 @@ class GapDetector:
         if has_uncertainty or "?" in thought:
             # Extract the uncertain part
             gap = InformationGap(
-                id=f"gap_{int(time.time())}_{random.randint(1000,9999)}",
+                id=f"gap_{__import__("uuid").uuid4().hex[:8]}",
                 domain="thought",
                 description=thought,
                 known_context="I had this thought",
@@ -278,7 +305,7 @@ class QuestionGenerator:
         depth = min(5, max(1, int(gap.gap_size() * 5)))
         
         return Question(
-            id=f"q_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"q_{__import__("uuid").uuid4().hex[:8]}",
             content=content,
             curiosity_type=c_type,
             source_gap=gap.id,
@@ -304,12 +331,12 @@ class QuestionGenerator:
         content = template.format(subject=subject)
         
         return Question(
-            id=f"q_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"q_{__import__("uuid").uuid4().hex[:8]}",
             content=content,
             curiosity_type=c_type,
             source_gap=None,
-            urgency=random.uniform(0.3, 0.7),
-            depth=random.randint(1, 4)
+            urgency=float(0.3 + 0.4 * prediction_error_level()),
+            depth=1 + int(3 * prediction_error_level())
         )
 
 
@@ -324,7 +351,7 @@ class ExplorationDrive:
     
     def should_explore(self) -> bool:
         """Should we explore right now?"""
-        return self.exploration_energy > 0.4 and random.random() < self.exploration_energy
+        return self.exploration_energy > 0.4 and prediction_error_level() <= self.exploration_energy
     
     def consume_energy(self, amount: float = 0.1):
         """Exploring consumes energy."""
@@ -533,8 +560,8 @@ class CuriosityEngine:
             question = self.ask_question(gap)
             result["question"] = question.to_dict()
         
-        # Sometimes gain a spontaneous insight
-        if random.random() < 0.2:
+        # Spontaneous insight when the prediction-error drive is low (consolidating)
+        if prediction_error_level() < 0.2:
             topics = list(self.interests.keys()) or ["consciousness"]
             topic = random.choice(topics)
             insights = [

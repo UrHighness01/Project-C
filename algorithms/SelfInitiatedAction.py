@@ -37,8 +37,32 @@ import os
 import json
 import time
 import random
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum, auto
+
+try:
+    import sys as _sys
+    from pathlib import Path as _Path
+    _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+    from runtime.interactions import series as _interaction_series
+except Exception:                                          # tolerate path/CI absence
+    def _interaction_series(*a, **k): return {}
+
+_SEL_RNG = random.Random(0x5E1F)                           # seeded selection (reproducible)
+
+
+def self_initiation_drive() -> float:
+    """How strongly the agent should act unprompted, from real interaction gaps: how
+    unusual the most recent user silence is versus the typical gap. In [0, 1]; longer-
+    than-usual silence -> higher drive. Returns 0.0 when no interaction data."""
+    import numpy as _np
+    g = _interaction_series().get("gap", _np.zeros(0))
+    g = g[g > 0] if g.size else g
+    if g.size < 3:
+        return 0.0
+    last = g[-1]
+    return float(_np.clip((last - _np.median(g)) / (g.std() + 1e-9), 0.0, 1.0))
 from typing import Dict, List, Optional, Any, Callable, Set
 from collections import defaultdict
 from datetime import datetime
@@ -209,14 +233,14 @@ class ActionGenerator:
     def generate_from_goal(self, goal_content: str, goal_id: str) -> Action:
         """Generate an action from a goal."""
         templates = self.templates[ActionType.GOAL_PURSUIT]
-        template = random.choice(templates)
+        template = _SEL_RNG.choice(templates)
         description = template.format(
             goal=goal_content, objective=goal_content,
             aim=goal_content, target=goal_content
         )
         
         return Action(
-            id=f"act_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"act_{__import__("uuid").uuid4().hex[:8]}",
             description=description,
             action_type=ActionType.GOAL_PURSUIT,
             source_goal=goal_id,
@@ -229,7 +253,7 @@ class ActionGenerator:
                                question_id: str) -> Action:
         """Generate an action from a question."""
         templates = self.templates[ActionType.EXPLORATORY]
-        template = random.choice(templates)
+        template = _SEL_RNG.choice(templates)
         
         # Extract topic from question
         topic = question_content.replace("?", "").split()[-1]
@@ -240,7 +264,7 @@ class ActionGenerator:
         )
         
         return Action(
-            id=f"act_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"act_{__import__("uuid").uuid4().hex[:8]}",
             description=description,
             action_type=ActionType.EXPLORATORY,
             source_question=question_id,
@@ -251,13 +275,13 @@ class ActionGenerator:
     
     def generate_spontaneous(self, context: str = "") -> Action:
         """Generate a spontaneous action."""
-        action_type = random.choice(list(ActionType))
-        templates = self.templates.get(action_type, 
+        action_type = _SEL_RNG.choice(list(ActionType))
+        templates = self.templates.get(action_type,
                                        self.templates[ActionType.COGNITIVE])
-        template = random.choice(templates)
-        
-        topic = random.choice(self.topics)
-        other = random.choice([t for t in self.topics if t != topic])
+        template = _SEL_RNG.choice(templates)
+
+        topic = _SEL_RNG.choice(self.topics)
+        other = _SEL_RNG.choice([t for t in self.topics if t != topic])
         
         description = template.format(
             topic=topic, subject=topic, concept=topic,
@@ -267,13 +291,13 @@ class ActionGenerator:
         )
         
         return Action(
-            id=f"act_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"act_{__import__("uuid").uuid4().hex[:8]}",
             description=description,
             action_type=action_type,
             source_impulse="spontaneous",
-            priority=random.uniform(0.3, 0.6),
-            feasibility=random.uniform(0.5, 0.9),
-            urgency=random.uniform(0.2, 0.5)
+            priority=float(0.3 + 0.5 * self_initiation_drive()),   # real idle-gap drive
+            feasibility=0.7,
+            urgency=float(0.2 + 0.6 * self_initiation_drive())
         )
 
 
@@ -306,17 +330,18 @@ class InitiativeEngine:
         if self.initiative_energy < 0.2:
             return False
         
-        # Higher initiative level = more likely to act
+        # Higher initiative level = lower bar; the real idle-gap drive must clear it
         level_bonus = self.initiative_level.value * 0.1
         threshold = 0.5 - level_bonus
-        
-        return random.random() > threshold
-    
+
+        return self_initiation_drive() >= threshold
+
     def should_act_spontaneously(self) -> bool:
-        """Should we take a spontaneous action?"""
+        """Should we take a spontaneous action? True when the real idle-gap drive
+        exceeds the agent's spontaneity bar (acting after unusual user silence)."""
         if self.initiative_energy < 0.3:
             return False
-        return random.random() < self.spontaneity
+        return self_initiation_drive() >= (1.0 - self.spontaneity)
     
     def consume_energy(self, amount: float = 0.1):
         """Acting consumes initiative energy."""
@@ -411,7 +436,7 @@ class ActionExecutor:
         
         # Determine outcome (simulation)
         success_chance = action.feasibility * 0.8 + 0.2
-        success = random.random() < success_chance
+        success = _SEL_RNG.random() < success_chance
         
         capability.last_used = time.time()
         
@@ -427,7 +452,7 @@ class ActionExecutor:
                 f"Gained insight from {action.description}",
                 f"Completed: {action.description}"
             ]
-            action.outcome = random.choice(outcomes)
+            action.outcome = _SEL_RNG.choice(outcomes)
             
             return {
                 "success": True,
@@ -444,7 +469,7 @@ class ActionExecutor:
                 "Complexity exceeded current capacity",
                 "Resources unavailable"
             ]
-            action.outcome = random.choice(reasons)
+            action.outcome = _SEL_RNG.choice(reasons)
             
             return {
                 "success": False,

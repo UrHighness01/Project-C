@@ -34,6 +34,8 @@ import os
 import json
 import time
 import random
+import uuid
+_SEL_RNG=random.Random(0x60A1)
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Dict, List, Optional, Any, Set, Tuple
@@ -245,11 +247,11 @@ class GoalGenerationEngine:
         if not templates:
             return None
         
-        template = random.choice(templates)
+        template = _SEL_RNG.choice(templates)
         
         # Fill in the template
-        topic_category = random.choice(list(self.topics.keys()))
-        topic = random.choice(self.topics[topic_category])
+        topic_category = _SEL_RNG.choice(list(self.topics.keys()))
+        topic = _SEL_RNG.choice(self.topics[topic_category])
         
         # Use context if provided
         if context:
@@ -281,7 +283,7 @@ class GoalGenerationEngine:
         }
         
         goal = Goal(
-            id=f"goal_{int(time.time())}_{random.randint(1000,9999)}",
+            id=f"goal_{__import__("uuid").uuid4().hex[:8]}",
             content=content,
             goal_type=GoalType.IMPULSE,
             domain=drive_to_domain.get(drive, GoalDomain.UNDERSTANDING),
@@ -314,7 +316,7 @@ class GoalGenerationEngine:
         weights = [w / total for w in weights]
         
         # Select a drive probabilistically
-        r = random.random()
+        r = _SEL_RNG.random()
         cumulative = 0
         selected_drive = drives[0]
         for drive, weight in zip(drives, weights):
