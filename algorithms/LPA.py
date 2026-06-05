@@ -198,7 +198,7 @@ class LoopPrevention:
                 self.state = "high_repetition"
                 print("High repetition detected! Applying strong penalty.")
                 # Strong penalty:  Force a more drastic change (e.g., inject random noise, switch strategy)
-                output = "I am now changing my response to avoid repetition.  " + np.random.choice(
+                output = "I am now changing my response to avoid repetition.  " + np.random.default_rng(7).choice(
                     ["This is a different approach.", "Let me try a new direction.", "I'll rephrase that."])
             else:
                 self.state = "repetition_detected"

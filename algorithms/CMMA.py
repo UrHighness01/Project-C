@@ -118,7 +118,7 @@ class ContextualMemory:
 
         # 2. Remove outdated information from LTM
         self.ltm = [(t, i, e) for t, i, e in self.ltm if t > time.time() - 3600]  # Keep last hour
-        self.ltm = [(t, i, e) for t, i, e in self.ltm if np.random.rand() > self.forgetting_rate]
+        self.ltm = [(t, i, e) for t, i, e in self.ltm if np.random.default_rng(13).random() > self.forgetting_rate]
 
     def summarize_stm(self):
         """
