@@ -254,3 +254,15 @@ def test_agency_counterfactual_meta_import_and_determinism():
     # phi-derived perturbations are deterministic
     assert np.array_equal(ag._phi_vec(5, 0), ag._phi_vec(5, 0))
     assert np.array_equal(cf._phi_vec(5, 0), cf._phi_vec(5, 0))
+
+
+def test_integration_probe_runs():
+    import integration_probe as ip
+    import numpy as np
+    # granger detects a real driven relationship, ~0 for independent noise
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal(400)
+    y = np.r_[0, x[:-1]] + 0.1 * rng.standard_normal(400)     # y driven by x lag-1
+    assert ip._granger(x, y) > ip._granger(y, rng.standard_normal(400))
+    names, M, cov = ip.build_channels()
+    assert "phi_level" in cov                                  # adapters wired
