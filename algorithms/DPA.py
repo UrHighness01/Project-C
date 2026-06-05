@@ -4,23 +4,23 @@ import time
 from typing import Callable, Tuple, Dict
 from torch.profiler import profile, record_function, ProfilerActivity
 
-def estimate_layer_accuracy(output: torch.Tensor, target: torch.Tensor) -> float:
+def estimate_layer_accuracy(output: torch.Tensor, reference: torch.Tensor) -> float:
     """
-    Estimates the accuracy of a layer's output by comparing it to a target.
-    This is a placeholder; replace with a suitable accuracy metric for your task.
+    Fidelity of a (reduced-precision) output against a full-precision reference.
+
+    Returns a value in (0, 1] where 1.0 means the reduced-precision output is identical
+    to the reference. This is the genuine signal that drives precision selection:
+    how much numerical fidelity is lost when a layer's precision is reduced.
 
     Args:
-        output: The output tensor of the layer.
-        target: The target tensor to compare against.
+        output: The output tensor at the candidate (reduced) precision.
+        reference: The full-precision output to compare against.
 
     Returns:
-        A float representing the estimated accuracy (between 0 and 1).
+        A float fidelity score (between 0 and 1).
     """
-    #  Example:  Mean Absolute Error (MAE) for demonstration
-    mae = torch.mean(torch.abs(output - target))
-    # Convert MAE to an accuracy-like measure (higher is better)
-    accuracy = 1.0 / (1 + mae)  #  Ensure accuracy is between 0 and 1
-    return accuracy.item() # Return scalar value
+    mae = torch.mean(torch.abs(output.float() - reference.float()))
+    return (1.0 / (1.0 + mae)).item()
 
 def adjust_precision(model: nn.Module,
                      input_data: torch.Tensor,
@@ -68,7 +68,10 @@ def adjust_precision(model: nn.Module,
         end_time = time.time()
         benchmark_results["forward_time_max_precision"] = end_time - start_time
 
-        estimated_accuracy = estimate_layer_accuracy(model_output_max_precision, torch.zeros_like(model_output_max_precision)) #Just a placeholder, needs real target
+        # Real signal: how faithful a reduced-precision pass is to the full-precision
+        # output (the full-precision result is the reference, not a fabricated target).
+        reduced_output = model(input_data.to(min_precision)).to(max_precision)
+        estimated_accuracy = estimate_layer_accuracy(reduced_output, model_output_max_precision)
 
         for layer in model.children():  # Iterate through layers of the model
             #print(f"Layer: {layer.__class__.__name__}")  # For debugging

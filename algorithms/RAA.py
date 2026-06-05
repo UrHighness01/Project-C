@@ -1,17 +1,38 @@
 import torch
 import torch.nn as nn
 import time
+import os
 from typing import Dict, List, Callable, Any, Optional, Mapping
 from collections import deque
+
+
+def real_system_resources() -> Dict[str, float]:
+    """The host's actual capacity, so allocation runs against real resources by default."""
+    try:
+        import sys as _sys
+        from pathlib import Path as _Path
+        _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+        from runtime.resources import resource_sample
+        s = resource_sample()
+        free_mem = s.get("mem_used_gb", 0.0) / max(s.get("mem_percent", 1.0) / 100.0, 1e-6)
+    except Exception:
+        free_mem = 8.0
+    return {"CPU": float(os.cpu_count() or 1) * 100.0,
+            "GPU": float(torch.cuda.device_count()) if torch.cuda.is_available() else 0.0,
+            "memory": float(round(free_mem, 1))}
+
 
 class ResourceAllocator:
     def __init__(
         self,
-        total_resources: Mapping[str, float],
+        total_resources: Optional[Mapping[str, float]] = None,
         strategy: str = "priority_based",
         priority_function: Optional[Callable[[Dict[str, Any]], float]] = None,
         device: str = "cuda" if torch.cuda.is_available() else "cpu",
     ):
+        # Default to the host's real capacity when none is supplied
+        if total_resources is None:
+            total_resources = real_system_resources()
         """
         Initializes the ResourceAllocator.
 

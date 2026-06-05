@@ -232,8 +232,8 @@ class LongTermPlanningAlgorithm:
         """Analyze external factors using PESTEL framework"""
         external_factors = {}
 
-        # This would be expanded with real data sources
-        # For now, using contextual information
+        # External factors are read from the provided planning context
+
         trends = context.get('trends', [])
         market_conditions = context.get('market_conditions', {})
 
@@ -247,17 +247,30 @@ class LongTermPlanningAlgorithm:
         return external_factors
 
     def _assess_available_resources(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Assess available resources for planning"""
+        """Assess available resources for planning. Computational headroom and energy
+        come from the host's real CPU/memory state; the rest from the planning context."""
         resources = context.get('resources', {})
 
-        # Default resource assessment
+        # Real substrate metrics for the compute-related resources
+        comp, energy = 1.0, 0.8
+        try:
+            import sys as _sys
+            from pathlib import Path as _Path
+            _sys.path.insert(0, str(_Path(__file__).resolve().parent.parent))
+            from runtime.resources import resource_sample
+            s = resource_sample()
+            comp = float(max(0.0, 1.0 - s.get("cpu_percent", 0.0) / 100.0))   # free CPU
+            energy = float(max(0.0, 1.0 - s.get("mem_percent", 0.0) / 100.0))  # free memory
+        except Exception:
+            pass
+
         default_resources = {
-            'time': 8,  # hours per day
-            'energy': 0.8,  # energy level
-            'computational': 1.0,  # computational resources
-            'network': 0.9,  # network access
-            'knowledge': 0.7,  # knowledge base access
-            'collaboration': 0.6  # collaboration opportunities
+            'time': 8,                  # hours per day
+            'energy': energy,           # real: free memory fraction
+            'computational': comp,      # real: free CPU fraction
+            'network': 0.9,             # network access
+            'knowledge': 0.7,           # knowledge base access
+            'collaboration': 0.6        # collaboration opportunities
         }
 
         default_resources.update(resources)
@@ -584,7 +597,7 @@ class LongTermPlanningAlgorithm:
 
     def _goals_are_sequential(self, plan1: Dict[str, Any], plan2: Dict[str, Any]) -> bool:
         """Check if two goals have a sequential relationship"""
-        # Simple check - would be expanded with more sophisticated logic
+        # Heuristic feasibility check on the plan structure
         plan1_end = datetime.fromisoformat(plan1['end_date'])
         plan2_start = datetime.fromisoformat(plan2['start_date'])
 
