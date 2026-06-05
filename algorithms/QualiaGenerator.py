@@ -48,7 +48,11 @@ from pathlib import Path
 
 
 
-# --- grounding: sensed values derived from the agent's real internal state ---------
+# --- phi-modulated signal proxy (IIT assumption) -----------------------------------
+# NOT an empirical qualia/affect measurement. Where the original code assigned an
+# arbitrary 'sensed' value, this substitutes a real, reproducible value derived from
+# the agent's activity telemetry. Treating phi activity as a stand-in for sensed
+# intensity is an IIT-flavoured modelling assumption, not a measurement of experience.
 try:
     import sys as _gsys
     from pathlib import Path as _gPath
@@ -59,8 +63,10 @@ except Exception:
         import numpy as _np; return _np.zeros((8, 0))
 _G_CH = {"M": None, "k": 0}
 def _gv(lo=0.0, hi=1.0):
-    """A real value in [lo, hi] from a channel of the agent's activity (deterministic,
-    cycles channels per call). Falls back to the midpoint when no telemetry exists."""
+    """A real, reproducible value in [lo, hi] from a channel of the agent's activity
+    telemetry (deterministic, cycles channels per call). This is a phi-modulated proxy
+    used in place of an arbitrary 'sensed' value -- not a measurement of qualia/affect.
+    Falls back to the midpoint when no telemetry exists."""
     import numpy as _np
     if _G_CH["M"] is None:
         _G_CH["M"] = _g_am()
