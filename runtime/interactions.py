@@ -42,13 +42,17 @@ def agents_dir() -> Path:
 
 
 def session_files(agent: Optional[str] = None) -> List[Path]:
-    """Session transcripts for the active agent (coherent with the other adapters)."""
+    """Session transcripts for the active agent, oldest-to-newest by modification time
+    (so turns() reading the last N picks the genuinely most recent sessions; filenames are
+    UUIDs, so sorting by name would read an arbitrary subset)."""
     try:
         from runtime.agent import agent_sessions_dir
         d = agent_sessions_dir(agent)
     except Exception:
         d = agents_dir() / (agent or "main") / "sessions"
-    return sorted(d.glob("*.jsonl")) if d.exists() else []
+    if not d.exists():
+        return []
+    return sorted(d.glob("*.jsonl"), key=lambda p: p.stat().st_mtime)
 
 
 def _ts(s: Optional[str]) -> float:
