@@ -310,3 +310,20 @@ def test_cross_modal_gain():
     t = np.r_[0, 0, s[:-2]] + 0.1 * rng.standard_normal(400)      # t driven by s (lag 2)
     assert cm._gain(s, t) > 0.3                                    # detects real cross-signal
     assert cm._gain(rng.standard_normal(400), rng.standard_normal(400)) < 0.1   # ~0 if independent
+
+
+def test_attention_monitor():
+    import numpy as np
+    from attention_monitor import salience, attention_profile
+    M = np.vstack([np.sin(np.arange(200) * 0.3),          # smooth (low salience)
+                   np.r_[np.zeros(100), np.ones(100)]])    # a step (high salience burst)
+    S = salience(M)
+    assert S.shape == M.shape and np.isfinite(S).all()
+    frac, conc, _, _ = attention_profile(["a", "b"], M)
+    assert abs(frac.sum() - 1.0) < 1e-6 and 0.0 <= conc <= 1.0
+
+
+def test_recovery_probe_sampler():
+    import recovery_probe as rp
+    samples = rp._sample_cpu(0.3, dt=0.1)                  # short, no load injection
+    assert len(samples) >= 2 and all(c >= 0 for _, c in samples)
