@@ -410,3 +410,16 @@ def test_closed_loop_stable():
     r = evaluate(phi_series())
     if r:
         assert np.isfinite(r["mse_fixed"]) and np.isfinite(r["mse_loop"])
+
+
+def test_binding_event_detector():
+    import numpy as np
+    from binding_events import detect
+    T = 120
+    M = np.zeros((3, T))                                   # 3 distinct-adapter channels
+    for c in range(3):
+        M[c, 50:53] += 5                                   # synchronized cross-adapter burst
+    names = ["phi_level", "cpu_percent", "memory_volume"]
+    event, n, dur = detect(names, M)
+    assert event[50:54].any()                              # the binding event is detected
+    assert n >= 1 and dur >= 1
