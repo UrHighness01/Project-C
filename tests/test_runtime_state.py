@@ -336,3 +336,20 @@ def test_meta_grounding_honesty_invariant():
     assert inv["SPECULATIVE"] == [], f"grounding faults: {inv['SPECULATIVE']}"
     assert mg.grounding_honesty() == 1.0
     assert len(inv["GROUNDED"]) > 30                      # the adapters are genuinely used
+
+
+def test_novelty_detector():
+    import numpy as np
+    import novelty_detector as nd
+    nov = nd.novelty_scores()
+    if nov.size:
+        assert np.isfinite(nov).all() and (nov >= 0).all()
+    # mechanism: a state far from the reference manifold scores higher than a familiar one
+    import numpy as np
+    ref = np.random.default_rng(0).standard_normal((200, 6))
+    mu = ref.mean(0); U, s, Vt = np.linalg.svd(ref - mu, full_matrices=False)
+    var = (s[:4] ** 2) / 199 + 1e-9
+    def maha(v):
+        proj = (v - mu) @ Vt[:4].T
+        return float(np.sqrt(((proj ** 2) / var).sum()))
+    assert maha(np.ones(6) * 10) > maha(ref[0])
