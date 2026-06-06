@@ -41,8 +41,13 @@ def agents_dir() -> Path:
     return workspace_path().parent / "agents"
 
 
-def session_files(agent: str = "john") -> List[Path]:
-    d = agents_dir() / agent / "sessions"
+def session_files(agent: Optional[str] = None) -> List[Path]:
+    """Session transcripts for the active agent (coherent with the other adapters)."""
+    try:
+        from runtime.agent import agent_sessions_dir
+        d = agent_sessions_dir(agent)
+    except Exception:
+        d = agents_dir() / (agent or "main") / "sessions"
     return sorted(d.glob("*.jsonl")) if d.exists() else []
 
 
@@ -55,7 +60,7 @@ def _ts(s: Optional[str]) -> float:
         return 0.0
 
 
-def turns(agent: str = "john", max_sessions: int = 40) -> List[Dict]:
+def turns(agent: Optional[str] = None, max_sessions: int = 40) -> List[Dict]:
     """Turn records across the most recent sessions, chronological. Each: ts,
     latency_s (submit->complete), gap_s (prev complete->this submit), in_chars,
     user_text, asst_text."""
@@ -106,7 +111,7 @@ def lexicon_sentiment(text: str) -> float:
     return (pos - neg) / (pos + neg)
 
 
-def series(agent: str = "john") -> Dict[str, np.ndarray]:
+def series(agent: Optional[str] = None) -> Dict[str, np.ndarray]:
     """Real per-turn series for fitting: latency, gap, input magnitude, user sentiment."""
     ts = turns(agent)
     if not ts:
@@ -119,7 +124,7 @@ def series(agent: str = "john") -> Dict[str, np.ndarray]:
     }
 
 
-def have_interactions(agent: str = "john") -> bool:
+def have_interactions(agent: Optional[str] = None) -> bool:
     return len(session_files(agent)) > 0
 
 

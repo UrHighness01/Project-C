@@ -23,11 +23,15 @@ import numpy as np
 
 
 def workspace_path() -> Path:
-    """Resolve the agent workspace without hard-coding any home path."""
-    env = os.getenv("OPENCLAW_WORKSPACE")
-    if env:
-        return Path(env).expanduser()
-    return Path.home() / ".openclaw" / "workspace"
+    """The active agent's workspace home (resolved coherently for all adapters)."""
+    try:
+        from runtime.agent import agent_home
+        return agent_home()
+    except Exception:
+        env = os.getenv("OPENCLAW_WORKSPACE")
+        if env:
+            return Path(env).expanduser()
+        return Path.home() / ".openclaw" / "workspace"
 
 
 def daemon_state_path() -> Path:
