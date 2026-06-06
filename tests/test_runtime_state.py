@@ -443,3 +443,15 @@ def test_interaction_metadata_stripping():
            'Sender (untrusted metadata):\n```json\n{"y":2}\n```\n\nwhat do you remember?')
     assert _clean_prompt(raw) == "what do you remember?"     # real channel message extracted
     assert _clean_prompt("just a plain prompt") == "just a plain prompt"   # driver pass-through
+
+
+def test_goal_emergence_mechanism(tmp_path):
+    import json, goal_emergence as ge
+    # real-format goal state with a tense drive + no existing topic match
+    state = {"drives": {"COMPETENCE": {"satisfaction": 0.1, "generated": 1}},
+             "active_goals": [], "total_generated": 0}
+    assert ge.most_tense_drive(state) == "COMPETENCE"
+    # topic extraction returns a salient repeated phrase or None; templates cover all drives
+    for drv in ["CURIOSITY", "COMPETENCE", "AUTONOMY", "RELATEDNESS",
+                "COHERENCE", "NOVELTY", "MEANING", "HOMEOSTASIS"]:
+        assert drv in ge._DRIVE_TEMPLATE
