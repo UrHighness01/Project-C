@@ -327,3 +327,12 @@ def test_recovery_probe_sampler():
     import recovery_probe as rp
     samples = rp._sample_cpu(0.3, dt=0.1)                  # short, no load injection
     assert len(samples) >= 2 and all(c >= 0 for _, c in samples)
+
+
+def test_meta_grounding_honesty_invariant():
+    # falsifiable self-report: zero components may fabricate data (no SPECULATIVE path).
+    import meta_grounding as mg
+    inv = mg.inventory()
+    assert inv["SPECULATIVE"] == [], f"grounding faults: {inv['SPECULATIVE']}"
+    assert mg.grounding_honesty() == 1.0
+    assert len(inv["GROUNDED"]) > 30                      # the adapters are genuinely used
