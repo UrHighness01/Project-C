@@ -365,3 +365,16 @@ def test_identity_drift():
     if r:
         assert r["boundedness"] >= 0 and r["regime"] in (
             "frozen", "bounded (growth-with-continuity)", "dispersing (weak identity)")
+
+
+def test_self_model_calibration():
+    import numpy as np
+    from self_model import calibration, NOMINAL
+    # synthetic: a model with correctly-estimated noise should be ~calibrated
+    rng = np.random.default_rng(0)
+    x = np.cumsum(rng.standard_normal(500)) * 0.1 + rng.standard_normal(500)
+    r = calibration(x)
+    assert r is not None
+    nominal, emp, cal_err, sigma = r
+    assert emp.shape == NOMINAL.shape and (0 <= emp).all() and (emp <= 1).all()
+    assert np.isfinite(cal_err) and sigma > 0
