@@ -300,3 +300,13 @@ def test_ablation_benchmark():
     r2_self = ab._r2_with_inputs(X, 0, [0, 1, 2])      # predict phi_level from all
     import numpy as np
     assert np.isfinite(r2_self) and r2_self > 0.5
+
+
+def test_cross_modal_gain():
+    import numpy as np
+    import cross_modal as cm
+    rng = np.random.default_rng(0)
+    s = rng.standard_normal(400)
+    t = np.r_[0, 0, s[:-2]] + 0.1 * rng.standard_normal(400)      # t driven by s (lag 2)
+    assert cm._gain(s, t) > 0.3                                    # detects real cross-signal
+    assert cm._gain(rng.standard_normal(400), rng.standard_normal(400)) < 0.1   # ~0 if independent
