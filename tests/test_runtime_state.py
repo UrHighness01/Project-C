@@ -378,3 +378,15 @@ def test_self_model_calibration():
     nominal, emp, cal_err, sigma = r
     assert emp.shape == NOMINAL.shape and (0 <= emp).all() and (emp <= 1).all()
     assert np.isfinite(cal_err) and sigma > 0
+
+
+def test_information_bottleneck_retention():
+    import numpy as np
+    from information_bottleneck import retention
+    rng = np.random.default_rng(0)
+    driver = np.cumsum(rng.standard_normal(400))
+    M = np.vstack([driver, np.roll(driver, 1) + 0.05 * rng.standard_normal(400),
+                   rng.standard_normal(400)])              # ch0 drives ch1; ch2 noise
+    ret = retention(M, rank=1)
+    assert abs(ret.sum() - 1.0) < 1e-6
+    assert ret[2] < ret[0]                                 # noise channel retained least
