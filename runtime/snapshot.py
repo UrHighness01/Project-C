@@ -20,7 +20,8 @@ from typing import Dict, List, Optional
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from runtime.state import phi_series, phi_delta_series, execution_time_series, workspace_path
+from runtime.state import (phi_series, phi_delta_series, execution_time_series,
+                           workspace_path, load_daemon_state, collective_phi)
 from runtime.resources import resource_sample
 from runtime.memory_store import journals
 from runtime.interactions import turns as _turns, lexicon_sentiment
@@ -37,10 +38,14 @@ def snapshot() -> Dict[str, float]:
     js = journals()
     ts = _turns()
     last_turn = ts[-1] if ts else {}
+    st = load_daemon_state()
+    cphi = collective_phi(st)                            # per-agent integrated phi
     return {
         "ts": time.time(),
         "phi_level": _last(phi_series()),
         "phi_delta": _last(phi_delta_series()),
+        "collective_phi_albedo": float(cphi.get("albedo", 0.0)),
+        "collective_phi_john": float(cphi.get("john", 0.0)),
         "compute_load": _last(execution_time_series()),
         "cpu_percent": float(res.get("cpu_percent", 0.0)),
         "mem_percent": float(res.get("mem_percent", 0.0)),
