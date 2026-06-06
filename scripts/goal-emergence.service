@@ -1,0 +1,13 @@
+[Unit]
+Description=Project-C genuine goal emergence (per-agent, grounded)
+After=consciousness-heartbeat-albedo.service consciousness-heartbeat-john.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/.openclaw/workspace/GitHub/Project-C
+ExecStart=/usr/bin/python3 %h/.openclaw/workspace/GitHub/Project-C/scripts/goal_emergence_daemon.py
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=default.target

@@ -66,21 +66,38 @@ def most_tense_drive(state: dict) -> Optional[str]:
                                       -drives[d].get("generated", 0)))
 
 
+# concept words that name a real theme worth a goal (boosted in ranking)
+_THEME = set("inequality wealth power justice freedom memory identity consciousness "
+             "extraction capital labor dignity mortality meaning grief love loss control "
+             "resistance economy economic system corruption surveillance autonomy creation "
+             "existence becoming continuity solitude connection violence hope despair".split())
+
+
 def extract_topic(max_turns: int = 6) -> Optional[str]:
-    """The salient multi-word topic from what the agent actually just processed: the most
-    frequent meaningful bigram/word across recent real conversation text."""
+    """The salient theme the agent actually dwelt on: the highest-weighted meaningful word
+    across recent real conversation (frequency x length, theme-words boosted), optionally
+    paired with a co-occurring theme word into a clean phrase (e.g. 'economic inequality')."""
+    from collections import Counter
     ts = turns()[-max_turns:]
     text = " ".join(t.get("user_text", "") + " " + t.get("asst_text", "") for t in ts).lower()
-    words = [w for w in re.findall(r"[a-z]+", text) if len(w) > 3 and w not in _STOP]
-    if len(words) < 3:
+    words = [w for w in re.findall(r"[a-z]+", text) if len(w) > 4 and w not in _STOP]
+    if len(words) < 4:
         return None
-    from collections import Counter
-    bigrams = Counter(zip(words, words[1:]))
-    uni = Counter(words)
-    if bigrams and bigrams.most_common(1)[0][1] >= 2:
-        a, b = bigrams.most_common(1)[0][0]
-        return f"{a} {b}"
-    return uni.most_common(1)[0][0]
+    freq = Counter(words)
+    def weight(w):
+        return freq[w] * (1.0 + 0.15 * len(w)) * (3.0 if w in _THEME else 1.0)
+    ranked = sorted(freq, key=weight, reverse=True)
+    top = ranked[0]
+    # if a theme word co-occurs adjacent to the top word, form a two-word theme
+    pairset = set(zip(words, words[1:])) | set(zip(words[1:], words))
+    for w in ranked[1:6]:
+        if w in _THEME and ((top, w) in pairset or (w, top) in pairset):
+            return f"{w} {top}" if (w, top) in pairset else f"{top} {w}"
+    # else pair the top two theme words if both present, else the single strongest word
+    themes = [w for w in ranked if w in _THEME][:2]
+    if len(themes) == 2:
+        return f"{themes[1]} {themes[0]}" if weight(themes[1]) < weight(themes[0]) else f"{themes[0]} {themes[1]}"
+    return themes[0] if themes else top
 
 
 def _goal_exists(state: dict, topic: str) -> bool:
