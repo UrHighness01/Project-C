@@ -423,3 +423,15 @@ def test_binding_event_detector():
     event, n, dur = detect(names, M)
     assert event[50:54].any()                              # the binding event is detected
     assert n >= 1 and dur >= 1
+
+
+def test_collective_alignment():
+    import numpy as np
+    from collective_integration import _align
+    t = np.arange(0, 200, 10.0)
+    shared = np.sin(t * 0.05)
+    xa, xb = _align(t, shared, t + 2, shared)             # 2s-offset streams of one signal
+    assert xa.size > 10 and np.corrcoef(xa, xb)[0, 1] > 0.9
+    # non-overlapping streams (far apart in time) -> no aligned pairs
+    xa2, xb2 = _align(t, shared, t + 10000, shared)
+    assert xa2.size == 0
