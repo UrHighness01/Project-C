@@ -390,3 +390,11 @@ def test_information_bottleneck_retention():
     ret = retention(M, rank=1)
     assert abs(ret.sum() - 1.0) < 1e-6
     assert ret[2] < ret[0]                                 # noise channel retained least
+
+
+def test_causal_intervention_sampler():
+    import causal_intervention as ci
+    import numpy as np
+    data = ci._sample(0.3, dt=0.1)
+    assert data.shape[1] == len(ci.CHANNELS) and data.shape[0] >= 2
+    assert np.isfinite(data).all()
