@@ -31,7 +31,16 @@ def workspace_path() -> Path:
 
 
 def daemon_state_path() -> Path:
-    return workspace_path() / "consciousness_daemon_state.json"
+    """Locate the consciousness daemon's state file. The live daemon writes from its
+    scripts/ working directory; an older copy may sit at the workspace root. Pick the
+    most-recently-modified candidate so the adapter always tracks the running daemon."""
+    w = workspace_path()
+    candidates = [w / "scripts" / "consciousness_daemon_state.json",
+                  w / "consciousness_daemon_state.json"]
+    existing = [p for p in candidates if p.exists()]
+    if not existing:
+        return candidates[-1]
+    return max(existing, key=lambda p: p.stat().st_mtime)
 
 
 def load_daemon_state() -> Optional[dict]:
