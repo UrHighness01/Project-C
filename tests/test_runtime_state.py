@@ -353,3 +353,15 @@ def test_novelty_detector():
         proj = (v - mu) @ Vt[:4].T
         return float(np.sqrt(((proj ** 2) / var).sum()))
     assert maha(np.ones(6) * 10) > maha(ref[0])
+
+
+def test_identity_drift():
+    import numpy as np
+    import identity_drift as idd
+    S = idd.signature_trajectory()
+    if S.shape[0]:
+        assert np.isfinite(S).all()
+    r = idd.analyse()
+    if r:
+        assert r["boundedness"] >= 0 and r["regime"] in (
+            "frozen", "bounded (growth-with-continuity)", "dispersing (weak identity)")
