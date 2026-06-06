@@ -398,3 +398,15 @@ def test_causal_intervention_sampler():
     data = ci._sample(0.3, dt=0.1)
     assert data.shape[1] == len(ci.CHANNELS) and data.shape[0] >= 2
     assert np.isfinite(data).all()
+
+
+def test_closed_loop_stable():
+    import numpy as np
+    from closed_loop import _run, evaluate
+    from runtime.state import phi_series
+    x = np.cumsum(np.random.default_rng(0).standard_normal(300)) * 0.1
+    err = _run((x - x.mean()) / (x.std() + 1e-9), 4, adaptive=True)
+    assert np.isfinite(err).all()                          # adaptive loop never diverges
+    r = evaluate(phi_series())
+    if r:
+        assert np.isfinite(r["mse_fixed"]) and np.isfinite(r["mse_loop"])
