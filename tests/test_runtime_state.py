@@ -289,3 +289,12 @@ def test_coherence_horizon_predictability():
     W, p = ch._fit_var(X[:split], 4)
     r2 = ch.one_step_r2(X[:split], X[split:], W, p)
     assert r2[0] > 0.3            # phi_level is genuinely predictable (real structure)
+
+
+def test_ablation_benchmark():
+    import ablation_benchmark as ab
+    from coherence_horizon import _channels
+    X = _channels()
+    full = ab._r2_with_inputs(X, 1, [0, 1, 2])        # predict phi_delta from all
+    ablated = ab._r2_with_inputs(X, 1, [1, 2])         # remove phi_level
+    assert full - ablated > 0.01                       # phi_level carries real signal for phi_delta
