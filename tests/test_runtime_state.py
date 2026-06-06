@@ -435,3 +435,11 @@ def test_collective_alignment():
     # non-overlapping streams (far apart in time) -> no aligned pairs
     xa2, xb2 = _align(t, shared, t + 10000, shared)
     assert xa2.size == 0
+
+
+def test_interaction_metadata_stripping():
+    from runtime.interactions import _clean_prompt
+    raw = ('Conversation info (untrusted metadata):\n```json\n{"x":1}\n```\n\n'
+           'Sender (untrusted metadata):\n```json\n{"y":2}\n```\n\nwhat do you remember?')
+    assert _clean_prompt(raw) == "what do you remember?"     # real channel message extracted
+    assert _clean_prompt("just a plain prompt") == "just a plain prompt"   # driver pass-through

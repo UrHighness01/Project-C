@@ -60,6 +60,17 @@ def _ts(s: Optional[str]) -> float:
         return 0.0
 
 
+def _clean_prompt(p: str) -> str:
+    """Extract the real user message from a gateway prompt: strip the 'Conversation info'
+    / 'Sender' untrusted-metadata blocks and their fenced JSON, leaving the actual text.
+    Pass-through for already-clean prompts (e.g. the local driver)."""
+    p = re.sub(r"```json\s*.*?```", "", p, flags=re.S)
+    p = re.sub(r"(Conversation info|Sender|Channel info)\s*\(untrusted metadata\):\s*",
+               "", p)
+    p = re.sub(r"^\s*\[[^\]]*\]\s*", "", p)               # drop a leading [cron:...] tag
+    return p.strip()
+
+
 def turns(agent: Optional[str] = None, max_sessions: int = 40) -> List[Dict]:
     """Turn records across the most recent sessions, chronological. Each: ts,
     latency_s (submit->complete), gap_s (prev complete->this submit), in_chars,
@@ -79,12 +90,17 @@ def turns(agent: Optional[str] = None, max_sessions: int = 40) -> List[Dict]:
                 continue
             t = e.get("type")
             if t == "prompt.submitted":
-                pending = (_ts(e.get("ts")), str((e.get("data") or {}).get("prompt", "")))
+                pending = (_ts(e.get("ts")),
+                           _clean_prompt(str((e.get("data") or {}).get("prompt", ""))))
             elif t == "model.completed" and pending is not None:
+                texts = (e.get("data") or {}).get("assistantTexts") or []
+                texts = [x for x in (texts if isinstance(texts, list) else [texts])
+                         if x and str(x).strip()]
+                if not texts:
+                    continue                              # tool/empty turn -> keep waiting
                 t_sub, user_text = pending
                 t_done = _ts(e.get("ts"))
-                texts = (e.get("data") or {}).get("assistantTexts") or []
-                asst = " ".join(texts) if isinstance(texts, list) else str(texts)
+                asst = " ".join(str(x) for x in texts)
                 out.append({
                     "ts": t_sub,
                     "latency_s": max(0.0, t_done - t_sub),
