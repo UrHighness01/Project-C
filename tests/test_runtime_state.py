@@ -279,3 +279,13 @@ def test_unified_snapshot_logger():
     names, M = snapshot_matrix(p)
     os.remove(p)
     assert M.shape[1] == 4 and "ts" not in names and len(names) >= 8
+
+
+def test_coherence_horizon_predictability():
+    import coherence_horizon as ch
+    X = ch._channels()
+    assert X.shape[0] > 64
+    split = int(X.shape[0] * 0.8)
+    W, p = ch._fit_var(X[:split], 4)
+    r2 = ch.one_step_r2(X[:split], X[split:], W, p)
+    assert r2[0] > 0.3            # phi_level is genuinely predictable (real structure)
