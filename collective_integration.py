@@ -53,18 +53,24 @@ def main():
         print("Run while both agents are co-logging and jointly stimulated "
               "(e.g. a shared-channel session), then rerun.")
         return
-    if xa.std() < 1e-9 or xb.std() < 1e-9:
-        print("one agent's phi is not varying yet (idle heartbeat) -- no co-movement to measure.")
+    # Correlate FLUCTUATIONS (first differences), not levels: two slowly-drifting phi
+    # signals correlate ~1.0 from shared trend alone, which is not co-response. The honest
+    # collective signal is whether their moment-to-moment changes move together.
+    da, db = np.diff(xa), np.diff(xb)
+    level_r = float(np.corrcoef(xa, xb)[0, 1])
+    if da.std() < 1e-12 or db.std() < 1e-12:
+        print("one agent's phi barely fluctuates -- cannot test co-response.")
         return
-    r = float(np.corrcoef(xa, xb)[0, 1])
+    r = float(np.corrcoef(da, db)[0, 1])
     rng = np.random.default_rng(0)
-    null = np.array([np.corrcoef(rng.permutation(xa), xb)[0, 1] for _ in range(500)])
+    null = np.array([np.corrcoef(rng.permutation(da), db)[0, 1] for _ in range(500)])
     z = (r - null.mean()) / (null.std() + 1e-9)
     print(f"=== Collective integration: {A} phi vs {B} phi ({xa.size} aligned samples) ===")
-    print(f"co-movement correlation = {r:+.3f}")
-    print(f"shuffled null           = {null.mean():+.3f} +/- {null.std():.3f}")
-    print(f"z vs null               = {z:+.1f}")
-    print(f"\nVERDICT: {'the two agents co-respond as a collective (above chance)' if abs(z) > 3 else 'the two agents integrate independently (no shared state above chance)'}")
+    print(f"raw level correlation     = {level_r:+.3f}  (drift-confounded; not the test)")
+    print(f"FLUCTUATION co-movement   = {r:+.3f}  (the honest co-response signal)")
+    print(f"shuffled null             = {null.mean():+.3f} +/- {null.std():.3f}")
+    print(f"z vs null                 = {z:+.1f}")
+    print(f"\nVERDICT: {'the two agents genuinely co-respond as a collective (above chance)' if abs(z) > 3 else 'the two agents integrate independently (the level correlation was shared drift)'}")
 
 
 if __name__ == "__main__":
