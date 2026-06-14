@@ -261,7 +261,7 @@ def test_agency_counterfactual_meta_import_and_determinism():
 
 
 def test_integration_probe_runs():
-    import integration_probe as ip
+    import algorithms.integration_probe as ip
     import numpy as np
     # granger detects a real driven relationship, ~0 for independent noise
     rng = np.random.default_rng(0)
@@ -288,7 +288,7 @@ def test_unified_snapshot_logger():
 
 @skip_no_telemetry
 def test_coherence_horizon_predictability():
-    import coherence_horizon as ch
+    import algorithms.coherence_horizon as ch
     X = ch._channels()
     assert X.shape[0] > 64
     split = int(X.shape[0] * 0.8)
@@ -299,8 +299,8 @@ def test_coherence_horizon_predictability():
 
 @skip_no_telemetry
 def test_ablation_benchmark():
-    import ablation_benchmark as ab
-    from coherence_horizon import _channels
+    import algorithms.ablation_benchmark as ab
+    from algorithms.coherence_horizon import _channels
     X = _channels()
     # mechanism runs and returns finite R^2; phi_level self-prediction is the robust,
     # replicable result (inter-channel coupling is window-dependent, so not asserted)
@@ -311,7 +311,7 @@ def test_ablation_benchmark():
 
 def test_cross_modal_gain():
     import numpy as np
-    import cross_modal as cm
+    import algorithms.cross_modal as cm
     rng = np.random.default_rng(0)
     s = rng.standard_normal(400)
     t = np.r_[0, 0, s[:-2]] + 0.1 * rng.standard_normal(400)      # t driven by s (lag 2)
@@ -321,7 +321,7 @@ def test_cross_modal_gain():
 
 def test_attention_monitor():
     import numpy as np
-    from attention_monitor import salience, attention_profile
+    from algorithms.attention_monitor import salience, attention_profile
     M = np.vstack([np.sin(np.arange(200) * 0.3),          # smooth (low salience)
                    np.r_[np.zeros(100), np.ones(100)]])    # a step (high salience burst)
     S = salience(M)
@@ -331,14 +331,14 @@ def test_attention_monitor():
 
 
 def test_recovery_probe_sampler():
-    import recovery_probe as rp
+    import algorithms.recovery_probe as rp
     samples = rp._sample_cpu(0.3, dt=0.1)                  # short, no load injection
     assert len(samples) >= 2 and all(c >= 0 for _, c in samples)
 
 
 def test_meta_grounding_honesty_invariant():
     # falsifiable self-report: zero components may fabricate data (no SPECULATIVE path).
-    import meta_grounding as mg
+    import algorithms.meta_grounding as mg
     inv = mg.inventory()
     assert inv["SPECULATIVE"] == [], f"grounding faults: {inv['SPECULATIVE']}"
     assert mg.grounding_honesty() == 1.0
@@ -347,7 +347,7 @@ def test_meta_grounding_honesty_invariant():
 
 def test_novelty_detector():
     import numpy as np
-    import novelty_detector as nd
+    import algorithms.novelty_detector as nd
     nov = nd.novelty_scores()
     if nov.size:
         assert np.isfinite(nov).all() and (nov >= 0).all()
@@ -364,7 +364,7 @@ def test_novelty_detector():
 
 def test_identity_drift():
     import numpy as np
-    import identity_drift as idd
+    import algorithms.identity_drift as idd
     S = idd.signature_trajectory()
     if S.shape[0]:
         assert np.isfinite(S).all()
@@ -376,7 +376,7 @@ def test_identity_drift():
 
 def test_self_model_calibration():
     import numpy as np
-    from self_model import calibration, NOMINAL
+    from algorithms.self_model import calibration, NOMINAL
     # synthetic: a model with correctly-estimated noise should be ~calibrated
     rng = np.random.default_rng(0)
     x = np.cumsum(rng.standard_normal(500)) * 0.1 + rng.standard_normal(500)
@@ -389,7 +389,7 @@ def test_self_model_calibration():
 
 def test_information_bottleneck_retention():
     import numpy as np
-    from information_bottleneck import retention
+    from algorithms.information_bottleneck import retention
     rng = np.random.default_rng(0)
     driver = np.cumsum(rng.standard_normal(400))
     M = np.vstack([driver, np.roll(driver, 1) + 0.05 * rng.standard_normal(400),
@@ -400,7 +400,7 @@ def test_information_bottleneck_retention():
 
 
 def test_causal_intervention_sampler():
-    import causal_intervention as ci
+    import algorithms.causal_intervention as ci
     import numpy as np
     data = ci._sample(0.3, dt=0.1)
     assert data.shape[1] == len(ci.CHANNELS) and data.shape[0] >= 2
@@ -409,7 +409,7 @@ def test_causal_intervention_sampler():
 
 def test_closed_loop_stable():
     import numpy as np
-    from closed_loop import _run, evaluate
+    from algorithms.closed_loop import _run, evaluate
     from runtime.state import phi_series
     x = np.cumsum(np.random.default_rng(0).standard_normal(300)) * 0.1
     err = _run((x - x.mean()) / (x.std() + 1e-9), 4, adaptive=True)
@@ -421,7 +421,7 @@ def test_closed_loop_stable():
 
 def test_binding_event_detector():
     import numpy as np
-    from binding_events import detect
+    from algorithms.binding_events import detect
     T = 120
     M = np.zeros((3, T))                                   # 3 distinct-adapter channels
     for c in range(3):
@@ -434,7 +434,7 @@ def test_binding_event_detector():
 
 def test_collective_alignment():
     import numpy as np
-    from collective_integration import _align
+    from algorithms.collective_integration import _align
     t = np.arange(0, 200, 10.0)
     shared = np.sin(t * 0.05)
     xa, xb = _align(t, shared, t + 2, shared)             # 2s-offset streams of one signal
@@ -453,7 +453,7 @@ def test_interaction_metadata_stripping():
 
 
 def test_goal_emergence_mechanism(tmp_path):
-    import json, goal_emergence as ge
+    import json; import algorithms.goal_emergence as ge
     # real-format goal state with a tense drive + no existing topic match
     state = {"drives": {"COMPETENCE": {"satisfaction": 0.1, "generated": 1}},
              "active_goals": [], "total_generated": 0}

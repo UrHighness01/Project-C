@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from coherence_horizon import _channels
+from algorithms.coherence_horizon import _channels
 
 
 def _r2_with_inputs(X: np.ndarray, target: int, input_cols: list, p: int = 4) -> float:

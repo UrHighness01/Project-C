@@ -27,7 +27,7 @@ def _check(agent: str) -> None:
     os.environ["OPENCLAW_AGENT"] = agent
     # import lazily AFTER setting the agent env, and re-resolve each cycle so paths follow
     import importlib
-    import goal_emergence as ge
+    import algorithms.goal_emergence as ge
     importlib.reload(ge)
     try:
         g = ge.maybe_emerge_goal(tension_threshold=TENSION, write=True)

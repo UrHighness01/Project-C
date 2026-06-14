@@ -28,7 +28,7 @@ SEEDED_RE = re.compile(r"default_rng\(|random\.Random\(|np\.random\.seed\(|cp\.r
 UNSEEDED_RE = re.compile(r"(?<![_\w.])np\.random\.(rand|randn|randint|normal|uniform|choice|shuffle)\(|"
                          r"(?<![_\w.])random\.(random|uniform|gauss|normal|randint|choice|sample)\(")
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parent.parent   # file is in algorithms/, scan from repo root
 SCAN = ["algorithms", "consciousness-core"]
 
 

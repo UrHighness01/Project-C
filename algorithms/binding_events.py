@@ -18,8 +18,8 @@ from __future__ import annotations
 import numpy as np
 
 from runtime.snapshot import snapshot_matrix
-from attention_monitor import salience
-from cross_modal import ADAPTER
+from algorithms.attention_monitor import salience
+from algorithms.cross_modal import ADAPTER
 
 MIN_SAMPLES = 200
 THRESH = 1.5            # salience (z-surprise) threshold for a channel to count as active

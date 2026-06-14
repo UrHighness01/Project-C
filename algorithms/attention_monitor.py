@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from coherence_horizon import _channels
+from algorithms.coherence_horizon import _channels
 from runtime.snapshot import snapshot_matrix
 
 
