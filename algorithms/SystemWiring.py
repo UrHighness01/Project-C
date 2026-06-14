@@ -381,6 +381,7 @@ class WiringManager:
         AlgorithmSpec("working_memory_decay_tracker", "WorkingMemoryDecayTracker", "DecayResult", "MEMORY", 0.73),
         AlgorithmSpec("phenomenal_unity_index", "PhenomenalUnityIndex", "PhenomenalUnityResult", "PHENOMENAL", 0.88),
         AlgorithmSpec("narrative_self_continuity", "NarrativeSelfContinuity", "NarrativeContinuityResult", "SELF_MODEL", 0.74),
+        AlgorithmSpec("critical_fluctuation_detector", "CriticalFluctuationDetector", "FluctuationResult", "TEMPORAL", 0.82),
     ]
     
     def __init__(self, memory_dir: str = "memory"):

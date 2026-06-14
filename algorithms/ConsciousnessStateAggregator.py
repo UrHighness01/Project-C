@@ -434,6 +434,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
         run("working_memory_decay_tracker", _run_wm_decay, entries)
 
     if qualia_ok:
+        def _run_ego_strength(entries):
+            from algorithms.EgoStrengthEstimator import analyse
+            r = analyse(entries)
+            return {"status": "ok", "ego_strength_index": r.ego_strength_index,
+                    "ego_class": r.ego_class, "pronoun_ratio": r.pronoun_ratio,
+                    "metacog_ratio": r.metacog_ratio, "ego_cv": r.ego_cv}
+        run("ego_strength_estimator", _run_ego_strength, entries)
+
         def _run_narrative_continuity(entries):
             from algorithms.NarrativeSelfContinuity import analyse
             r = analyse(entries)
@@ -499,6 +507,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["narrative_jaccard"]    = _get("narrative_self_continuity", "jaccard_lag1")
     summary["phi_fluctuation_alert"] = _get("critical_fluctuation_detector", "alert_level")
     summary["phi_ar1"]               = _get("critical_fluctuation_detector", "current_ar1")
+    summary["ego_strength"]          = _get("ego_strength_estimator", "ego_class")
+    summary["ego_strength_index"]    = _get("ego_strength_estimator", "ego_strength_index")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),

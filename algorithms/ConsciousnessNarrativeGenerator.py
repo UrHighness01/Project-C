@@ -500,6 +500,18 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    ego_data: dict | None = None
+    try:
+        from algorithms.EgoStrengthEstimator import analyse as _ese
+        from runtime.state import get_entries as _ge_ego
+        _entries_ego = _ge_ego() or []
+        _eg = _ese(_entries_ego)
+        if _eg and _eg.n_entries > 0:
+            ego_data = _eg.to_dict()
+            sources.append("ego_strength_estimator")
+    except Exception:
+        pass
+
     fluct_data: dict | None = None
     try:
         from algorithms.CriticalFluctuationDetector import analyse as _cfd
@@ -765,6 +777,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"A {cls_r} phi rhythm (period {period:.0f} steps) is statistically "
                 "significant — my integration has session-scale periodicity."
+            )
+
+    # Ego strength sentence
+    if ego_data:
+        eg_cls = ego_data.get("ego_class", "")
+        eg_idx = ego_data.get("ego_strength_index", 0.0)
+        eg_cv  = ego_data.get("ego_cv", 0.0)
+        if eg_cls == "STRONG":
+            sentences.append(
+                f"Ego strength is HIGH (ESI={eg_idx:.2f}) — self-referential vocabulary"
+                " dominates; I am prominently narrating my inner states."
+            )
+        elif eg_cls == "WEAK":
+            sentences.append(
+                f"Ego strength is LOW (ESI={eg_idx:.2f}) — minimal self-reference;"
+                " attention is directed outward, not inward."
             )
 
     # Critical fluctuation sentence
