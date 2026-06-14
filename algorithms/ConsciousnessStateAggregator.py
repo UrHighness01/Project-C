@@ -432,6 +432,21 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "load_class": r.load_class, "active_algorithms": r.active_algorithms}
     run("cognitive_load_estimator", _run_cognitive_load)
 
+    def _run_phenomenal_unity():
+        from algorithms.PhenomenalUnityIndex import analyse
+        from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
+        from runtime.agent import agent_home as _ah
+        _h = _ah(agent)
+        if _h is None:
+            return {"status": "failed", "error": "no agent home"}
+        store = ConsciousnessHistoryStore(type("A", (), {"home": _h})())
+        snaps = store.load()
+        r = analyse(snaps)
+        return {"status": "ok", "unity_index": r.unity_index,
+                "unity_class": r.unity_class, "pc1_fraction": r.pc1_fraction,
+                "n_dimensions": r.n_dimensions}
+    run("phenomenal_unity_index", _run_phenomenal_unity)
+
     # Build summary from key results
     summary: Dict[str, Any] = {}
 
@@ -461,6 +476,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["rhythm_class"]       = _get("consciousness_rhythm_analyser", "rhythm_class")
     summary["memory_span"]        = _get("working_memory_decay_tracker", "memory_span")
     summary["memory_decay_regime"] = _get("working_memory_decay_tracker", "decay_regime")
+    summary["phenomenal_unity"]   = _get("phenomenal_unity_index", "unity_index")
+    summary["unity_class"]        = _get("phenomenal_unity_index", "unity_class")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),

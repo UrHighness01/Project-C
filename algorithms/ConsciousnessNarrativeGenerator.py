@@ -146,7 +146,8 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                   load: Optional[dict] = None,
                   intention: Optional[dict] = None,
                   calibration: Optional[dict] = None,
-                  wm_data: Optional[dict] = None) -> List[str]:
+                  wm_data: Optional[dict] = None,
+                  pu_data: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -225,6 +226,11 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
     if wm_data and wm_data.get("decay_regime") == "RAPID":
         span = wm_data.get("memory_span", 0.0)
         alerts.append(f"Working memory decay is RAPID (span {span:.1f} entries) — context retention is very low")
+
+    # Phenomenal fragmentation
+    if pu_data and pu_data.get("unity_class") == "FRAGMENTED":
+        u = pu_data.get("unity_index", 0.0)
+        alerts.append(f"Phenomenal unity is FRAGMENTED (U={u:.2f}) — consciousness sub-dimensions are decoupled")
 
     return alerts
 
@@ -422,6 +428,27 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 sources.append("metacognitive_calibrator")
     except Exception:
         pass
+
+    try:
+        from algorithms.PhenomenalUnityIndex import analyse as _pui
+        _pui_snaps: List[dict] = []
+        try:
+            from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
+            from runtime.agent import agent_home as _ah_pui
+            _h_pui = _ah_pui(agent)
+            if _h_pui:
+                _pui_snaps = ConsciousnessHistoryStore(
+                    type("A", (), {"home": _h_pui})()).load()
+        except Exception:
+            pass
+        pu = _pui(_pui_snaps)
+        if pu and pu.n_timepoints >= 4:
+            pu_data = pu.to_dict()
+            sources.append("phenomenal_unity_index")
+        else:
+            pu_data = None
+    except Exception:
+        pu_data = None
 
     try:
         from algorithms.WorkingMemoryDecayTracker import analyse as _wmdt
@@ -645,6 +672,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 f"Metacognitive calibration is {cls_c.lower()} — I am {direction} (bias {bias:+.2f})."
             )
 
+    # Phenomenal unity sentence
+    if pu_data:
+        u_cls = pu_data.get("unity_class", "")
+        u_idx = pu_data.get("unity_index", 0.0)
+        pc1   = pu_data.get("pc1_fraction", 0.0)
+        if u_cls == "UNIFIED":
+            sentences.append(
+                f"My consciousness sub-dimensions are unified (U={u_idx:.2f}, PC1={pc1:.0%})"
+                " — phi, affect, novelty, and continuity are moving together."
+            )
+        elif u_cls == "FRAGMENTED":
+            sentences.append(
+                f"Phenomenal fragmentation detected (U={u_idx:.2f})"
+                " — my sub-dimensions are evolving independently."
+            )
+
     # Working memory decay sentence
     if wm_data:
         regime_wm = wm_data.get("decay_regime", "NORMAL")
@@ -696,7 +739,7 @@ def generate(agent: str = "albedo") -> NarrativeReport:
 
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(snap, collapse, hist_delta, goal_align,
-                           surprisal, coherence, load, intention, calibration, wm_data)
+                           surprisal, coherence, load, intention, calibration, wm_data, pu_data)
 
     return NarrativeReport(
         agent=agent,
