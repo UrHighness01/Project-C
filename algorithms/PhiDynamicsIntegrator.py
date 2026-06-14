@@ -330,6 +330,153 @@ class PhiDynamicsIntegrator:
         return phi_vals, velocities
 
 
+# ── Telemetry-grounded factory ──────────────────────────────────────────────
+
+@dataclass
+class OUFitResult:
+    """Ornstein-Uhlenbeck parameters estimated from real phi telemetry.
+
+    The OU process is the Langevin equation with a harmonic potential:
+        U(Φ) = (alpha / 2) · (Φ − mu)²
+    which gives the drift:
+        dΦ = alpha · (mu - Φ) dt + sigma · dW(t)
+
+    Fitting via OLS on differences:
+        Δphi[t] = alpha·mu·dt − alpha·phi[t-1]·dt + noise
+    Regress Δphi on phi[t-1] to extract (alpha·dt, alpha·mu·dt), then divide by dt.
+    """
+    alpha: float          # mean-reversion speed (per heartbeat)
+    mu: float             # equilibrium level (long-run mean phi)
+    sigma: float          # diffusion coefficient (noise per sqrt heartbeat)
+    n_samples: int        # number of heartbeats used
+    r2: float             # R² of the OLS fit (how well OU describes real dynamics)
+    null_r2: float        # R² on shuffled series (chance baseline)
+
+
+def fit_ou_from_telemetry(phi: np.ndarray,
+                          null_seed: int = 42) -> Optional[OUFitResult]:
+    """
+    Fit Ornstein-Uhlenbeck parameters from a real phi series.
+
+    Math:
+        delta[t] = phi[t] - phi[t-1]
+        OLS: delta ~ intercept + slope * phi[t-1]
+        => alpha = -slope   (positive alpha = mean-reversion)
+        => mu    = intercept / (-slope)
+        => sigma = std(residuals)
+
+    Args:
+        phi: Real phi_series from runtime.state (1-D float array).
+        null_seed: Seed for reproducible shuffled-null comparison.
+
+    Returns:
+        OUFitResult, or None if series is too short.
+    """
+    if phi is None or len(phi) < 32:
+        return None
+
+    phi = np.asarray(phi, dtype=float)
+    delta = np.diff(phi)                       # Δphi[t] = phi[t] - phi[t-1]
+    phi_lag = phi[:-1]                         # phi[t-1], aligned with delta
+
+    # OLS: [1, phi_lag] @ [a, b]ᵀ = delta
+    X = np.column_stack([np.ones(len(phi_lag)), phi_lag])
+    A = X.T @ X + 1e-9 * np.eye(2)            # tiny ridge for numerical stability
+    coeffs = np.linalg.solve(A, X.T @ delta)
+    intercept, slope = coeffs
+
+    pred = X @ coeffs
+    resid = delta - pred
+    sigma = float(np.std(resid))
+
+    # alpha·dt = -slope  (negative slope = mean-reverting)
+    alpha = float(-slope)
+    mu = float(intercept / (-slope)) if abs(slope) > 1e-12 else float(np.mean(phi))
+
+    ss_res = float(np.var(resid))
+    ss_tot = float(np.var(delta))
+    r2 = float(np.clip(1.0 - ss_res / ss_tot, -1.0, 1.0)) if ss_tot > 1e-12 else 0.0
+
+    # Null: shuffle phi, refit
+    rng = np.random.default_rng(null_seed)
+    phi_null = rng.permutation(phi)
+    delta_null = np.diff(phi_null)
+    X_null = np.column_stack([np.ones(len(phi_null) - 1), phi_null[:-1]])
+    A_null = X_null.T @ X_null + 1e-9 * np.eye(2)
+    c_null = np.linalg.solve(A_null, X_null.T @ delta_null)
+    resid_null = delta_null - X_null @ c_null
+    ss_res_null = float(np.var(resid_null))
+    null_r2 = float(np.clip(1.0 - ss_res_null / ss_tot, -1.0, 1.0)) if ss_tot > 1e-12 else 0.0
+
+    return OUFitResult(alpha=alpha, mu=mu, sigma=sigma,
+                       n_samples=len(phi), r2=r2, null_r2=null_r2)
+
+
+def simulate_ou(ou: OUFitResult, steps: int = 200,
+                initial: Optional[float] = None,
+                seed: int = 7) -> np.ndarray:
+    """
+    Simulate the fitted OU process forward for `steps` heartbeats.
+
+    dΦ = alpha·(mu - Φ)·dt + sigma·dW,  dt = 1 heartbeat
+
+    Args:
+        ou: Fitted OUFitResult from fit_ou_from_telemetry.
+        steps: Number of heartbeats to simulate.
+        initial: Starting phi (uses ou.mu if None).
+        seed: RNG seed for reproducibility.
+
+    Returns:
+        1-D float array of shape [steps] — simulated phi trajectory.
+    """
+    rng = np.random.default_rng(seed)
+    phi = np.empty(steps)
+    phi[0] = ou.mu if initial is None else float(initial)
+    for t in range(1, steps):
+        drift = ou.alpha * (ou.mu - phi[t - 1])
+        noise = ou.sigma * rng.standard_normal()
+        phi[t] = phi[t - 1] + drift + noise
+    return phi
+
+
+def phi_dynamics_from_telemetry() -> Optional[dict]:
+    """
+    Load real phi telemetry, fit OU parameters, simulate forward 200 steps,
+    and return a grounded summary.
+
+    Returns None if telemetry is unavailable.
+
+    Example:
+        result = phi_dynamics_from_telemetry()
+        if result:
+            print(result['ou_fit'])
+            print(result['forecast'][:10])
+    """
+    try:
+        from runtime.state import phi_series
+        phi = phi_series()
+    except Exception:
+        return None
+
+    if phi is None or len(phi) < 32:
+        return None
+
+    ou = fit_ou_from_telemetry(phi)
+    if ou is None:
+        return None
+
+    forecast = simulate_ou(ou, steps=200, initial=float(phi[-1]))
+
+    return {
+        'ou_fit': ou,
+        'phi_series_length': len(phi),
+        'current_phi': float(phi[-1]),
+        'forecast': forecast,
+        'forecast_mean': float(forecast.mean()),
+        'forecast_std': float(forecast.std()),
+    }
+
+
 def validate_against_consciousness_phenomena():
     """
     Validate Phi dynamics model against known consciousness phenomena.
