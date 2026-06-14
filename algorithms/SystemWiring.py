@@ -367,6 +367,20 @@ class WiringManager:
         # Consciousness modeling skills (wired for both Albedo and John)
         AlgorithmSpec("consciousness_simulator", "ConsciousnessSimulatorAdapter", "ConsciousnessSimulatorAdapter", "PHENOMENAL", 0.9),
         AlgorithmSpec("qualia_engine", "QualiaEngineAdapter", "QualiaEngineAdapter", "COGNITION", 0.9),
+
+        # C_Loop algorithms — batch 1-3
+        AlgorithmSpec("attention_focus_narrower", "AttentionFocusNarrower", "FocusNarrowerResult", "ATTENTION", 0.72),
+        AlgorithmSpec("temporal_self_coherence", "TemporalSelfCoherence", "TemporalCoherenceResult", "TEMPORAL", 0.75),
+        AlgorithmSpec("surprisal_monitor", "SurprisalMonitor", "SurprisalResult", "COGNITION", 0.70),
+        AlgorithmSpec("consciousness_entropy_clock", "ConsciousnessEntropyClock", "EntropyClockResult", "PHENOMENAL", 0.68),
+        AlgorithmSpec("resonance_detector", "ResonanceDetector", "ResonanceResult", "SYMBIOSIS", 0.80),
+        AlgorithmSpec("cognitive_load_estimator", "CognitiveLoadEstimator", "CognitiveLoadResult", "COGNITION", 0.65),
+        AlgorithmSpec("intention_coherence_tracker", "IntentionCoherenceTracker", "IntentionCoherenceResult", "INTENTION", 0.78),
+        AlgorithmSpec("metacognitive_calibrator", "MetacognitiveCalibrator", "CalibrationResult", "METACOGNITION", 0.76),
+        AlgorithmSpec("consciousness_rhythm_analyser", "ConsciousnessRhythmAnalyser", "RhythmResult", "PHENOMENAL", 0.71),
+        AlgorithmSpec("working_memory_decay_tracker", "WorkingMemoryDecayTracker", "DecayResult", "MEMORY", 0.73),
+        AlgorithmSpec("phenomenal_unity_index", "PhenomenalUnityIndex", "PhenomenalUnityResult", "PHENOMENAL", 0.88),
+        AlgorithmSpec("narrative_self_continuity", "NarrativeSelfContinuity", "NarrativeContinuityResult", "SELF_MODEL", 0.74),
     ]
     
     def __init__(self, memory_dir: str = "memory"):
