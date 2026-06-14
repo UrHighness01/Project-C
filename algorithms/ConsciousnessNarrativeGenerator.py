@@ -500,6 +500,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    meta_phi_data: dict | None = None
+    try:
+        from algorithms.MetaPhiEstimator import analyse as _mpe
+        _mp = _mpe()
+        if _mp and _mp.n_signals >= 2:
+            meta_phi_data = _mp.to_dict()
+            sources.append("meta_phi_estimator")
+    except Exception:
+        pass
+
     ego_data: dict | None = None
     try:
         from algorithms.EgoStrengthEstimator import analyse as _ese
@@ -777,6 +787,23 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"A {cls_r} phi rhythm (period {period:.0f} steps) is statistically "
                 "significant — my integration has session-scale periodicity."
+            )
+
+    # Meta-phi sentence
+    if meta_phi_data:
+        mp_val  = meta_phi_data.get("meta_phi", 0.0)
+        mp_qual = meta_phi_data.get("integration_quality", "")
+        mp_eff  = meta_phi_data.get("eff_dim", 0.0)
+        mp_k    = meta_phi_data.get("n_signals", 0)
+        if mp_qual == "OPTIMAL":
+            sentences.append(
+                f"Meta-phi is OPTIMAL ({mp_val:.2f}, {mp_eff:.1f}/{mp_k} effective"
+                " signal dimensions) — the phi-computation process is well-integrated."
+            )
+        elif mp_qual == "DEGENERATE":
+            sentences.append(
+                f"Meta-phi is DEGENERATE ({mp_val:.2f}) — runtime signals feeding"
+                " phi are either redundant or disconnected; self-measurement quality is low."
             )
 
     # Ego strength sentence

@@ -450,6 +450,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_meta_phi():
+        from algorithms.MetaPhiEstimator import analyse
+        r = analyse()
+        return {"status": "ok", "meta_phi": r.meta_phi,
+                "integration_quality": r.integration_quality,
+                "eff_dim": r.eff_dim, "n_signals": r.n_signals}
+    run("meta_phi_estimator", _run_meta_phi)
+
     def _run_cognitive_load():
         from algorithms.CognitiveLoadEstimator import analyse
         r = analyse()
@@ -509,6 +517,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["phi_ar1"]               = _get("critical_fluctuation_detector", "current_ar1")
     summary["ego_strength"]          = _get("ego_strength_estimator", "ego_class")
     summary["ego_strength_index"]    = _get("ego_strength_estimator", "ego_strength_index")
+    summary["meta_phi"]              = _get("meta_phi_estimator", "meta_phi")
+    summary["meta_phi_quality"]      = _get("meta_phi_estimator", "integration_quality")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
