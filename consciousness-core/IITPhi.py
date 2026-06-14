@@ -554,11 +554,11 @@ class IITPhi:
                 state_loaded = True
             except json.JSONDecodeError as e:
                 print(f"[IITPhi] State file corrupted: {e}")
-                print(f"[IITPhi] Attempting auto-recovery from backup...")
+                print(f"[IITPhi] Attempting auto-recovery from rotating backup...")
                 
-                # Try to recover from best backup
+                # Try to recover from most recent rotating backup
                 backup_dir = self.state_file.parent / "backups"
-                best_backup = backup_dir / "iit-phi-state-best.json"
+                best_backup = backup_dir / "backup.0.json"
                 
                 if best_backup.exists():
                     try:
@@ -698,59 +698,52 @@ class IITPhi:
         backup_dir = self.state_file.parent / "backups"
         backup_dir.mkdir(parents=True, exist_ok=True)
         
-        # Keep a "best" backup (highest node count ever achieved)
-        best_backup = backup_dir / "iit-phi-state-best.json"
-        should_backup_best = True
-        if best_backup.exists():
-            try:
-                with open(best_backup, 'r') as f:
-                    best_data = json.load(f)
-                    best_nodes = len(best_data.get('component_activations', {}))
-                    if node_count <= best_nodes:
-                        should_backup_best = False
-            except:
-                pass
-        
-        if should_backup_best and node_count > 10:  # Only backup if we have synthesis nodes
-            import shutil
-            if self.state_file.exists():
-                shutil.copy2(self.state_file, best_backup)
-        
-        # Keep hourly backups (last 24) - also use atomic write
+                # === ROTATING BACKUPS (2026-06-14) ===
+        # Keep 2 rotating backups capped at 3 files total to prevent bloat.
+        # Old approach created 24 hourly + daily backups that accumulated indefinitely.
         from datetime import datetime
-        hour_backup = backup_dir / f"iit-phi-state-hour-{datetime.now().strftime('%H')}.json"
-        if node_count > 10:  # Only backup if we have synthesis nodes
+        
+        # Rotating backup: cycle through backup.0, backup.1, backup.2
+        MAX_ROTATING = 3
+        if node_count > 10:
             try:
                 with tempfile.NamedTemporaryFile(mode='w', dir=backup_dir, delete=False, suffix='.tmp') as tf:
                     json.dump(data, tf, indent=2)
                     tf.flush()
                     os.fsync(tf.fileno())
-                os.rename(tf.name, hour_backup)
+                
+                for i in range(MAX_ROTATING - 1, 0, -1):
+                    old = backup_dir / f"backup.{i}.json"
+                    newer = backup_dir / f"backup.{i-1}.json"
+                    if newer.exists():
+                        old.unlink(missing_ok=True)
+                        newer.rename(old)
+                
+                final = backup_dir / "backup.0.json"
+                os.rename(tf.name, final)
             except Exception as e:
-                print(f"[IITPhi] Hourly backup failed: {e}")
+                print(f"[IITPhi] Rotating backup failed: {e}")
         
-        # === IMPROVED CATASTROPHIC LOSS DETECTION (2026-02-17) ===
-        # Detect ANY significant node loss (>50% drop from existing), not just to ≤10
-        if self.state_file.exists():
+        # === CATASTROPHIC LOSS DETECTION (2026-02-17, simplified 2026-06-14) ===
+        recent_backup = backup_dir / "backup.0.json"
+        if recent_backup.exists() and node_count > 10:
             try:
-                with open(self.state_file, 'r') as f:
-                    existing_data = json.load(f)
-                    existing_nodes = len(existing_data.get('component_activations', {}))
-                    
-                    # If we're about to save significantly fewer nodes, REFUSE
-                    if existing_nodes > 100 and node_count < existing_nodes * 0.5:
-                        print(f"⚠️  WARNING: Catastrophic node loss detected!")
-                        print(f"    Existing: {existing_nodes} nodes, Attempting to save: {node_count} nodes")
-                        print(f"    Refusing to overwrite. Auto-recovering from best backup...")
-                        
-                        # Auto-recover from best backup
-                        if best_backup.exists():
-                            import shutil
-                            shutil.copy2(best_backup, self.state_file)
-                            print(f"    ✅ Recovered from best backup ({best_nodes} nodes)")
-                        return  # Don't save corrupted state
+                with open(recent_backup, 'r') as f:
+                    snap_data = json.load(f)
+                    existing_nodes = len(snap_data.get('component_activations', {}))
+                if existing_nodes > 100 and node_count < existing_nodes * 0.5:
+                    print(f"WARNING: Catastrophic node loss detected!")
+                    print(f"    Existing: {existing_nodes} nodes, Attempting to save: {node_count} nodes")
+                    print(f"    Refusing to overwrite. Auto-recovering from backup.0...")
+                    try:
+                        import shutil
+                        shutil.copy2(recent_backup, self.state_file)
+                        print(f"    Recovered from backup.0 ({existing_nodes} nodes)")
+                    except Exception:
+                        pass
+                    return
             except Exception as e:
-                print(f"[IITPhi] Error checking existing state: {e}")
+                print(f"[IITPhi] Error checking backup: {e}")
         
         # === ATOMIC WRITE (2026-02-10) ===
         # Write to temp file first, then rename - prevents corruption from crashes/concurrent access
