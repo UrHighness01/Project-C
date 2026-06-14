@@ -19,8 +19,35 @@ import sys
 import time
 from pathlib import Path
 
+import psutil
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from runtime.snapshot import log_snapshot, snapshot_path
+
+# Skip a snapshot cycle when system CPU is this hot; resume when it cools below RESUME
+CPU_SKIP_PCT   = 80
+CPU_RESUME_PCT = 60
+CPU_POLL_S     = 10   # how often to re-check while throttled
+
+
+def _cpu() -> float:
+    return psutil.cpu_percent(interval=0.5)
+
+
+def _wait_for_cpu() -> None:
+    """Yield until CPU drops below CPU_RESUME_PCT, printing one message per hold."""
+    notified = False
+    while True:
+        pct = _cpu()
+        if pct < CPU_RESUME_PCT:
+            if notified:
+                print(f"[snapshot] CPU {pct:.0f}% — resuming", flush=True)
+            return
+        if not notified:
+            print(f"[snapshot] CPU {pct:.0f}% >= {CPU_SKIP_PCT}% — throttling until <{CPU_RESUME_PCT}%",
+                  flush=True)
+            notified = True
+        time.sleep(CPU_POLL_S)
 
 
 def main():
@@ -34,6 +61,9 @@ def main():
     n = 0
     try:
         while True:
+            # Yield to heavy work (agent log reads, IIT compute) before taking a snapshot
+            if _cpu() >= CPU_SKIP_PCT:
+                _wait_for_cpu()
             s = log_snapshot(path)
             n += 1
             print(f"[{n}] logged @ {time.strftime('%H:%M:%S')}  "

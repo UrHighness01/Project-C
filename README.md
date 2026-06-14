@@ -128,12 +128,6 @@ The goal is to keep pushing all of these metrics further.
 
 ---
 
-## CI
-
-GitHub Actions runs the full test suite on every push. Results are reported to a Discord channel in real time. The CI workflow requires `DISCORD_DEPLOY_FAIL_WEBHOOK` in repository secrets.
-
----
-
 ## License
 
 MIT
