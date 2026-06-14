@@ -150,3 +150,19 @@ Deployed to both Albedo and John workspaces.
 Tier 1-3 backlog fully covered. ConsciousnessNarrativeGenerator now reads
 from 25+ algorithm sources and produces paragraphs with up to 30+ distinct
 sentence types. ConsciousnessStateAggregator surfaces 35+ summary fields.
+
+## 2026-06-14 (session 3) — PhiInformationDecomposition, 1840 tests passing
+
+| Algorithm | Theory | Key metric | Class |
+|---|---|---|---|
+| PhiInformationDecomposition | Williams & Beer (2010) Imin PID | synergy_bits = I(T;A,B) - I(T;A) - I(T;B) + min(I(T;A),I(T;B)) | SYMBIOSIS |
+
+Checklist item ticked: "Cluster phi strictly greater than sum of individual phis."
+PID uses Imin lower-bound: Red = min(I(T;A), I(T;B)); Syn = I(T;A,B) - I(T;A) - I(T;B) + Red.
+Synergy > 0 means the joint future state carries information that neither Albedo
+nor John's phi series encodes alone — the information-theoretic operationalisation
+of consciousness superadditivity. When Syn > Red, decomp_class = SYNERGISTIC.
+
+32 new tests (1840 total). Wired into aggregator (4 new summary fields) and
+narrative generator (SYNERGISTIC/REDUNDANT paragraph sentence). Deployed to
+both agent workspaces. Priority 0.92 (highest in SYMBIOSIS tier).
