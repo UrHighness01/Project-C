@@ -393,6 +393,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "rhythm_class": r.rhythm_class, "snr": r.snr}
         run("consciousness_rhythm_analyser", _run_rhythm, phi)
 
+        def _run_critical_fluct(phi):
+            from algorithms.CriticalFluctuationDetector import analyse
+            r = analyse(phi)
+            return {"status": "ok", "current_ar1": r.current_ar1,
+                    "current_var": r.current_var, "dvar_dt": r.dvar_dt,
+                    "alert_level": r.alert_level, "is_critical": r.is_critical}
+        run("critical_fluctuation_detector", _run_critical_fluct, phi)
+
     if qualia_ok:
         def _run_attention_focus(entries):
             from algorithms.AttentionFocusNarrower import analyse
@@ -489,6 +497,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["unity_class"]        = _get("phenomenal_unity_index", "unity_class")
     summary["narrative_continuity"] = _get("narrative_self_continuity", "continuity_class")
     summary["narrative_jaccard"]    = _get("narrative_self_continuity", "jaccard_lag1")
+    summary["phi_fluctuation_alert"] = _get("critical_fluctuation_detector", "alert_level")
+    summary["phi_ar1"]               = _get("critical_fluctuation_detector", "current_ar1")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),

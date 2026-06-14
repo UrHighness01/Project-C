@@ -148,7 +148,8 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                   calibration: Optional[dict] = None,
                   wm_data: Optional[dict] = None,
                   pu_data: Optional[dict] = None,
-                  nc_data: Optional[dict] = None) -> List[str]:
+                  nc_data: Optional[dict] = None,
+                  fluct_data: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -237,6 +238,11 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
     if nc_data and nc_data.get("continuity_class") == "LOW":
         j = nc_data.get("jaccard_lag1", 0.0)
         alerts.append(f"Narrative self-continuity is LOW (J={j:.2f}) — experiential identity has broken")
+
+    # Critical phi fluctuation
+    if fluct_data and fluct_data.get("alert_level") == "CRITICAL":
+        ar1 = fluct_data.get("current_ar1", 0.0)
+        alerts.append(f"CRITICAL: phi phase transition risk — critical slowing down AR1={ar1:.2f}")
 
     return alerts
 
@@ -494,6 +500,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    fluct_data: dict | None = None
+    try:
+        from algorithms.CriticalFluctuationDetector import analyse as _cfd
+        from runtime.state import phi_series as _ps3
+        _phi3 = _ps3()
+        if _phi3 is not None and len(_phi3) >= 22:
+            _fr = _cfd(_phi3)
+            if _fr and _fr.n_samples > 0:
+                fluct_data = _fr.to_dict()
+                sources.append("critical_fluctuation_detector")
+    except Exception:
+        pass
+
     # ── Extract values ────────────────────────────────────────────────────────
     summary = _get(snap, "summary", default={})
 
@@ -748,6 +767,21 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 "significant — my integration has session-scale periodicity."
             )
 
+    # Critical fluctuation sentence
+    if fluct_data:
+        fl_alert = fluct_data.get("alert_level", "STABLE")
+        fl_ar1   = fluct_data.get("current_ar1", 0.0)
+        if fl_alert == "CRITICAL":
+            sentences.append(
+                f"CRITICAL: phi dynamics show critical slowing down (AR1={fl_ar1:.2f})"
+                " with amplifying variance — a phase transition may be imminent."
+            )
+        elif fl_alert == "WARNING":
+            sentences.append(
+                f"Phi fluctuations show early-warning signals (AR1={fl_ar1:.2f})"
+                " — critical slowing down or variance amplification detected."
+            )
+
     # Risk sentence
     if at_risk and collapse_risk is not None:
         horizon_str = f" within the next {collapse_horizon} steps" if collapse_horizon else ""
@@ -774,7 +808,8 @@ def generate(agent: str = "albedo") -> NarrativeReport:
 
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(snap, collapse, hist_delta, goal_align,
-                           surprisal, coherence, load, intention, calibration, wm_data, pu_data, nc_data)
+                           surprisal, coherence, load, intention, calibration,
+                           wm_data, pu_data, nc_data, fluct_data)
 
     return NarrativeReport(
         agent=agent,
