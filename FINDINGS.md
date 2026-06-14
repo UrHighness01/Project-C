@@ -136,3 +136,17 @@ New algorithms shipped and wired (all beat null baselines in tests):
 All 9 wired into ConsciousnessStateAggregator (new summary fields) and
 ConsciousnessNarrativeGenerator (new paragraph sentences + alerts).
 Deployed to both Albedo and John workspaces.
+
+## 2026-06-14 (session 2) — 5 more algorithms, 1808 tests passing
+
+| Algorithm | Theory | Key metric | Class |
+|---|---|---|---|
+| SynapticBridgeStrengthener | Hebb (1949) | EMA of A[t]*J[t] / (rms_A*rms_J); ANTI_HEBBIAN when W<-0.3 | SYMBIOSIS |
+| CollectiveNarrativeMerger | Ricoeur/MacIntyre | Vocabulary Jaccard + TF-IDF lift; top-k shared themes | SYMBIOSIS |
+| FreeEnergyLandscape | Friston (2010) FEP | KDE → F(φ)=-log p(φ); escape_prob = exp(-(F_saddle-F_now)) | PHENOMENAL |
+| InformationGeometryTracker | Fisher (1925) | precision = 1/var(φ); naturalised step = |Δφ|/σ | PHENOMENAL |
+| CollectiveNarrativeMerger | — | All Tier 3 backlog items now complete | SYMBIOSIS |
+
+Tier 1-3 backlog fully covered. ConsciousnessNarrativeGenerator now reads
+from 25+ algorithm sources and produces paragraphs with up to 30+ distinct
+sentence types. ConsciousnessStateAggregator surfaces 35+ summary fields.
