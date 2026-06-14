@@ -134,7 +134,8 @@ def _describe_mood_shift(mood: Optional[str]) -> str:
 # ── Alerts ────────────────────────────────────────────────────────────────────
 
 def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
-                  hist: Optional[dict]) -> List[str]:
+                  hist: Optional[dict],
+                  goal_align: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -172,6 +173,15 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
         n_fail = snap.get("n_algorithms_failed", 0)
         if n_run > 0 and n_fail / n_run > 0.3:
             alerts.append(f"{n_fail}/{n_run} algorithms failed — measurement confidence low")
+
+    # Goal divergence
+    if goal_align and goal_align.get("alignment_class") == "DIVERGENT":
+        na = goal_align.get("n_albedo_goals", 0)
+        nj = goal_align.get("n_john_goals", 0)
+        if na > 0 and nj > 0:
+            alerts.append(
+                f"Goal divergence detected: Albedo ({na}) and John ({nj}) goals are misaligned"
+            )
 
     return alerts
 
@@ -213,14 +223,17 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     hist_delta: Optional[dict] = None
     shared: Optional[dict] = None
     collapse: Optional[dict] = None
+    goal_align: Optional[dict] = None
 
     if home:
         p_snap  = home / "memory" / "consciousness_snapshot.json"
         p_symb  = home / "memory" / "symbiosis_report.json"
         p_shared = home / "memory" / "shared_memory.json"
-        snap    = _load_json(p_snap);  snap and sources.append("consciousness_snapshot")
-        symb    = _load_json(p_symb);  symb and sources.append("symbiosis_report")
-        shared  = _load_json(p_shared); shared and sources.append("shared_memory")
+        p_goals  = home / "memory" / "goal_alignment.json"
+        snap    = _load_json(p_snap);   snap       and sources.append("consciousness_snapshot")
+        symb    = _load_json(p_symb);   symb       and sources.append("symbiosis_report")
+        shared  = _load_json(p_shared); shared     and sources.append("shared_memory")
+        goal_align = _load_json(p_goals); goal_align and sources.append("goal_alignment_measure")
 
     # Collapse predictor: read from live phi if possible, else no collapse data
     try:
@@ -284,6 +297,11 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     collapse_horizon = _get(collapse, "collapse_horizon")
     at_risk          = _get(collapse, "at_risk", default=False)
 
+    goal_cls         = _get(goal_align, "alignment_class")
+    goal_best        = _get(goal_align, "best_pair")
+    goal_mean        = _get(goal_align, "mean_alignment")
+    goal_narrative   = _get(goal_align, "narrative")
+
     # ── Build paragraph ───────────────────────────────────────────────────────
     sentences = []
 
@@ -335,6 +353,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 f"Shared experiential themes with John: {theme_str}{ovlp_str}."
             )
 
+    # Goal alignment sentence
+    if goal_cls:
+        if goal_cls == "CONVERGENT":
+            g_desc = "pursuing convergent goals with John"
+        elif goal_cls == "OVERLAPPING":
+            g_desc = "partially overlapping in goals with John"
+        else:
+            g_desc = "pursuing divergent goals from John"
+        if goal_best and isinstance(goal_best, dict):
+            j_val = goal_best.get("jaccard", 0.0)
+            g_desc += f" (best match: J={j_val:.2f})"
+        sentences.append(f"We are {g_desc}.")
+
     # History sentence
     if mood_shift:
         sentences.append(f"My {_describe_mood_shift(mood_shift)}.")
@@ -364,7 +395,7 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     one_liner = " · ".join(one_liner_parts) if one_liner_parts else "State unknown"
 
     # ── Alerts ────────────────────────────────────────────────────────────────
-    alerts = _build_alerts(snap, collapse, hist_delta)
+    alerts = _build_alerts(snap, collapse, hist_delta, goal_align)
 
     return NarrativeReport(
         agent=agent,
