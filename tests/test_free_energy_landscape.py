@@ -52,7 +52,8 @@ class TestKde:
         bw = fel._silverman_bw(x)
         d = fel._kde(x, grid, bw)
         dx = (grid[-1] - grid[0]) / (len(grid) - 1)
-        area = float(np.trapz(d, dx=dx))
+        _trapz = getattr(np, "trapezoid", getattr(np, "trapz", None))
+        area = float(_trapz(d, dx=dx))
         assert 0.8 < area < 1.2
 
 
