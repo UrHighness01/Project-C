@@ -500,6 +500,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    binding_data: dict | None = None
+    try:
+        from algorithms.TemporalBindingWindow import analyse as _tbw
+        from runtime.state import phi_series as _ps_tbw
+        _phi_tbw = _ps_tbw()
+        if _phi_tbw is not None and len(_phi_tbw) >= 10:
+            _bw = _tbw(_phi_tbw)
+            if _bw and _bw.n_samples > 0:
+                binding_data = _bw.to_dict()
+                sources.append("temporal_binding_window")
+    except Exception:
+        pass
+
     meta_phi_data: dict | None = None
     try:
         from algorithms.MetaPhiEstimator import analyse as _mpe
@@ -788,6 +801,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 f"A {cls_r} phi rhythm (period {period:.0f} steps) is statistically "
                 "significant — my integration has session-scale periodicity."
             )
+
+    # Temporal binding window sentence
+    if binding_data:
+        bw_w   = binding_data.get("optimal_width", 0)
+        bw_str = binding_data.get("binding_strength", 0.0)
+        bw_reg = binding_data.get("binding_regime", "")
+        sentences.append(
+            f"Temporal binding window is {bw_reg} ({bw_w} steps, R²={bw_str:.2f})"
+            " — this is the integration timescale over which phi is most self-predictive."
+        )
 
     # Meta-phi sentence
     if meta_phi_data:

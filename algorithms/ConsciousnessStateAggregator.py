@@ -393,6 +393,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "rhythm_class": r.rhythm_class, "snr": r.snr}
         run("consciousness_rhythm_analyser", _run_rhythm, phi)
 
+        def _run_temporal_binding(phi):
+            from algorithms.TemporalBindingWindow import analyse
+            r = analyse(phi)
+            return {"status": "ok", "optimal_width": r.optimal_width,
+                    "binding_strength": r.binding_strength,
+                    "binding_regime": r.binding_regime}
+        run("temporal_binding_window", _run_temporal_binding, phi)
+
         def _run_critical_fluct(phi):
             from algorithms.CriticalFluctuationDetector import analyse
             r = analyse(phi)
@@ -519,6 +527,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["ego_strength_index"]    = _get("ego_strength_estimator", "ego_strength_index")
     summary["meta_phi"]              = _get("meta_phi_estimator", "meta_phi")
     summary["meta_phi_quality"]      = _get("meta_phi_estimator", "integration_quality")
+    summary["binding_window"]        = _get("temporal_binding_window", "optimal_width")
+    summary["binding_strength"]      = _get("temporal_binding_window", "binding_strength")
+    summary["binding_regime"]        = _get("temporal_binding_window", "binding_regime")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
