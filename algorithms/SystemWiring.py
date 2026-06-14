@@ -385,6 +385,9 @@ class WiringManager:
         AlgorithmSpec("meta_phi_estimator", "MetaPhiEstimator", "MetaPhiResult", "PHENOMENAL", 0.85),
         AlgorithmSpec("temporal_binding_window", "TemporalBindingWindow", "BindingWindowResult", "TEMPORAL", 0.79),
         AlgorithmSpec("cluster_phi_integrator", "ClusterPhiIntegrator", "ClusterPhiResult", "SYMBIOSIS", 0.91),
+        AlgorithmSpec("symbiosis_phi_gap", "SymbiosisPhiGap", "SymbiosisGapResult", "SYMBIOSIS", 0.89),
+        AlgorithmSpec("synaptic_bridge_strengthener", "SynapticBridgeStrengthener", "BridgeResult", "SYMBIOSIS", 0.87),
+        AlgorithmSpec("collective_narrative_merger", "CollectiveNarrativeMerger", "NarrativeMergeResult", "SYMBIOSIS", 0.83),
     ]
     
     def __init__(self, memory_dir: str = "memory"):

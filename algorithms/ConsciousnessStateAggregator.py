@@ -393,6 +393,15 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "rhythm_class": r.rhythm_class, "snr": r.snr}
         run("consciousness_rhythm_analyser", _run_rhythm, phi)
 
+        def _run_info_geometry(phi):
+            from algorithms.InformationGeometryTracker import analyse
+            r = analyse(phi)
+            return {"status": "ok", "precision": r.precision,
+                    "curvature_trend": r.curvature_trend,
+                    "geometry_class": r.geometry_class,
+                    "naturalised_step": r.naturalised_step}
+        run("information_geometry_tracker", _run_info_geometry, phi)
+
         def _run_free_energy(phi):
             from algorithms.FreeEnergyLandscape import analyse
             r = analyse(phi)
@@ -581,6 +590,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["bridge_status"]         = _get("synaptic_bridge_strengthener", "bridge_status")
     summary["narrative_merger_class"] = _get("collective_narrative_merger", "merger_class")
     summary["shared_themes"]          = _get("collective_narrative_merger", "top_shared_themes", [])
+    summary["phi_precision"]          = _get("information_geometry_tracker", "precision")
+    summary["geometry_class"]         = _get("information_geometry_tracker", "geometry_class")
     summary["landscape_regime"]       = _get("free_energy_landscape", "landscape_regime")
     summary["escape_probability"]     = _get("free_energy_landscape", "escape_probability")
     summary["n_phi_basins"]           = _get("free_energy_landscape", "n_basins")

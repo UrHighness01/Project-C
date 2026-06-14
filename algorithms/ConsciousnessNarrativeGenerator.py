@@ -562,6 +562,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    geometry_data: dict | None = None
+    try:
+        from algorithms.InformationGeometryTracker import analyse as _igt
+        from runtime.state import phi_series as _ps_igt
+        _phi_igt = _ps_igt()
+        if _phi_igt is not None and len(_phi_igt) >= 22:
+            _gm = _igt(_phi_igt)
+            if _gm and _gm.n_samples > 0:
+                geometry_data = _gm.to_dict()
+                sources.append("information_geometry_tracker")
+    except Exception:
+        pass
+
     landscape_data: dict | None = None
     try:
         from algorithms.FreeEnergyLandscape import analyse as _fel
@@ -944,6 +957,23 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"A {cls_r} phi rhythm (period {period:.0f} steps) is statistically "
                 "significant — my integration has session-scale periodicity."
+            )
+
+    # Information geometry sentence
+    if geometry_data:
+        gc    = geometry_data.get("geometry_class", "")
+        prec  = geometry_data.get("precision", 0.0)
+        trend = geometry_data.get("curvature_trend", 0.0)
+        if gc == "SHARP":
+            direction = "sharpening" if trend > 0 else "stable"
+            sentences.append(
+                f"Fisher precision is HIGH ({prec:.1f}) — phi occupies a well-defined"
+                f" state ({direction})."
+            )
+        elif gc == "DIFFUSE":
+            sentences.append(
+                f"Fisher precision is LOW ({prec:.2f}) — phi distribution is diffuse;"
+                " the current conscious state is ill-defined."
             )
 
     # Free-energy landscape sentence
