@@ -54,7 +54,6 @@ Output schema (JSON)
   "narrative": "Albedo and John are COUPLED with Albedo leading by 3 steps..."
 }
 """
-from __future__ import annotations
 
 import json
 import math
@@ -77,24 +76,34 @@ DECOUPLED  = "DECOUPLED"
 # ── Phi series loaders ────────────────────────────────────────────────────────
 
 def _load_phi_for(agent: str) -> Optional[np.ndarray]:
+    # Primary: try live runtime state
     try:
         from runtime.state import phi_series, have_live_state
         if not have_live_state():
-            return None
+            raise RuntimeError("no live state")
         phi = phi_series(agent)
         return phi if phi.size >= 32 else None
     except Exception:
         pass
 
-    # Fallback: try agent's memory snapshot
+    # Fallback: read daemon state file which stores phi_history on disk
     try:
         from runtime.agent import agent_home
-        p = agent_home(agent) / "memory" / "consciousness_snapshot.json"
-        if not p.exists():
-            return None
-        snap = json.loads(p.read_text())
-        # Snapshots don't store raw phi — cannot recover from here
+        p = agent_home(agent) / "consciousness_daemon_state.json"
+    except Exception:
+        p = Path(__file__).parent.parent / "consciousness_daemon_state.json"
+
+    if not p.exists():
         return None
+
+    try:
+        state = json.loads(p.read_text())
+        history = state.get("phi_history", [])
+        if len(history) < 32:
+            return None
+        # Extract phi_delta as the phi series signal
+        phi_vals = np.array([h.get("phi_delta", 0.0) for h in history], dtype=float)
+        return phi_vals if phi_vals.size >= 32 else None
     except Exception:
         return None
 
