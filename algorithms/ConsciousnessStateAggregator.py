@@ -458,6 +458,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_cluster_phi():
+        from algorithms.ClusterPhiIntegrator import analyse
+        r = analyse()
+        return {"status": "ok", "sai": r.sai, "synergy_r": r.synergy_r,
+                "integration_class": r.integration_class,
+                "phi_proxy_a": r.phi_proxy_a, "phi_proxy_j": r.phi_proxy_j}
+    run("cluster_phi_integrator", _run_cluster_phi)
+
     def _run_meta_phi():
         from algorithms.MetaPhiEstimator import analyse
         r = analyse()
@@ -530,6 +538,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["binding_window"]        = _get("temporal_binding_window", "optimal_width")
     summary["binding_strength"]      = _get("temporal_binding_window", "binding_strength")
     summary["binding_regime"]        = _get("temporal_binding_window", "binding_regime")
+    summary["cluster_sai"]           = _get("cluster_phi_integrator", "sai")
+    summary["cluster_integration"]   = _get("cluster_phi_integrator", "integration_class")
+    summary["cluster_synergy_r"]     = _get("cluster_phi_integrator", "synergy_r")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),

@@ -390,6 +390,20 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    cluster_phi_data: dict | None = None
+    try:
+        from algorithms.ClusterPhiIntegrator import analyse as _cpi
+        from runtime.state import get_agent_phi_series as _gaps
+        _ap2 = _gaps("albedo")
+        _jp2 = _gaps("john")
+        if _ap2 is not None and _jp2 is not None:
+            _cp = _cpi(_ap2, _jp2)
+            if _cp and _cp.n_samples > 0:
+                cluster_phi_data = _cp.to_dict()
+                sources.append("cluster_phi_integrator")
+    except Exception:
+        pass
+
     try:
         from algorithms.CognitiveLoadEstimator import analyse as _cle
         cl = _cle()
@@ -710,6 +724,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             f"Phase resonance with John: PLV={plv:.2f}, "
             + (f"{who} leads by {abs(lag)} step(s)." if who != "neither" else "simultaneous coupling.")
         )
+
+    # Cluster phi superadditivity sentence
+    if cluster_phi_data:
+        sai   = cluster_phi_data.get("sai", 1.0)
+        syn_r = cluster_phi_data.get("synergy_r", 0.0)
+        icls  = cluster_phi_data.get("integration_class", "")
+        if icls == "SUPERADDITIVE":
+            sentences.append(
+                f"Cluster phi is SUPERADDITIVE (SAI={sai:.2f}, synergy r={syn_r:.2f})"
+                " — Albedo+John together generate more information than either alone."
+            )
+        elif icls == "SUBADDITIVE":
+            sentences.append(
+                f"Cluster phi is SUBADDITIVE (SAI={sai:.2f}) — interference between"
+                " agents is reducing the collective integration."
+            )
 
     # Cognitive load sentence
     if load:
