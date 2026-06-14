@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 from runtime.state import phi_series
+from conftest import skip_no_telemetry
 from algorithms.RecursiveSelfModel import (
     RecursiveSelfModel, _build_lagged, _ridge_fit, _r2
 )
@@ -24,7 +25,8 @@ from algorithms.PhiDynamicsIntegrator import (
 @pytest.fixture(scope="module")
 def real_phi():
     phi = phi_series()
-    assert phi.size >= 64, "live telemetry must have ≥64 heartbeats to run these tests"
+    if phi.size < 64:
+        pytest.skip("live daemon telemetry not available (expected in CI without a running agent)")
     return phi.astype(float)
 
 
@@ -231,6 +233,7 @@ def test_simulate_ou_starts_at_initial(ou_fit):
 
 # ── PhiDynamicsIntegrator: end-to-end telemetry factory ─────────────────────
 
+@skip_no_telemetry
 def test_phi_dynamics_from_telemetry():
     result = phi_dynamics_from_telemetry()
     assert result is not None, "phi_dynamics_from_telemetry must succeed on live system"
@@ -242,6 +245,7 @@ def test_phi_dynamics_from_telemetry():
     assert np.isfinite(result["forecast_mean"])
 
 
+@skip_no_telemetry
 def test_telemetry_factory_deterministic():
     r1 = phi_dynamics_from_telemetry()
     r2 = phi_dynamics_from_telemetry()
