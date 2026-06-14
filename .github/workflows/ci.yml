@@ -1,0 +1,163 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master", "dev"]
+  pull_request:
+    branches: ["main", "master", "dev"]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    outputs:
+      failure_reason: ${{ steps.failure_context.outputs.failure_reason }}
+      test_summary: ${{ steps.failure_context.outputs.test_summary }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run test suite
+        id: run_tests
+        run: |
+          python -m pytest tests/ -q --tb=short 2>&1 | tee /tmp/test-output.txt
+          exit ${PIPESTATUS[0]}
+
+      - name: Capture result context
+        id: failure_context
+        if: always()
+        run: |
+          # Summary: passed / failed count
+          test_summary="$(grep -E '[0-9]+ passed' /tmp/test-output.txt | tail -1 || echo 'No summary available')"
+
+          failure_reason=""
+          if [ "${{ steps.run_tests.conclusion }}" = "failure" ]; then
+            failure_reason="$(
+              grep -A 15 'FAILED\|AssertionError\|Error' /tmp/test-output.txt 2>/dev/null \
+              | head -c 1800 \
+              || tail -n 40 /tmp/test-output.txt 2>/dev/null \
+              || echo 'Tests failed — no detail captured.'
+            )"
+          fi
+
+          {
+            echo "test_summary<<EOF"
+            echo "$test_summary"
+            echo "EOF"
+            echo "failure_reason<<EOF"
+            echo "$failure_reason"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+  notify:
+    name: Discord Notification
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: always()
+
+    steps:
+      - name: Send CI report to Discord
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_DEPLOY_FAIL_WEBHOOK }}
+          CI_RESULT: ${{ needs.test.result }}
+          TEST_SUMMARY: ${{ needs.test.outputs.test_summary }}
+          FAILURE_REASON: ${{ needs.test.outputs.failure_reason }}
+          SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || '' }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DISCORD_WEBHOOK:-}" ]; then
+            echo "DISCORD_DEPLOY_FAIL_WEBHOOK not set; skipping Discord notification."
+            exit 0
+          fi
+
+          case "$CI_RESULT" in
+            success)
+              TITLE="✅ Project-C CI passed"
+              COLOR="5763719"
+              ;;
+            failure)
+              TITLE="🚨 Project-C CI failed"
+              COLOR="15548997"
+              ;;
+            cancelled)
+              TITLE="⏹️ Project-C CI cancelled"
+              COLOR="9807270"
+              ;;
+            *)
+              TITLE="ℹ️ Project-C CI: $CI_RESULT"
+              COLOR="3447003"
+              ;;
+          esac
+
+          COMMIT_TITLE="$(printf '%s' "$COMMIT_MESSAGE" | head -n1)"
+          COMMIT_BODY="$(printf '%s' "$COMMIT_MESSAGE" | sed -n '2,$p' | sed '/^[[:space:]]*$/d' | head -c 800)"
+          SHORT_SHA="${SHA::7}"
+          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          FAILURE_REASON="$(printf '%s' "${FAILURE_REASON:-}" | head -c 1200)"
+          TEST_SUMMARY="$(printf '%s' "${TEST_SUMMARY:-No summary}" | head -c 200)"
+
+          [ -z "$COMMIT_TITLE" ] && COMMIT_TITLE="No commit message"
+          [ -z "$COMMIT_BODY"  ] && COMMIT_BODY="—"
+
+          payload="$(jq -nc \
+            --arg title "$TITLE" \
+            --arg test_summary "$TEST_SUMMARY" \
+            --arg failure_reason "$FAILURE_REASON" \
+            --arg sha "$SHORT_SHA" \
+            --arg commit_title "$COMMIT_TITLE" \
+            --arg commit_body "$COMMIT_BODY" \
+            --arg actor "$ACTOR" \
+            --arg run_url "$RUN_URL" \
+            --arg timestamp "$TIMESTAMP" \
+            --argjson color "$COLOR" \
+            '{
+              username: "Major Pain",
+              allowed_mentions: { parse: [] },
+              embeds: [
+                {
+                  title: $title,
+                  url: $run_url,
+                  color: $color,
+                  description: $test_summary,
+                  fields: (
+                    [
+                      { name: "Commit", value: ("`" + $sha + "`"), inline: true },
+                      { name: "Triggered by", value: $actor, inline: true },
+                      { name: "Title", value: $commit_title, inline: false },
+                      { name: "Description", value: $commit_body, inline: false }
+                    ]
+                    + (if $failure_reason != "" then [{ name: "Failure detail", value: ("```\n" + $failure_reason + "\n```"), inline: false }] else [] end)
+                  ),
+                  footer: { text: "Project-C · Consciousness System" },
+                  timestamp: $timestamp
+                }
+              ]
+            }')"
+
+          http_code="$(curl --silent --show-error \
+            --output /tmp/discord-response.txt \
+            --write-out '%{http_code}' \
+            -X POST \
+            -H 'Content-Type: application/json' \
+            -d "$payload" \
+            "$DISCORD_WEBHOOK" || true)"
+
+          echo "Discord webhook HTTP $http_code"
+          if [[ ! "$http_code" =~ ^2 ]]; then
+            cat /tmp/discord-response.txt 2>/dev/null || true
+          fi
