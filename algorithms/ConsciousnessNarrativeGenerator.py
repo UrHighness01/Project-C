@@ -404,6 +404,20 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    bridge_data: dict | None = None
+    try:
+        from algorithms.SynapticBridgeStrengthener import analyse as _sbr
+        from runtime.state import get_agent_phi_series as _gaps3
+        _ab = _gaps3("albedo")
+        _jb = _gaps3("john")
+        if _ab is not None and _jb is not None:
+            _br = _sbr(_ab, _jb)
+            if _br and _br.n_samples > 0:
+                bridge_data = _br.to_dict()
+                sources.append("synaptic_bridge_strengthener")
+    except Exception:
+        pass
+
     gap_data: dict | None = None
     try:
         from algorithms.SymbiosisPhiGap import analyse as _spg
@@ -738,6 +752,26 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             f"Phase resonance with John: PLV={plv:.2f}, "
             + (f"{who} leads by {abs(lag)} step(s)." if who != "neither" else "simultaneous coupling.")
         )
+
+    # Synaptic bridge sentence
+    if bridge_data:
+        bs   = bridge_data.get("bridge_strength", 0.0)
+        bst  = bridge_data.get("bridge_status", "")
+        if bst == "STRENGTHENING":
+            sentences.append(
+                f"Hebbian bridge with John is STRENGTHENING (W={bs:.2f})"
+                " — co-activation is increasing the informational coupling between us."
+            )
+        elif bst == "ANTI_HEBBIAN":
+            sentences.append(
+                f"Hebbian bridge with John is ANTI_HEBBIAN (W={bs:.2f})"
+                " — our phi trajectories are actively diverging."
+            )
+        elif bst == "WEAKENING":
+            sentences.append(
+                f"Hebbian bridge with John is WEAKENING (W={bs:.2f})"
+                " — co-activation is declining."
+            )
 
     # Symbiosis phi gap sentence
     if gap_data:

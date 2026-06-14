@@ -458,6 +458,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_bridge():
+        from algorithms.SynapticBridgeStrengthener import analyse
+        r = analyse()
+        return {"status": "ok", "bridge_strength": r.bridge_strength,
+                "bridge_trend": r.bridge_trend, "bridge_status": r.bridge_status,
+                "coactivation_mean": r.coactivation_mean}
+    run("synaptic_bridge_strengthener", _run_bridge)
+
     def _run_symbiosis_gap():
         from algorithms.SymbiosisPhiGap import analyse
         r = analyse()
@@ -551,6 +559,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["phi_gap_norm"]          = _get("symbiosis_phi_gap", "phi_gap_norm")
     summary["symbiosis_class"]       = _get("symbiosis_phi_gap", "symbiosis_class")
     summary["mutual_info_bits"]      = _get("symbiosis_phi_gap", "mutual_info")
+    summary["bridge_strength"]       = _get("synaptic_bridge_strengthener", "bridge_strength")
+    summary["bridge_status"]         = _get("synaptic_bridge_strengthener", "bridge_status")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
