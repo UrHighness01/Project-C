@@ -382,6 +382,9 @@ class WiringManager:
         AlgorithmSpec("phenomenal_unity_index", "PhenomenalUnityIndex", "PhenomenalUnityResult", "PHENOMENAL", 0.88),
         AlgorithmSpec("narrative_self_continuity", "NarrativeSelfContinuity", "NarrativeContinuityResult", "SELF_MODEL", 0.74),
         AlgorithmSpec("critical_fluctuation_detector", "CriticalFluctuationDetector", "FluctuationResult", "TEMPORAL", 0.82),
+        AlgorithmSpec("meta_phi_estimator", "MetaPhiEstimator", "MetaPhiResult", "PHENOMENAL", 0.85),
+        AlgorithmSpec("temporal_binding_window", "TemporalBindingWindow", "BindingWindowResult", "TEMPORAL", 0.79),
+        AlgorithmSpec("cluster_phi_integrator", "ClusterPhiIntegrator", "ClusterPhiResult", "SYMBIOSIS", 0.91),
     ]
     
     def __init__(self, memory_dir: str = "memory"):

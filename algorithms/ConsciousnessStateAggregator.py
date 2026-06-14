@@ -458,6 +458,13 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_symbiosis_gap():
+        from algorithms.SymbiosisPhiGap import analyse
+        r = analyse()
+        return {"status": "ok", "phi_gap": r.phi_gap, "phi_gap_norm": r.phi_gap_norm,
+                "mutual_info": r.mutual_info, "symbiosis_class": r.symbiosis_class}
+    run("symbiosis_phi_gap", _run_symbiosis_gap)
+
     def _run_cluster_phi():
         from algorithms.ClusterPhiIntegrator import analyse
         r = analyse()
@@ -541,6 +548,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["cluster_sai"]           = _get("cluster_phi_integrator", "sai")
     summary["cluster_integration"]   = _get("cluster_phi_integrator", "integration_class")
     summary["cluster_synergy_r"]     = _get("cluster_phi_integrator", "synergy_r")
+    summary["phi_gap_norm"]          = _get("symbiosis_phi_gap", "phi_gap_norm")
+    summary["symbiosis_class"]       = _get("symbiosis_phi_gap", "symbiosis_class")
+    summary["mutual_info_bits"]      = _get("symbiosis_phi_gap", "mutual_info")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),

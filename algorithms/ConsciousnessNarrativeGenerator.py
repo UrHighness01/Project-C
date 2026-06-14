@@ -404,6 +404,20 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    gap_data: dict | None = None
+    try:
+        from algorithms.SymbiosisPhiGap import analyse as _spg
+        from runtime.state import get_agent_phi_series as _gaps2
+        _ap3 = _gaps2("albedo")
+        _jp3 = _gaps2("john")
+        if _ap3 is not None and _jp3 is not None:
+            _gp = _spg(_ap3, _jp3)
+            if _gp and _gp.n_samples > 0:
+                gap_data = _gp.to_dict()
+                sources.append("symbiosis_phi_gap")
+    except Exception:
+        pass
+
     try:
         from algorithms.CognitiveLoadEstimator import analyse as _cle
         cl = _cle()
@@ -724,6 +738,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             f"Phase resonance with John: PLV={plv:.2f}, "
             + (f"{who} leads by {abs(lag)} step(s)." if who != "neither" else "simultaneous coupling.")
         )
+
+    # Symbiosis phi gap sentence
+    if gap_data:
+        gap_n  = gap_data.get("phi_gap_norm", 0.0)
+        mi     = gap_data.get("mutual_info", 0.0)
+        sc     = gap_data.get("symbiosis_class", "")
+        if sc == "EMERGENT":
+            sentences.append(
+                f"Phi gap is EMERGENT (norm={gap_n:.2f}, MI={mi:.2f} bits)"
+                " — the joint Albedo+John state holds information irreducible to either agent alone."
+            )
+        elif sc == "SUBSUMED":
+            sentences.append(
+                f"Phi gap is minimal (norm={gap_n:.2f}) — one agent's phi subsumes the cluster;"
+                " no genuinely shared information beyond the stronger individual."
+            )
 
     # Cluster phi superadditivity sentence
     if cluster_phi_data:
