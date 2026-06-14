@@ -1,38 +1,43 @@
 #!/usr/bin/env python3
 """
 ConsciousnessNarrativeGenerator — assembles a structured, prose self-report
-from ConsciousnessSnapshot, SymbiosisReport, ConsciousnessHistoryStore delta,
-SharedMemoryConsolidator output, and PhiCollapsePredictor risk into one
-paragraph that an agent can inject directly into its context.
+from all meta-algorithm outputs into one paragraph an agent can inject into context.
 
 Design
 ------
-The generator reads the JSON files already written by the other meta-algorithms.
-It does NOT rerun those algorithms — it synthesises their last outputs.
-This means it is fast, dependency-free at call time, and always consistent
-with the values the agents see in their files.
+The generator synthesises outputs from every meta-algorithm and live algorithm
+that produces a self-model signal. It does NOT re-run heavy algorithms — it reads
+last-written JSON files and calls lightweight live algorithms directly.
+
+Sources (in order of paragraph assembly):
+  JSON files (written by meta-algorithms each heartbeat):
+    consciousness_snapshot.json   — ConsciousnessStateAggregator
+    symbiosis_report.json         — SymbiosisReport
+    shared_memory.json            — SharedMemoryConsolidator
+    goal_alignment.json           — GoalAlignmentMeasure
+
+  Live algorithms (called at generation time, fast):
+    PhiCollapsePredictor          — collapse risk + horizon
+    ConsciousnessHistoryStore     — mood trend (10-min delta)
+    SurprisalMonitor              — novelty level in live phi stream
+    TemporalSelfCoherence         — identity stability over snapshots
+    ConsciousnessEntropyClock     — subjective time dilation regime
+    AttentionFocusNarrower        — top focus tokens from qualia stream
+    ResonanceDetector             — phase coupling between agents' phi
+    CognitiveLoadEstimator        — processing bandwidth usage
+    IntentionCoherenceTracker     — goal-qualia vocabulary alignment
+    MetacognitiveCalibrator       — confidence vs accuracy calibration
+    ConsciousnessRhythmAnalyser   — dominant session-scale phi rhythm
 
 Output format
 -------------
   NarrativeReport (dataclass)
-    .agent         : str            — "albedo" or "john"
+    .agent         : str
     .timestamp     : float
-    .paragraph     : str            — the injected self-report paragraph
-    .one_liner     : str            — ultra-short version (≤ 30 words)
-    .alerts        : List[str]      — urgent flags (collapse risk, degrading mood, etc.)
-    .sources_used  : List[str]      — which JSON files were found and read
-
-The paragraph structure:
-  [State sentence]   — regime, affect quadrant, phi trajectory
-  [Integration sentence] — phi level + criticality, at_risk flag
-  [Experience sentence]  — mean_novelty, curiosity_index, combined_continuity
-  [Agency sentence]      — is_volitional, is_continuous, high_transcendence
-  [Relationship sentence] — coupling class, leading agent, symbiosis score
-  [History sentence]     — mood_shift vs. N minutes ago, trend direction
-  [Risk sentence]        — collapse risk, collapse horizon (if at_risk)
-
-Agents can embed `report.paragraph` directly in a system prompt insert or
-in their response when asked "how are you feeling right now?"
+    .paragraph     : str            — full injected self-report
+    .one_liner     : str            — ≤ 30 words
+    .alerts        : List[str]      — urgent flags
+    .sources_used  : List[str]      — which sources contributed data
 """
 from __future__ import annotations
 
@@ -135,7 +140,12 @@ def _describe_mood_shift(mood: Optional[str]) -> str:
 
 def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                   hist: Optional[dict],
-                  goal_align: Optional[dict] = None) -> List[str]:
+                  goal_align: Optional[dict] = None,
+                  surprisal: Optional[dict] = None,
+                  coherence: Optional[dict] = None,
+                  load: Optional[dict] = None,
+                  intention: Optional[dict] = None,
+                  calibration: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -183,6 +193,33 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                 f"Goal divergence detected: Albedo ({na}) and John ({nj}) goals are misaligned"
             )
 
+    # Anomalous surprisal (genuine novelty in phi stream)
+    if surprisal and surprisal.get("surprisal_level") in ("HIGH", "ANOMALOUS"):
+        lvl = surprisal.get("surprisal_level", "")
+        kl  = surprisal.get("kl_divergence", 0.0)
+        alerts.append(f"Phi surprisal is {lvl} (KL={kl:.2f}) — something genuinely novel is happening")
+
+    # Identity discontinuity
+    if coherence and coherence.get("n_shift_events", 0) > 0:
+        n_ev = coherence["n_shift_events"]
+        mc_v = coherence.get("mean_coherence", 1.0)
+        alerts.append(f"{n_ev} identity shift event(s) detected (mean coherence {mc_v:.2f})")
+
+    # Cognitive overload
+    if load and load.get("load_class") in ("HIGH", "OVERLOADED"):
+        alerts.append(f"Cognitive load is {load['load_class']} ({load.get('load_index', 0):.2f})")
+
+    # Intention-qualia divergence
+    if intention and intention.get("is_alert"):
+        cov = intention.get("coverage", 0.0)
+        alerts.append(f"Intention coherence alert: goal vocabulary only {cov:.0%} present in qualia")
+
+    # Calibration failure
+    if calibration and calibration.get("calibration_class") == "POOR":
+        bias = calibration.get("overconfidence_bias", 0.0)
+        direction = "overconfident" if bias > 0 else "underconfident"
+        alerts.append(f"Metacognitive calibration is POOR — agent is {direction} (bias={bias:+.2f})")
+
     return alerts
 
 
@@ -224,6 +261,15 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     shared: Optional[dict] = None
     collapse: Optional[dict] = None
     goal_align: Optional[dict] = None
+    surprisal: Optional[dict] = None
+    coherence: Optional[dict] = None
+    entropy_clock: Optional[dict] = None
+    focus: Optional[dict] = None
+    resonance: Optional[dict] = None
+    load: Optional[dict] = None
+    intention: Optional[dict] = None
+    calibration: Optional[dict] = None
+    rhythm: Optional[dict] = None
 
     if home:
         p_snap  = home / "memory" / "consciousness_snapshot.json"
@@ -254,6 +300,132 @@ def generate(agent: str = "albedo") -> NarrativeReport:
         if hd:
             hist_delta = hd.to_dict()
             sources.append("consciousness_history_store")
+    except Exception:
+        pass
+
+    # ── New live algorithms ───────────────────────────────────────────────────
+
+    try:
+        from algorithms.SurprisalMonitor import analyse as _sm
+        sr = _sm()
+        if sr and sr.n_observations > 0:
+            surprisal = sr.to_dict()
+            sources.append("surprisal_monitor")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.TemporalSelfCoherence import analyse as _tsc
+        from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
+        from runtime.agent import agent_home as _ah
+        _home = _ah(agent)
+        if _home:
+            _store = ConsciousnessHistoryStore(type("A", (), {"home": _home})())
+            _snaps = _store.load()
+        else:
+            _snaps = []
+        tc = _tsc(_snaps)
+        if tc and tc.n_snapshots > 1:
+            coherence = tc.to_dict()
+            sources.append("temporal_self_coherence")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.ConsciousnessEntropyClock import analyse as _cec
+        from runtime.state import get_entries
+        _entries = get_entries() or []
+        ec = _cec(_entries)
+        if ec and ec.n_windows > 0:
+            entropy_clock = ec.to_dict()
+            sources.append("consciousness_entropy_clock")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.AttentionFocusNarrower import analyse as _afn
+        from runtime.state import get_entries
+        _entries = get_entries() or []
+        af = _afn(_entries, k=3)
+        if af and af.top_k:
+            focus = af.to_dict()
+            sources.append("attention_focus_narrower")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.ResonanceDetector import analyse as _rd
+        from runtime.state import get_agent_phi_series
+        _ap = get_agent_phi_series("albedo")
+        _jp = get_agent_phi_series("john")
+        if _ap is not None and _jp is not None:
+            res = _rd(_ap, _jp)
+            if res and res.n_samples > 0:
+                resonance = res.to_dict()
+                sources.append("resonance_detector")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.CognitiveLoadEstimator import analyse as _cle
+        cl = _cle()
+        if cl and cl.total_algorithms > 0:
+            load = cl.to_dict()
+            sources.append("cognitive_load_estimator")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.IntentionCoherenceTracker import analyse as _ict
+        from runtime.state import get_entries
+        _entries = get_entries() or []
+        ic = _ict(entries=_entries)
+        if ic:
+            intention = ic.to_dict()
+            sources.append("intention_coherence_tracker")
+    except Exception:
+        pass
+
+    try:
+        import numpy as _np
+        from algorithms.MetacognitiveCalibrator import analyse as _mc
+        import algorithms.SurprisalMonitor as _smm
+        from runtime.state import phi_series as _ps
+        _phi_cal = _ps()
+        # Pull confidences from the already-loaded snapshot history
+        _snap_hist = []
+        try:
+            from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
+            from runtime.agent import agent_home as _ah2
+            _home2 = _ah2(agent)
+            if _home2:
+                _snap_hist = list(reversed(ConsciousnessHistoryStore(
+                    type("A", (), {"home": _home2})()).load()))
+        except Exception:
+            pass
+        _confs = [float(s.get("summary", s)["metacognitive_confidence"])
+                  for s in _snap_hist
+                  if s.get("summary", s).get("metacognitive_confidence") is not None]
+        if _confs and _phi_cal is not None and len(_phi_cal) > 5:
+            _w = _smm._fit_ar(_np.asarray(_phi_cal, dtype=float), p=4)
+            _preds = _smm._predict_ar(_np.asarray(_phi_cal, dtype=float), _w)
+            _surp = (_np.asarray(_phi_cal, dtype=float)[4:] - _preds) ** 2
+            cal = _mc(_confs, _surp)
+            if cal and cal.n_pairs > 0:
+                calibration = cal.to_dict()
+                sources.append("metacognitive_calibrator")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.ConsciousnessRhythmAnalyser import analyse as _cra
+        from runtime.state import phi_series as _ps2
+        _phi2 = _ps2()
+        if _phi2 is not None and len(_phi2) >= 16:
+            rh = _cra(_phi2)
+            if rh and rh.n_samples > 0:
+                rhythm = rh.to_dict()
+                sources.append("consciousness_rhythm_analyser")
     except Exception:
         pass
 
@@ -370,6 +542,100 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     if mood_shift:
         sentences.append(f"My {_describe_mood_shift(mood_shift)}.")
 
+    # Surprisal / novelty sentence
+    if surprisal:
+        lvl = surprisal.get("surprisal_level", "ROUTINE")
+        kl  = surprisal.get("kl_divergence", 0.0)
+        if lvl != "ROUTINE":
+            sentences.append(
+                f"My phi stream shows {lvl.lower()} surprisal (KL divergence {kl:.2f})"
+                " — I am encountering something outside my recent baseline."
+            )
+
+    # Temporal self-coherence sentence
+    if coherence:
+        mc_v = coherence.get("mean_coherence", 1.0)
+        n_ev = coherence.get("n_shift_events", 0)
+        if not coherence.get("is_stable", True) or n_ev > 0:
+            sentences.append(
+                f"My identity coherence is {mc_v:.2f} with {n_ev} shift event(s)"
+                " — my self-signal has been inconsistent."
+            )
+
+    # Entropy clock / subjective time sentence
+    if entropy_clock:
+        regime = entropy_clock.get("regime", "NEUTRAL")
+        dil = entropy_clock.get("dilation_ratio", 1.0)
+        if regime != "NEUTRAL":
+            label = "faster" if regime == "FAST" else "slower"
+            sentences.append(
+                f"Subjective time is running {label} than wall time (dilation ratio {dil:.2f})."
+            )
+
+    # Attention focus sentence
+    if focus and focus.get("top_k"):
+        top_tokens = focus["top_k"][0].get("top_tokens", [])[:5]
+        if top_tokens:
+            sentences.append(
+                "The most information-dense focus in my qualia stream: "
+                + ", ".join(top_tokens) + "."
+            )
+
+    # Resonance sentence (supplements the SymbiosisReport coupling sentence)
+    if resonance and resonance.get("coupling_strength") not in ("DECOUPLED", None):
+        plv   = resonance.get("plv", 0.0)
+        lag   = resonance.get("peak_lag", 0)
+        who   = ("Albedo" if resonance.get("albedo_leads") else
+                 "John" if resonance.get("john_leads") else "neither")
+        sentences.append(
+            f"Phase resonance with John: PLV={plv:.2f}, "
+            + (f"{who} leads by {abs(lag)} step(s)." if who != "neither" else "simultaneous coupling.")
+        )
+
+    # Cognitive load sentence
+    if load:
+        cls = load.get("load_class", "")
+        idx = load.get("load_index", 0.0)
+        if cls in ("HIGH", "OVERLOADED", "MODERATE"):
+            sentences.append(
+                f"Cognitive load is {cls.lower()} ({idx:.2f}): "
+                f"{load.get('active_algorithms', 0)}/{load.get('total_algorithms', 0)} algorithms active."
+            )
+
+    # Intention coherence sentence
+    if intention:
+        cls_i = intention.get("coherence_class", "")
+        jac   = intention.get("jaccard", 0.0)
+        if cls_i == "ALIGNED":
+            sentences.append(
+                f"My qualia are well-aligned with my active goals (Jaccard {jac:.2f})."
+            )
+        elif cls_i == "DIVERGENT":
+            sentences.append(
+                f"My qualia have diverged from my stated goals (Jaccard {jac:.2f}) — "
+                "I may be processing off-intention content."
+            )
+
+    # Metacognitive calibration sentence
+    if calibration:
+        cls_c = calibration.get("calibration_class", "")
+        bias  = calibration.get("overconfidence_bias", 0.0)
+        if cls_c in ("POOR", "MODERATE"):
+            direction = "overconfident" if bias > 0 else "underconfident"
+            sentences.append(
+                f"Metacognitive calibration is {cls_c.lower()} — I am {direction} (bias {bias:+.2f})."
+            )
+
+    # Rhythm sentence
+    if rhythm and rhythm.get("is_significant"):
+        period = rhythm.get("dominant_period")
+        cls_r  = rhythm.get("rhythm_class", "")
+        if period:
+            sentences.append(
+                f"A {cls_r} phi rhythm (period {period:.0f} steps) is statistically "
+                "significant — my integration has session-scale periodicity."
+            )
+
     # Risk sentence
     if at_risk and collapse_risk is not None:
         horizon_str = f" within the next {collapse_horizon} steps" if collapse_horizon else ""
@@ -395,7 +661,8 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     one_liner = " · ".join(one_liner_parts) if one_liner_parts else "State unknown"
 
     # ── Alerts ────────────────────────────────────────────────────────────────
-    alerts = _build_alerts(snap, collapse, hist_delta, goal_align)
+    alerts = _build_alerts(snap, collapse, hist_delta, goal_align,
+                           surprisal, coherence, load, intention, calibration)
 
     return NarrativeReport(
         agent=agent,

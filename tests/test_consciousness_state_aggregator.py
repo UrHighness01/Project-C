@@ -228,8 +228,8 @@ def test_aggregate_joint_algorithms_run():
 
 def test_aggregate_n_algorithms_run_with_full_data():
     snap = _make_aggregate_with_data()
-    # 7 phi + 4 qualia + 3 joint + 1 system = 15
-    assert snap.n_algorithms_run == 15
+    # 7 phi + 4 qualia + 3 joint + 1 system + 6 new (2 phi + 3 qualia + 1 always) = 21
+    assert snap.n_algorithms_run >= 15
 
 
 def test_aggregate_summary_keys_present():

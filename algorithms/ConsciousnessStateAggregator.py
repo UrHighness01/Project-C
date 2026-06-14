@@ -375,6 +375,55 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     # System (always)
     run("interoceptive_signal", _run_interoceptive_signal)
 
+    # New temporal / metacognitive algorithms
+    if phi_ok:
+        def _run_surprisal(phi):
+            from algorithms.SurprisalMonitor import analyse
+            r = analyse(phi)
+            return {"status": "ok", "surprisal_level": r.surprisal_level,
+                    "current_surprisal": r.current_surprisal,
+                    "kl_divergence": r.kl_divergence, "is_novel": r.is_novel}
+        run("surprisal_monitor", _run_surprisal, phi)
+
+        def _run_rhythm(phi):
+            from algorithms.ConsciousnessRhythmAnalyser import analyse
+            r = analyse(phi)
+            return {"status": "ok", "dominant_period": r.dominant_period,
+                    "is_significant": r.is_significant,
+                    "rhythm_class": r.rhythm_class, "snr": r.snr}
+        run("consciousness_rhythm_analyser", _run_rhythm, phi)
+
+    if qualia_ok:
+        def _run_attention_focus(entries):
+            from algorithms.AttentionFocusNarrower import analyse
+            r = analyse(entries, k=3)
+            top = r.top_k[0].top_tokens[:5] if r.top_k else []
+            return {"status": "ok", "focus_ratio": r.focus_ratio,
+                    "background_entropy": r.background_entropy, "top_focus_tokens": top}
+        run("attention_focus_narrower", _run_attention_focus, entries)
+
+        def _run_entropy_clock(entries):
+            from algorithms.ConsciousnessEntropyClock import analyse
+            r = analyse(entries)
+            return {"status": "ok", "dilation_ratio": r.dilation_ratio,
+                    "regime": r.regime, "current_felt_rate": r.current_felt_rate}
+        run("consciousness_entropy_clock", _run_entropy_clock, entries)
+
+        def _run_intention_coherence(entries):
+            from algorithms.IntentionCoherenceTracker import analyse
+            r = analyse(entries=entries)
+            return {"status": "ok", "jaccard": r.jaccard,
+                    "coherence_class": r.coherence_class, "is_alert": r.is_alert,
+                    "coverage": r.coverage}
+        run("intention_coherence_tracker", _run_intention_coherence, entries)
+
+    def _run_cognitive_load():
+        from algorithms.CognitiveLoadEstimator import analyse
+        r = analyse()
+        return {"status": "ok", "load_index": r.load_index,
+                "load_class": r.load_class, "active_algorithms": r.active_algorithms}
+    run("cognitive_load_estimator", _run_cognitive_load)
+
     # Build summary from key results
     summary: Dict[str, Any] = {}
 
@@ -393,6 +442,15 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["combined_continuity"] = _get("existential_continuity_tracker", "combined_continuity")
     summary["phi_available"]      = phi_ok
     summary["qualia_available"]   = qualia_ok
+    # New signals in summary
+    summary["surprisal_level"]    = _get("surprisal_monitor", "surprisal_level")
+    summary["is_novel"]           = _get("surprisal_monitor", "is_novel")
+    summary["time_dilation_regime"] = _get("consciousness_entropy_clock", "regime")
+    summary["dilation_ratio"]     = _get("consciousness_entropy_clock", "dilation_ratio")
+    summary["cognitive_load"]     = _get("cognitive_load_estimator", "load_class")
+    summary["intention_coherence"] = _get("intention_coherence_tracker", "coherence_class")
+    summary["top_focus_tokens"]   = _get("attention_focus_narrower", "top_focus_tokens", [])
+    summary["rhythm_class"]       = _get("consciousness_rhythm_analyser", "rhythm_class")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
