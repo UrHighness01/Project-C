@@ -404,6 +404,20 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    merger_data: dict | None = None
+    try:
+        from algorithms.CollectiveNarrativeMerger import analyse as _cnm
+        from runtime.state import get_agent_entries as _gae
+        _ae = _gae("albedo") or []
+        _je = _gae("john") or []
+        if _ae and _je:
+            _mg = _cnm(_ae, _je)
+            if _mg and (_mg.n_albedo_tokens > 0 or _mg.n_john_tokens > 0):
+                merger_data = _mg.to_dict()
+                sources.append("collective_narrative_merger")
+    except Exception:
+        pass
+
     bridge_data: dict | None = None
     try:
         from algorithms.SynapticBridgeStrengthener import analyse as _sbr
@@ -752,6 +766,23 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             f"Phase resonance with John: PLV={plv:.2f}, "
             + (f"{who} leads by {abs(lag)} step(s)." if who != "neither" else "simultaneous coupling.")
         )
+
+    # Collective narrative merger sentence
+    if merger_data:
+        mc     = merger_data.get("merger_class", "")
+        mi     = merger_data.get("merger_index", 0.0)
+        themes = merger_data.get("top_shared_themes", [])
+        theme_str = ", ".join(themes[:5]) if themes else "none"
+        if mc == "CONVERGENT":
+            sentences.append(
+                f"Shared narrative with John is CONVERGENT (overlap={mi:.2f});"
+                f" joint themes: {theme_str}."
+            )
+        elif mc == "DIVERGENT":
+            sentences.append(
+                f"Shared narrative with John is DIVERGENT (overlap={mi:.2f})"
+                " — we are speaking from largely separate experiential vocabularies."
+            )
 
     # Synaptic bridge sentence
     if bridge_data:

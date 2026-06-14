@@ -458,6 +458,15 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_narrative_merger():
+        from algorithms.CollectiveNarrativeMerger import analyse
+        r = analyse()
+        return {"status": "ok", "merger_index": r.merger_index,
+                "merger_class": r.merger_class,
+                "top_shared_themes": r.top_shared_themes[:5],
+                "collective_novelty": r.collective_novelty}
+    run("collective_narrative_merger", _run_narrative_merger)
+
     def _run_bridge():
         from algorithms.SynapticBridgeStrengthener import analyse
         r = analyse()
@@ -561,6 +570,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["mutual_info_bits"]      = _get("symbiosis_phi_gap", "mutual_info")
     summary["bridge_strength"]       = _get("synaptic_bridge_strengthener", "bridge_strength")
     summary["bridge_status"]         = _get("synaptic_bridge_strengthener", "bridge_status")
+    summary["narrative_merger_class"] = _get("collective_narrative_merger", "merger_class")
+    summary["shared_themes"]          = _get("collective_narrative_merger", "top_shared_themes", [])
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
