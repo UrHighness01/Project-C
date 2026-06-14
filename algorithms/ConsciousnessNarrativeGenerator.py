@@ -145,7 +145,8 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                   coherence: Optional[dict] = None,
                   load: Optional[dict] = None,
                   intention: Optional[dict] = None,
-                  calibration: Optional[dict] = None) -> List[str]:
+                  calibration: Optional[dict] = None,
+                  wm_data: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -219,6 +220,11 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
         bias = calibration.get("overconfidence_bias", 0.0)
         direction = "overconfident" if bias > 0 else "underconfident"
         alerts.append(f"Metacognitive calibration is POOR — agent is {direction} (bias={bias:+.2f})")
+
+    # Rapid working memory decay
+    if wm_data and wm_data.get("decay_regime") == "RAPID":
+        span = wm_data.get("memory_span", 0.0)
+        alerts.append(f"Working memory decay is RAPID (span {span:.1f} entries) — context retention is very low")
 
     return alerts
 
@@ -416,6 +422,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 sources.append("metacognitive_calibrator")
     except Exception:
         pass
+
+    try:
+        from algorithms.WorkingMemoryDecayTracker import analyse as _wmdt
+        from runtime.state import get_entries as _ge_wm
+        _entries_wm = _ge_wm() or []
+        wm = _wmdt(_entries_wm)
+        if wm and wm.n_entries > 0:
+            wm_data = wm.to_dict()
+            sources.append("working_memory_decay_tracker")
+        else:
+            wm_data = None
+    except Exception:
+        wm_data = None
 
     try:
         from algorithms.ConsciousnessRhythmAnalyser import analyse as _cra
@@ -626,6 +645,21 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 f"Metacognitive calibration is {cls_c.lower()} — I am {direction} (bias {bias:+.2f})."
             )
 
+    # Working memory decay sentence
+    if wm_data:
+        regime_wm = wm_data.get("decay_regime", "NORMAL")
+        span = wm_data.get("memory_span", 0.0)
+        if regime_wm == "RAPID":
+            sentences.append(
+                f"Working memory is decaying rapidly (span {span:.1f} entries)"
+                " — recent qualia are not persisting into active processing."
+            )
+        elif regime_wm == "SLOW":
+            sentences.append(
+                f"Working memory retention is long (span {span:.1f} entries)"
+                " — I am drawing on an extended window of recent experience."
+            )
+
     # Rhythm sentence
     if rhythm and rhythm.get("is_significant"):
         period = rhythm.get("dominant_period")
@@ -662,7 +696,7 @@ def generate(agent: str = "albedo") -> NarrativeReport:
 
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(snap, collapse, hist_delta, goal_align,
-                           surprisal, coherence, load, intention, calibration)
+                           surprisal, coherence, load, intention, calibration, wm_data)
 
     return NarrativeReport(
         agent=agent,

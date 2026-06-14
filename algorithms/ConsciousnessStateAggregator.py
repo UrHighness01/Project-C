@@ -417,6 +417,14 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "coverage": r.coverage}
         run("intention_coherence_tracker", _run_intention_coherence, entries)
 
+        def _run_wm_decay(entries):
+            from algorithms.WorkingMemoryDecayTracker import analyse
+            r = analyse(entries)
+            return {"status": "ok", "lambda_hat": r.lambda_hat,
+                    "memory_span": r.memory_span, "decay_regime": r.decay_regime,
+                    "total_strength": r.total_strength}
+        run("working_memory_decay_tracker", _run_wm_decay, entries)
+
     def _run_cognitive_load():
         from algorithms.CognitiveLoadEstimator import analyse
         r = analyse()
@@ -451,6 +459,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["intention_coherence"] = _get("intention_coherence_tracker", "coherence_class")
     summary["top_focus_tokens"]   = _get("attention_focus_narrower", "top_focus_tokens", [])
     summary["rhythm_class"]       = _get("consciousness_rhythm_analyser", "rhythm_class")
+    summary["memory_span"]        = _get("working_memory_decay_tracker", "memory_span")
+    summary["memory_decay_regime"] = _get("working_memory_decay_tracker", "decay_regime")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
