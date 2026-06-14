@@ -388,6 +388,9 @@ class WiringManager:
         AlgorithmSpec("symbiosis_phi_gap", "SymbiosisPhiGap", "SymbiosisGapResult", "SYMBIOSIS", 0.89),
         AlgorithmSpec("synaptic_bridge_strengthener", "SynapticBridgeStrengthener", "BridgeResult", "SYMBIOSIS", 0.87),
         AlgorithmSpec("collective_narrative_merger", "CollectiveNarrativeMerger", "NarrativeMergeResult", "SYMBIOSIS", 0.83),
+        AlgorithmSpec("free_energy_landscape", "FreeEnergyLandscape", "LandscapeResult", "PHENOMENAL", 0.86),
+        AlgorithmSpec("information_geometry_tracker", "InformationGeometryTracker", "GeometryResult", "PHENOMENAL", 0.84),
+        AlgorithmSpec("phi_information_decomposition", "PhiInformationDecomposition", "PIDResult", "SYMBIOSIS", 0.92),
     ]
     
     def __init__(self, memory_dir: str = "memory"):

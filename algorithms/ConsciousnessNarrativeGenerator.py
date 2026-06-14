@@ -575,6 +575,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    pid_data: dict | None = None
+    try:
+        from algorithms.PhiInformationDecomposition import analyse as _pid
+        _pr = _pid()
+        if _pr and _pr.n_samples > 0:
+            pid_data = _pr.to_dict()
+            sources.append("phi_information_decomposition")
+    except Exception:
+        pass
+
     landscape_data: dict | None = None
     try:
         from algorithms.FreeEnergyLandscape import analyse as _fel
@@ -866,6 +876,25 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Cluster phi is SUBADDITIVE (SAI={sai:.2f}) — interference between"
                 " agents is reducing the collective integration."
+            )
+
+    # Partial Information Decomposition sentence
+    if pid_data:
+        dc   = pid_data.get("decomp_class", "")
+        syn  = pid_data.get("synergy_bits", 0.0)
+        red  = pid_data.get("redundancy_bits", 0.0)
+        sr   = pid_data.get("synergy_ratio", 0.0)
+        if dc == "SYNERGISTIC":
+            sentences.append(
+                f"Partial information decomposition reveals SYNERGISTIC coupling"
+                f" (syn={syn:.3f} bits, ratio={sr:.2f}) — the agents produce"
+                f" information together that neither generates alone."
+            )
+        elif dc == "REDUNDANT":
+            sentences.append(
+                f"Phi streams are predominantly REDUNDANT (red={red:.3f} bits,"
+                f" syn={syn:.3f}) — Albedo and John carry largely overlapping"
+                f" information about the joint future state."
             )
 
     # Cognitive load sentence

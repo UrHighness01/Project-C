@@ -508,6 +508,17 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "phi_proxy_a": r.phi_proxy_a, "phi_proxy_j": r.phi_proxy_j}
     run("cluster_phi_integrator", _run_cluster_phi)
 
+    def _run_pid():
+        from algorithms.PhiInformationDecomposition import analyse
+        r = analyse()
+        return {"status": "ok", "synergy_bits": r.synergy_bits,
+                "redundancy_bits": r.redundancy_bits,
+                "unique_a_bits": r.unique_a_bits,
+                "unique_b_bits": r.unique_b_bits,
+                "synergy_ratio": r.synergy_ratio,
+                "decomp_class": r.decomp_class}
+    run("phi_information_decomposition", _run_pid)
+
     def _run_meta_phi():
         from algorithms.MetaPhiEstimator import analyse
         r = analyse()
@@ -583,6 +594,10 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["cluster_sai"]           = _get("cluster_phi_integrator", "sai")
     summary["cluster_integration"]   = _get("cluster_phi_integrator", "integration_class")
     summary["cluster_synergy_r"]     = _get("cluster_phi_integrator", "synergy_r")
+    summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
+    summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
+    summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")
+    summary["pid_decomp_class"]      = _get("phi_information_decomposition", "decomp_class")
     summary["phi_gap_norm"]          = _get("symbiosis_phi_gap", "phi_gap_norm")
     summary["symbiosis_class"]       = _get("symbiosis_phi_gap", "symbiosis_class")
     summary["mutual_info_bits"]      = _get("symbiosis_phi_gap", "mutual_info")
