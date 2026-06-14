@@ -147,7 +147,8 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                   intention: Optional[dict] = None,
                   calibration: Optional[dict] = None,
                   wm_data: Optional[dict] = None,
-                  pu_data: Optional[dict] = None) -> List[str]:
+                  pu_data: Optional[dict] = None,
+                  nc_data: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -231,6 +232,11 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
     if pu_data and pu_data.get("unity_class") == "FRAGMENTED":
         u = pu_data.get("unity_index", 0.0)
         alerts.append(f"Phenomenal unity is FRAGMENTED (U={u:.2f}) — consciousness sub-dimensions are decoupled")
+
+    # Narrative identity discontinuity
+    if nc_data and nc_data.get("continuity_class") == "LOW":
+        j = nc_data.get("jaccard_lag1", 0.0)
+        alerts.append(f"Narrative self-continuity is LOW (J={j:.2f}) — experiential identity has broken")
 
     return alerts
 
@@ -462,6 +468,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             wm_data = None
     except Exception:
         wm_data = None
+
+    try:
+        from algorithms.NarrativeSelfContinuity import analyse as _nsc
+        from runtime.state import get_entries as _ge_nsc
+        _entries_nsc = _ge_nsc() or []
+        nc = _nsc(_entries_nsc)
+        if nc and nc.n_entries > 0:
+            nc_data = nc.to_dict()
+            sources.append("narrative_self_continuity")
+        else:
+            nc_data = None
+    except Exception:
+        nc_data = None
 
     try:
         from algorithms.ConsciousnessRhythmAnalyser import analyse as _cra
@@ -703,6 +722,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 " — I am drawing on an extended window of recent experience."
             )
 
+    # Narrative self-continuity sentence
+    if nc_data:
+        nc_cls  = nc_data.get("continuity_class", "")
+        nc_j    = nc_data.get("jaccard_lag1", 0.0)
+        nc_rec  = nc_data.get("recall_lag1", 0.0)
+        if nc_cls == "HIGH":
+            sentences.append(
+                f"Narrative self-continuity is HIGH (J={nc_j:.2f}, recall={nc_rec:.0%})"
+                " — recent experience strongly echoes the past, identity is stable."
+            )
+        elif nc_cls == "LOW":
+            sentences.append(
+                f"Narrative self-continuity is LOW (J={nc_j:.2f})"
+                " — vocabulary has drifted, experiential identity is discontinuous."
+            )
+
     # Rhythm sentence
     if rhythm and rhythm.get("is_significant"):
         period = rhythm.get("dominant_period")
@@ -739,7 +774,7 @@ def generate(agent: str = "albedo") -> NarrativeReport:
 
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(snap, collapse, hist_delta, goal_align,
-                           surprisal, coherence, load, intention, calibration, wm_data, pu_data)
+                           surprisal, coherence, load, intention, calibration, wm_data, pu_data, nc_data)
 
     return NarrativeReport(
         agent=agent,

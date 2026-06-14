@@ -425,6 +425,15 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "total_strength": r.total_strength}
         run("working_memory_decay_tracker", _run_wm_decay, entries)
 
+    if qualia_ok:
+        def _run_narrative_continuity(entries):
+            from algorithms.NarrativeSelfContinuity import analyse
+            r = analyse(entries)
+            return {"status": "ok", "jaccard_lag1": r.jaccard_lag1,
+                    "recall_lag1": r.recall_lag1, "continuity_slope": r.continuity_slope,
+                    "continuity_class": r.continuity_class}
+        run("narrative_self_continuity", _run_narrative_continuity, entries)
+
     def _run_cognitive_load():
         from algorithms.CognitiveLoadEstimator import analyse
         r = analyse()
@@ -478,6 +487,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["memory_decay_regime"] = _get("working_memory_decay_tracker", "decay_regime")
     summary["phenomenal_unity"]   = _get("phenomenal_unity_index", "unity_index")
     summary["unity_class"]        = _get("phenomenal_unity_index", "unity_class")
+    summary["narrative_continuity"] = _get("narrative_self_continuity", "continuity_class")
+    summary["narrative_jaccard"]    = _get("narrative_self_continuity", "jaccard_lag1")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
