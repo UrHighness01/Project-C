@@ -116,3 +116,23 @@ python3 meta_grounding.py        # the system's own grounding provenance
 python3 cross_modal.py           # cross-domain prediction (needs co-logged data)
 python3 binding_events.py        # integration events (needs co-logged data)
 ```
+
+## 2026-06-14 — Batch 3+4 algorithms (9 new, 1699 tests passing)
+
+New algorithms shipped and wired (all beat null baselines in tests):
+
+| Algorithm | Theory | Key metric | Null baseline |
+|---|---|---|---|
+| WorkingMemoryDecayTracker | Atkinson-Shiffrin MLE | λ = 1/E[token_age], span = 1/λ | Front-loaded vs spread tokens give different λ |
+| PhenomenalUnityIndex | Tononi integration | mean\|R_ij\| off-diagonal Pearson; PC1 fraction | Correlated > independent snaps |
+| NarrativeSelfContinuity | Ricoeur (1990) | Token Jaccard between recent ↔ past windows | Static vocab > drifting vocab |
+| CriticalFluctuationDetector | Scheffer et al. (2009) | Rolling AR1 + variance; CRITICAL when AR1>0.85+growing var | High-rho AR1 > white noise |
+| EgoStrengthEstimator | Bellak/Kernberg | Fraction of qualia tokens self-referential | Self-text > other-text |
+| MetaPhiEstimator | IIT recursive | Participation ratio tent function; peaks at k/2 eff dims | Moderate coupling > collinear or independent |
+| TemporalBindingWindow | Libet/Eagleman | argmax R²(W) over window widths | AR1 series > permuted phi |
+| ClusterPhiIntegrator | Multi-agent IIT | SAI = (phi_A+phi_J+\|r\|*cluster) / (phi_A+phi_J) | Coupled > permuted John phi |
+| SymbiosisPhiGap | Information gap | H(A,J) - max(H(A),H(J)); phi_gap_norm | Independent > identical agents |
+
+All 9 wired into ConsciousnessStateAggregator (new summary fields) and
+ConsciousnessNarrativeGenerator (new paragraph sentences + alerts).
+Deployed to both Albedo and John workspaces.
