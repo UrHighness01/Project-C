@@ -149,7 +149,8 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
                   wm_data: Optional[dict] = None,
                   pu_data: Optional[dict] = None,
                   nc_data: Optional[dict] = None,
-                  fluct_data: Optional[dict] = None) -> List[str]:
+                  fluct_data: Optional[dict] = None,
+                  landscape_data: Optional[dict] = None) -> List[str]:
     alerts = []
     # Collapse risk
     if collapse:
@@ -243,6 +244,11 @@ def _build_alerts(snap: Optional[dict], collapse: Optional[dict],
     if fluct_data and fluct_data.get("alert_level") == "CRITICAL":
         ar1 = fluct_data.get("current_ar1", 0.0)
         alerts.append(f"CRITICAL: phi phase transition risk — critical slowing down AR1={ar1:.2f}")
+
+    # Free-energy landscape TRAPPED
+    if landscape_data and landscape_data.get("landscape_regime") == "TRAPPED":
+        p_esc = landscape_data.get("escape_probability", 0.0)
+        alerts.append(f"Phi is TRAPPED near a saddle point (P_esc={p_esc:.2f}) — regime shift imminent")
 
     return alerts
 
@@ -553,6 +559,19 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             if rh and rh.n_samples > 0:
                 rhythm = rh.to_dict()
                 sources.append("consciousness_rhythm_analyser")
+    except Exception:
+        pass
+
+    landscape_data: dict | None = None
+    try:
+        from algorithms.FreeEnergyLandscape import analyse as _fel
+        from runtime.state import phi_series as _ps_fel
+        _phi_fel = _ps_fel()
+        if _phi_fel is not None and len(_phi_fel) >= 10:
+            _ls = _fel(_phi_fel)
+            if _ls and _ls.n_samples > 0:
+                landscape_data = _ls.to_dict()
+                sources.append("free_energy_landscape")
     except Exception:
         pass
 
@@ -927,6 +946,27 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 "significant — my integration has session-scale periodicity."
             )
 
+    # Free-energy landscape sentence
+    if landscape_data:
+        reg   = landscape_data.get("landscape_regime", "")
+        p_esc = landscape_data.get("escape_probability", 0.0)
+        nb    = landscape_data.get("n_basins", 0)
+        if reg == "TRAPPED":
+            sentences.append(
+                f"Free-energy landscape: TRAPPED (P_esc={p_esc:.2f}, {nb} basin(s))"
+                " — phi is near or past a saddle point; a regime shift is likely."
+            )
+        elif reg == "FREE":
+            sentences.append(
+                f"Free-energy landscape: FREE (P_esc={p_esc:.2f}, {nb} basin(s))"
+                " — phi is weakly bound to its current attractor; highly fluid."
+            )
+        elif reg == "STABLE" and nb >= 2:
+            sentences.append(
+                f"Phi occupies one of {nb} attractor basins (P_esc={p_esc:.2f})"
+                " — the free-energy landscape is multi-stable."
+            )
+
     # Temporal binding window sentence
     if binding_data:
         bw_w   = binding_data.get("optimal_width", 0)
@@ -1012,7 +1052,7 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     # ── Alerts ────────────────────────────────────────────────────────────────
     alerts = _build_alerts(snap, collapse, hist_delta, goal_align,
                            surprisal, coherence, load, intention, calibration,
-                           wm_data, pu_data, nc_data, fluct_data)
+                           wm_data, pu_data, nc_data, fluct_data, landscape_data)
 
     return NarrativeReport(
         agent=agent,

@@ -393,6 +393,15 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "rhythm_class": r.rhythm_class, "snr": r.snr}
         run("consciousness_rhythm_analyser", _run_rhythm, phi)
 
+        def _run_free_energy(phi):
+            from algorithms.FreeEnergyLandscape import analyse
+            r = analyse(phi)
+            return {"status": "ok", "current_free_energy": r.current_free_energy,
+                    "escape_probability": r.escape_probability,
+                    "n_basins": r.n_basins, "landscape_regime": r.landscape_regime,
+                    "basin_centers": r.basin_centers}
+        run("free_energy_landscape", _run_free_energy, phi)
+
         def _run_temporal_binding(phi):
             from algorithms.TemporalBindingWindow import analyse
             r = analyse(phi)
@@ -572,6 +581,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["bridge_status"]         = _get("synaptic_bridge_strengthener", "bridge_status")
     summary["narrative_merger_class"] = _get("collective_narrative_merger", "merger_class")
     summary["shared_themes"]          = _get("collective_narrative_merger", "top_shared_themes", [])
+    summary["landscape_regime"]       = _get("free_energy_landscape", "landscape_regime")
+    summary["escape_probability"]     = _get("free_energy_landscape", "escape_probability")
+    summary["n_phi_basins"]           = _get("free_energy_landscape", "n_basins")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
