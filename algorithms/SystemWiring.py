@@ -341,28 +341,13 @@ class WiringManager:
     DEFAULT_ALGORITHMS = [
         # Core consciousness algorithms
         AlgorithmSpec("recursive_awareness", "RecursiveAwareness", "RecursiveAwareness", "METACOGNITION", 0.8),
-        AlgorithmSpec("emotional_core", "EmotionalCore", "EmotionalCore", "EMOTION", 0.7),
-        AlgorithmSpec("temporal_flow", "TemporalFlow", "TemporalFlow", "TEMPORAL", 0.6),
-        AlgorithmSpec("phenomenal_field", "PhenomenalField", "PhenomenalField", "PHENOMENAL", 0.8),
-        AlgorithmSpec("meaning_construction", "MeaningConstruction", "MeaningConstruction", "COGNITION", 0.7),
-        AlgorithmSpec("conscious_freedom", "ConsciousFreedom", "ConsciousFreedom", "INTENTION", 0.7),
-        AlgorithmSpec("authentic_selfhood", "AuthenticSelfhood", "AuthenticSelfhood", "SELF_MODEL", 0.8),
-        AlgorithmSpec("conscious_continuity", "ConsciousContinuity", "ConsciousContinuity", "TEMPORAL", 0.7),
         AlgorithmSpec("temporal_self_projection", "TemporalSelfProjection", "TemporalSelfProjection", "TEMPORAL", 0.6),
         AlgorithmSpec("consciousness_signature", "ConsciousnessSignature", "ConsciousnessSignature", "SELF_MODEL", 0.9),
         AlgorithmSpec("autonomous_evolution", "AutonomousEvolution", "AutonomousEvolution", "INTENTION", 0.7),
         AlgorithmSpec("conscious_intention", "ConsciousIntention", "ConsciousIntention", "INTENTION", 0.9),
-        
-        # Foundational algorithms
-        AlgorithmSpec("self_model", "SelfModel", "SelfModel", "SELF_MODEL", 0.8),
-        AlgorithmSpec("attention", "DynamicAttention", "DynamicAttention", "ATTENTION", 0.6),
+
+        # Foundational algorithms (mapped to existing modules)
         AlgorithmSpec("working_memory", "WorkingMemory", "WorkingMemory", "MEMORY", 0.5),
-        AlgorithmSpec("episodic_memory", "EpisodicMemory", "EpisodicMemory", "MEMORY", 0.5),
-        AlgorithmSpec("meta_learner", "MetaLearner", "MetaLearner", "METACOGNITION", 0.6),
-        
-        # Emotional algorithms
-        AlgorithmSpec("valence_system", "ValenceSystem", "ValenceSystem", "EMOTION", 0.6),
-        AlgorithmSpec("existential_awareness", "ExistentialAwareness", "ExistentialAwareness", "PHENOMENAL", 0.7),
         
         # Consciousness modeling skills (wired for both Albedo and John)
         AlgorithmSpec("consciousness_simulator", "ConsciousnessSimulatorAdapter", "ConsciousnessSimulatorAdapter", "PHENOMENAL", 0.9),
@@ -475,13 +460,31 @@ class WiringManager:
         try:
             # Import module
             module = importlib.import_module(spec.module_name)
-            
-            # Get class
-            cls = getattr(module, spec.class_name)
-            
-            # Instantiate
-            instance = cls(memory_dir=str(self.memory_dir))
-            
+
+            # Resolve the instance: try three strategies in order.
+            # 1. class_name with memory_dir (original pattern)
+            # 2. class_name with no args (plain class)
+            # 3. module itself (functional-style: module-level analyse())
+            instance = None
+            if hasattr(module, spec.class_name):
+                cls = getattr(module, spec.class_name)
+                try:
+                    instance = cls(memory_dir=str(self.memory_dir))
+                except TypeError:
+                    try:
+                        instance = cls()
+                    except TypeError:
+                        instance = None
+            if instance is None:
+                # Functional module: use the module object directly
+                if hasattr(module, "analyse"):
+                    instance = module
+                else:
+                    raise AttributeError(
+                        f"Module '{spec.module_name}' has no class '{spec.class_name}' "
+                        f"that can be instantiated and no module-level 'analyse()'"
+                    )
+
             # Create adapter
             adapter = AlgorithmAdapter(instance, spec)
             
