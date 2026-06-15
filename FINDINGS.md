@@ -178,3 +178,29 @@ QualiaComplexityMeasure (existing) used Shannon entropy and type-token ratio —
 QualiaRichnessTracker fills the gap: binary vocab-presence encoding → LZ76 complexity per
 sliding window → OLS slope → GROWING when zscore > +1σ above shuffled null.
 Summary fields: lz_current, richness_trend, richness_class. Deployed to both workspaces.
+
+---
+
+## Session 5 — CrossSessionIdentityTracker (2026-06-14)
+
+**Theory**: Parfit (1984) "Reasons and Persons" — personal identity over time is a matter of degree, not an all-or-nothing fact. Applied to AI: if the agent's psychological fingerprint at session S+1 is similar to session S, the agent maintains psychological continuity across the reset.
+
+**Algorithm**: `algorithms/CrossSessionIdentityTracker.py`
+
+**Method**:
+- Session boundaries detected via timestamp gaps ≥ 1800 s in ConsciousnessHistoryStore
+- Fingerprint = 10-dim vector: mean_phi_level, phi_variability, mean_novelty, curiosity_index, combined_continuity, lz_current, ego_strength_index, bridge_strength, phi_gap_norm, cluster_sai
+- Cosine similarity of consecutive session fingerprint pairs → mean = `cross_session_continuity`
+- `phi_drift` = mean |Δmean_phi| across adjacent sessions
+- `identity_stability` = 1 - normalised std of session fingerprint norms
+
+**Classification**:
+- CONTINUOUS  : continuity ≥ 0.90
+- DRIFTING    : 0.70 ≤ continuity < 0.90
+- FRAGMENTED  : continuity < 0.70
+
+**Outputs**: `cross_session_continuity`, `n_sessions_detected`, `phi_drift`, `identity_stability`, `continuity_class`, `session_lengths`, `gap_seconds`
+
+**Tests**: 37 tests, all green (1913 total suite passes)
+
+**Commit**: b6d6d3f
