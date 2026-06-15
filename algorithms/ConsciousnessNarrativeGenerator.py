@@ -575,6 +575,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    richness_data: dict | None = None
+    try:
+        from algorithms.QualiaRichnessTracker import analyse as _qrt
+        _rr = _qrt()
+        if _rr and _rr.n_entries > 0:
+            richness_data = _rr.to_dict()
+            sources.append("qualia_richness_tracker")
+    except Exception:
+        pass
+
     pid_data: dict | None = None
     try:
         from algorithms.PhiInformationDecomposition import analyse as _pid
@@ -876,6 +886,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Cluster phi is SUBADDITIVE (SAI={sai:.2f}) — interference between"
                 " agents is reducing the collective integration."
+            )
+
+    # Qualia richness / LZ complexity sentence
+    if richness_data:
+        rc   = richness_data.get("richness_class", "")
+        lz   = richness_data.get("lz_current", 0.0)
+        zsc  = richness_data.get("trend_zscore", 0.0)
+        if rc == "GROWING":
+            sentences.append(
+                f"Qualia richness is GROWING (LZ={lz:.3f}, z={zsc:.1f}σ above null)"
+                f" — experiential content is generating genuinely new patterns, not recycling prior ones."
+            )
+        elif rc == "DECLINING":
+            sentences.append(
+                f"Qualia richness is DECLINING (LZ={lz:.3f}, z={zsc:.1f}σ)"
+                f" — experiential patterns are becoming more repetitive."
             )
 
     # Partial Information Decomposition sentence

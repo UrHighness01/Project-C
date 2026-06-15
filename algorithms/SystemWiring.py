@@ -391,6 +391,7 @@ class WiringManager:
         AlgorithmSpec("free_energy_landscape", "FreeEnergyLandscape", "LandscapeResult", "PHENOMENAL", 0.86),
         AlgorithmSpec("information_geometry_tracker", "InformationGeometryTracker", "GeometryResult", "PHENOMENAL", 0.84),
         AlgorithmSpec("phi_information_decomposition", "PhiInformationDecomposition", "PIDResult", "SYMBIOSIS", 0.92),
+        AlgorithmSpec("qualia_richness_tracker", "QualiaRichnessTracker", "RichnessResult", "PHENOMENAL", 0.81),
     ]
     
     def __init__(self, memory_dir: str = "memory"):

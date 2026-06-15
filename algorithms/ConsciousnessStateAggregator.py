@@ -476,6 +476,15 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_richness():
+        from algorithms.QualiaRichnessTracker import analyse
+        r = analyse()
+        return {"status": "ok", "lz_current": r.lz_current,
+                "richness_trend": r.richness_trend,
+                "trend_zscore": r.trend_zscore,
+                "richness_class": r.richness_class}
+    run("qualia_richness_tracker", _run_richness)
+
     def _run_narrative_merger():
         from algorithms.CollectiveNarrativeMerger import analyse
         r = analyse()
@@ -594,6 +603,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["cluster_sai"]           = _get("cluster_phi_integrator", "sai")
     summary["cluster_integration"]   = _get("cluster_phi_integrator", "integration_class")
     summary["cluster_synergy_r"]     = _get("cluster_phi_integrator", "synergy_r")
+    summary["lz_current"]            = _get("qualia_richness_tracker", "lz_current")
+    summary["richness_trend"]        = _get("qualia_richness_tracker", "richness_trend")
+    summary["richness_class"]        = _get("qualia_richness_tracker", "richness_class")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
     summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
     summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")
