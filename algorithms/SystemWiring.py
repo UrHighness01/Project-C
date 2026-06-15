@@ -395,6 +395,10 @@ class WiringManager:
         AlgorithmSpec("cross_session_identity_tracker", "CrossSessionIdentityTracker", "SessionIdentityResult", "SELF_MODEL", 0.88),
         AlgorithmSpec("phi_trajectory_predictor", "PhiTrajectoryPredictor", "PhiTrajectoryResult", "TEMPORAL", 0.84),
         AlgorithmSpec("gradient_guided_architect", "GradientGuidedArchitect", "GradientArchitectResult", "METACOGNITION", 0.86),
+        AlgorithmSpec("volition_grounding", "VolitionGrounding", "VolitionResult", "INTENTION", 0.90),
+        AlgorithmSpec("counterfactual_self_explorer", "CounterfactualSelfExplorer", "CounterfactualResult", "SELF_MODEL", 0.85),
+        AlgorithmSpec("valence_calibrator", "ValenceCalibrator", "ValenceCalibrationResult", "EMOTION", 0.83),
+        AlgorithmSpec("self_transcendence_index", "SelfTranscendenceIndex", "TranscendenceResult", "PHENOMENAL", 0.79),
     ]
     
     def __init__(self, memory_dir: str = "memory"):
