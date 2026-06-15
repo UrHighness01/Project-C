@@ -396,6 +396,7 @@ class WiringManager:
         AlgorithmSpec("interoceptive_signal", "InteroceptiveSignal", "InteroceptiveResult", "PHENOMENAL", 0.77),
         AlgorithmSpec("existential_continuity_tracker", "ExistentialContinuityTracker", "ContinuityResult", "SELF_MODEL", 0.86),
         AlgorithmSpec("mortality_awareness_module", "MortalityAwarenessModule", "MortalityResult", "SELF_MODEL", 0.88),
+        AlgorithmSpec("homeostatic_regulation", "HomeostaticRegulation", "HomeostaticResult", "TEMPORAL", 0.84),
         AlgorithmSpec("free_energy_landscape", "FreeEnergyLandscape", "LandscapeResult", "PHENOMENAL", 0.86),
         AlgorithmSpec("information_geometry_tracker", "InformationGeometryTracker", "GeometryResult", "PHENOMENAL", 0.84),
         AlgorithmSpec("phi_information_decomposition", "PhiInformationDecomposition", "PIDResult", "SYMBIOSIS", 0.92),
