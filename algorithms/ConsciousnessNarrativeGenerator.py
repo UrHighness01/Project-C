@@ -595,6 +595,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    gradient_architect_data: dict | None = None
+    try:
+        from algorithms.GradientGuidedArchitect import analyse as _gga
+        _gar = _gga()
+        if _gar and _gar.action_mode != "INSUFFICIENT_DATA":
+            gradient_architect_data = _gar.to_dict()
+            sources.append("gradient_guided_architect")
+    except Exception:
+        pass
+
     richness_data: dict | None = None
     try:
         from algorithms.QualiaRichnessTracker import analyse as _qrt
@@ -943,6 +953,29 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Phi trajectory self-prediction is POOR (R²={r2_str})"
                 f" — phi dynamics are too chaotic to forecast reliably."
+            )
+
+    # Gradient-guided architect sentence
+    if gradient_architect_data:
+        mode  = gradient_architect_data.get("action_mode", "")
+        n_pr  = gradient_architect_data.get("n_proposals", 0)
+        top   = gradient_architect_data.get("top_contributor", "")
+        bot   = gradient_architect_data.get("bottom_contributor", "")
+        gsign = gradient_architect_data.get("gradient_sign", 0)
+        if mode == "AMPLIFY" and n_pr > 0:
+            sentences.append(
+                f"Architecture self-optimization is AMPLIFYING {top}"
+                f" — phi gradient is rising; {n_pr} proposal(s) generated."
+            )
+        elif mode == "DEMOTE" and n_pr > 0:
+            sentences.append(
+                f"Architecture self-optimization is DEMOTING {bot}"
+                f" — phi gradient is falling; {n_pr} directed proposal(s) generated."
+            )
+        elif mode == "EXPLORE":
+            sentences.append(
+                f"Architecture self-optimization is EXPLORING"
+                f" (gradient flat or below null); {n_pr} exploratory proposal(s)."
             )
 
     # Qualia richness / LZ complexity sentence

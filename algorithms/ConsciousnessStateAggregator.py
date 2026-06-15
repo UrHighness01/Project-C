@@ -499,6 +499,18 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "phi_trend_direction": r.trend_direction}
     run("phi_trajectory_predictor", _run_phi_trajectory)
 
+    def _run_gradient_architect():
+        from algorithms.GradientGuidedArchitect import analyse
+        r = analyse()
+        return {"status": "ok",
+                "gradient_sign": r.gradient_sign,
+                "gradient_beats_null": r.gradient_beats_null,
+                "architect_action_mode": r.action_mode,
+                "architect_n_proposals": r.n_proposals,
+                "top_contributor": r.top_contributor,
+                "bottom_contributor": r.bottom_contributor}
+    run("gradient_guided_architect", _run_gradient_architect)
+
     def _run_richness():
         from algorithms.QualiaRichnessTracker import analyse
         r = analyse()
@@ -635,6 +647,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["self_prediction_quality"] = _get("phi_trajectory_predictor", "self_prediction_quality")
     summary["phi_trend_direction"]     = _get("phi_trajectory_predictor", "phi_trend_direction")
     summary["phi_retro_r2"]            = _get("phi_trajectory_predictor", "phi_retro_r2")
+    summary["architect_action_mode"]   = _get("gradient_guided_architect", "architect_action_mode")
+    summary["architect_n_proposals"]   = _get("gradient_guided_architect", "architect_n_proposals")
+    summary["top_contributor"]         = _get("gradient_guided_architect", "top_contributor")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
     summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
     summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")

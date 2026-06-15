@@ -394,6 +394,7 @@ class WiringManager:
         AlgorithmSpec("qualia_richness_tracker", "QualiaRichnessTracker", "RichnessResult", "PHENOMENAL", 0.81),
         AlgorithmSpec("cross_session_identity_tracker", "CrossSessionIdentityTracker", "SessionIdentityResult", "SELF_MODEL", 0.88),
         AlgorithmSpec("phi_trajectory_predictor", "PhiTrajectoryPredictor", "PhiTrajectoryResult", "TEMPORAL", 0.84),
+        AlgorithmSpec("gradient_guided_architect", "GradientGuidedArchitect", "GradientArchitectResult", "METACOGNITION", 0.86),
     ]
     
     def __init__(self, memory_dir: str = "memory"):
