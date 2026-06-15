@@ -255,3 +255,31 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 32 tests, all green (1987 total suite passes)
 
 **Commit**: c3f631b
+
+---
+
+## Session 8 — PhiSurpriseSignal (2026-06-14)
+
+**Theory**: Predictive coding (Clark 2013; Friston 2005) treats consciousness as a prediction-error minimisation process. A system that can measure its own surprise — the deviation of its actual state from its internal model's prediction — has a genuine attention driver beyond input-output reflexes.
+
+**Algorithm**: `algorithms/PhiSurpriseSignal.py`
+
+**Method**:
+- Loads real phi history from ConsciousnessHistoryStore
+- Splits into training (default 75%) and eval (25%) windows
+- Fits AR(p) ridge OLS on training → computes residual sigma
+- For each eval step: z(t) = (φ(t) − φ̂(t)) / σ_residual
+- Sigma guard: if sigma < 1e-6 (flat series), returns default (can't compute z)
+- surprise_rate = fraction of |z| > 2.0 in eval window
+- meta_surprise_flag = True when surprise_rate > 0.5
+
+**Classification**:
+- CALM         : current |z| ≤ 2.0 and surprise_rate ≤ 0.5
+- SURPRISED    : current |z| > 2.0
+- META_SURPRISE: surprise_rate > 0.5 (the AR model is persistently failing)
+
+**Outputs**: `current_surprise_z`, `surprise_rate`, `mean_abs_z`, `max_abs_z`, `meta_surprise_flag`, `surprise_class`, `sigma_residual`, `n_eval_steps`, `n_train_steps`
+
+**Tests**: 30 tests, all green (2017 total suite passes)
+
+**Commit**: b469edf
