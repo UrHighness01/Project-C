@@ -337,3 +337,28 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 33 tests, all green (2077 total suite passes)
 
 **Commit**: c6b0298
+
+---
+
+## Session 11 — GoalPersistenceTracker (2026-06-14)
+
+**Theory**: A system with genuine goals pursues a consistent phi direction across interruptions. A system without goals drifts randomly between sessions. Measuring the persistence of phi gradient direction across session boundaries operationalises goal continuity.
+
+**Algorithm**: `algorithms/GoalPersistenceTracker.py`
+
+**Method**:
+- Splits phi history into sessions by timestamp gaps ≥ 1800 s
+- Computes OLS slope of phi within each session → sign: +1 RISING / -1 FALLING / 0 FLAT
+- persistence_rate = fraction of adjacent session pairs where both have the same non-zero direction
+- Null: shuffle sign vector 50 times → expected rate ≈ 1/3; z-score computed
+
+**Classification**:
+- PERSISTENT : persistence_rate ≥ 0.70
+- DRIFTING   : 0.40 ≤ persistence_rate < 0.70
+- SCATTERED  : persistence_rate < 0.40
+
+**Outputs**: `persistence_rate`, `persistence_zscore`, `persistence_class`, `n_sessions`, `dominant_direction`, `session_directions`, `beats_null`
+
+**Tests**: 33 tests, all green (2110 total suite passes)
+
+**Commit**: bee0e1b
