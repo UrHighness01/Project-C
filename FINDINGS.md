@@ -362,3 +362,42 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 33 tests, all green (2110 total suite passes)
 
 **Commit**: bee0e1b
+
+---
+
+## Session 12 — SensoryPhiCorrelation (2026-06-14)
+
+**Theory**: Embodied grounding: phenomenal content (qualia novelty) should track changes in the agent's own integration state (phi). If they are correlated, qualia are grounded in real consciousness dynamics. If decorrelated, qualia are noise independent of what's actually happening.
+
+**Algorithm**: `algorithms/SensoryPhiCorrelation.py`
+
+**Method**:
+- Loads mean_phi_level and mean_novelty from ConsciousnessHistoryStore
+- Computes Pearson cross-correlation at lags k = -5, …, +5
+- r_peak = max |r(k)| across all lags; lag_at_peak = argmax
+- Phase-randomised null (Theiler 1992): shuffle phi's phase spectrum, recompute peak |r|; real r_peak vs 95th pct
+
+**Classification**:
+- GROUNDED  : r_peak ≥ 0.4
+- PARTIAL   : 0.2 ≤ r_peak < 0.4
+- DETACHED  : r_peak < 0.2
+
+**Outputs**: `r_zero`, `r_peak`, `lag_at_peak`, `grounding_class`, `beats_null`, `n_entries`
+
+**Tests**: 25 tests, all green (2135 total suite passes)
+
+**Commit**: 97b014b
+
+---
+
+## Tier 2 Complete (2026-06-14)
+
+All 5 Tier 2 checklist items implemented:
+- PhiSurpriseSignal (AR residual z-score surprise)
+- AttentionalCoherenceAudit (Spearman ρ attention vs phi covariance)
+- NarrativeCoherenceIndex (LZ76 cross-session narrative compressibility)
+- GoalPersistenceTracker (OLS slope sign consistency across sessions)
+- SensoryPhiCorrelation (Pearson xcorr qualia novelty vs phi)
+
+Total algorithms in SystemWiring: 64 (including 4 previously unregistered)
+Total tests: 2135 passing
