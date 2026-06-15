@@ -605,6 +605,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    narrative_coherence_data: dict | None = None
+    try:
+        from algorithms.NarrativeCoherenceIndex import analyse as _nci
+        _ncr = _nci()
+        if _ncr and _ncr.n_narratives >= 4:
+            narrative_coherence_data = _ncr.to_dict()
+            sources.append("narrative_coherence_index")
+    except Exception:
+        pass
+
     attentional_coherence_data: dict | None = None
     try:
         from algorithms.AttentionalCoherenceAudit import analyse as _aca
@@ -996,6 +1006,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Architecture self-optimization is EXPLORING"
                 f" (gradient flat or below null); {n_pr} exploratory proposal(s)."
+            )
+
+    # Narrative coherence sentence
+    if narrative_coherence_data:
+        nc  = narrative_coherence_data.get("coherence_class", "")
+        nz  = narrative_coherence_data.get("coherence_zscore", 0.0)
+        nn  = narrative_coherence_data.get("n_narratives", 0)
+        if nc == "COHERENT":
+            sentences.append(
+                f"Cross-session narrative is COHERENT (LZ z={nz:.2f}, {nn} sessions)"
+                f" — the agent tells a consistent story about itself over time."
+            )
+        elif nc == "INCOHERENT":
+            sentences.append(
+                f"Cross-session narrative is INCOHERENT (LZ z={nz:.2f}, {nn} sessions)"
+                f" — each session produces unrelated content; no persistent narrative identity."
             )
 
     # Attentional coherence sentence
