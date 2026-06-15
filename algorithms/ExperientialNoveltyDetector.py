@@ -184,9 +184,10 @@ def _acf1(y: np.ndarray) -> float:
     return float(np.clip(np.dot(yc[:-1], yc[1:]) / denom, -1.0, 1.0)) if denom > 1e-9 else 0.0
 
 
-def analyse(entries: list, recency_window: int = 10,
-            rolling_window: int = 10, null_seed: int = 42
-            ) -> Optional[NoveltyResult]:
+def analyse(entries: Optional[list] = None, recency_window: int = 10,
+            rolling_window: int = 10, null_seed: int = 42,
+            agent: str = "albedo",
+) -> Optional[NoveltyResult]:
     """
     Compute novelty of each qualia entry relative to its K predecessors.
 
@@ -199,7 +200,13 @@ def analyse(entries: list, recency_window: int = 10,
     Returns:
         NoveltyResult, or None if too short.
     """
-    if len(entries) < max(recency_window, rolling_window) + 2:
+    if entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = list(reversed(chs.load(agent) or []))
+        except Exception:
+            return None
+    if not entries or len(entries) < max(recency_window, rolling_window) + 2:
         return None
 
     contents = [e.get("content", "") if isinstance(e, dict) else str(e)

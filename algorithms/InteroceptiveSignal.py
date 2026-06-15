@@ -250,7 +250,9 @@ def _classify_regime(arousal: float, fatigue: float, stress: float
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(snapshots: list[InteroceptiveSnapshot]) -> Optional[InteroceptiveResult]:
+def analyse(snapshots: Optional[list] = None,
+            n: int = 5, interval_sec: float = 0.05,
+            agent: str = "albedo") -> Optional[InteroceptiveResult]:
     """
     Compute interoceptive state from a list of pre-collected snapshots.
 
@@ -260,6 +262,8 @@ def analyse(snapshots: list[InteroceptiveSnapshot]) -> Optional[InteroceptiveRes
     Returns:
         InteroceptiveResult, or None if too few snapshots.
     """
+    if snapshots is None:
+        snapshots = sample_series(n, interval_sec)
     if len(snapshots) < 2:
         return None
 
@@ -334,7 +338,7 @@ def sample_series(n: int = 5, interval_sec: float = 0.5
 def analyse_from_telemetry(n: int = 5, interval_sec: float = 0.2
                            ) -> Optional[InteroceptiveResult]:
     """Take n live snapshots and return interoceptive state."""
-    return analyse(sample_series(n, interval_sec))
+    return analyse(snapshots=sample_series(n, interval_sec))
 
 
 # ── Standalone smoke-test ─────────────────────────────────────────────────────

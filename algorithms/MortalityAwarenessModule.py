@@ -163,9 +163,11 @@ class MortalityResult:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(phi: np.ndarray, uptime_sec: float = 0.0,
+def analyse(phi: Optional[np.ndarray] = None, uptime_sec: float = 0.0,
             reference_session_sec: float = 3600.0,
-            p: int = 4) -> Optional[MortalityResult]:
+            p: int = 4,
+            agent: str = "albedo",
+) -> Optional[MortalityResult]:
     """
     Compute mortality awareness metrics from phi series.
 
@@ -178,6 +180,16 @@ def analyse(phi: np.ndarray, uptime_sec: float = 0.0,
     Returns:
         MortalityResult, or None if phi is too short.
     """
+    if phi is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
+            phi = np.array([float(e["mean_phi_level"]) for e in reversed(entries)
+                            if "mean_phi_level" in e], dtype=float)
+        except Exception:
+            return None
+    if phi is None or len(phi) == 0:
+        return None
     n = len(phi)
     if n < p + 8:
         return None

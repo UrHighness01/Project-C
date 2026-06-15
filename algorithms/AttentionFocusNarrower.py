@@ -146,6 +146,7 @@ def analyse(
     step: int = 10,
     k: int = 5,
     alpha: float = 0.5,
+    agent: str = "albedo",
 ) -> FocusNarrowerResult:
     """
     Identify the K most attention-worthy windows in the qualia stream.
@@ -159,8 +160,8 @@ def analyse(
     """
     if entries is None:
         try:
-            from runtime.state import get_entries
-            entries = get_entries() or []
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
         except Exception:
             entries = []
 

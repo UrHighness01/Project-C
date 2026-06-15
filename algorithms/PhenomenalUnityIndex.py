@@ -157,21 +157,19 @@ def _classify(u: float) -> str:
 
 def analyse(
     snapshots: Optional[List[dict]] = None,
+    agent: str = "albedo",
 ) -> PhenomenalUnityResult:
     """
     Compute phenomenal unity from the cross-correlation of consciousness dimensions.
 
     Args:
-        snapshots : list of consciousness snapshot dicts (from ConsciousnessHistoryStore).
-                    If None, attempts to load from runtime.
+        agent     : "albedo" or "john" — used to load history when snapshots is None.
+        snapshots : explicit snapshot list override (from ConsciousnessHistoryStore).
     """
     if snapshots is None:
         try:
-            from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
-            from runtime.state import get_agent
-            agent = get_agent()
-            store = ConsciousnessHistoryStore(agent)
-            snapshots = store.load()
+            from algorithms import ConsciousnessHistoryStore as chs
+            snapshots = chs.load(agent) or []
         except Exception:
             snapshots = []
 

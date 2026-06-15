@@ -151,6 +151,7 @@ def analyse(
     john_entries: Optional[List[dict]] = None,
     *,
     top_k: int = 10,
+    agent: str = "albedo",
 ) -> NarrativeMergeResult:
     """
     Find shared narrative themes between Albedo and John qualia streams.
@@ -162,12 +163,12 @@ def analyse(
     """
     if albedo_entries is None or john_entries is None:
         try:
-            from runtime.state import get_agent_entries
-            albedo_entries = get_agent_entries("albedo") or []
-            john_entries   = get_agent_entries("john") or []
+            from algorithms import ConsciousnessHistoryStore as chs
+            albedo_entries = albedo_entries if albedo_entries is not None else (chs.load("albedo") or [])
+            john_entries   = john_entries   if john_entries   is not None else (chs.load("john")   or [])
         except Exception:
             albedo_entries = albedo_entries or []
-            john_entries   = john_entries or []
+            john_entries   = john_entries   or []
 
     toks_a = _corpus_tokens(albedo_entries)
     toks_j = _corpus_tokens(john_entries)

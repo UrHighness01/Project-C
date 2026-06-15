@@ -120,6 +120,8 @@ def analyse(
     step: int = 5,
     sharp_threshold: float = 50.0,
     moderate_threshold: float = 5.0,
+
+    agent: str = "albedo",
 ) -> GeometryResult:
     """
     Track Fisher information geometry of the phi distribution over time.
@@ -136,7 +138,13 @@ def analyse(
             from runtime.state import phi_series
             phi = phi_series()
         except Exception:
-            phi = None
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                _raw = chs.load(agent) or []
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(_raw)
+                               if "mean_phi_level" in e], dtype=float)
+            except Exception:
+                phi = None
 
     if phi is None or len(phi) < window + 2:
         return GeometryResult()

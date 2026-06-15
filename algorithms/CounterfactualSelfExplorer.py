@@ -172,9 +172,11 @@ class CounterfactualResult:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(phi: np.ndarray, p: int = 4, H: int = 20,
+def analyse(phi: Optional[np.ndarray] = None, p: int = 4, H: int = 20,
             delta_sigma: float = 1.0,
-            n_interventions: int = 10) -> Optional[CounterfactualResult]:
+            n_interventions: int = 10,
+            agent: str = "albedo",
+) -> Optional[CounterfactualResult]:
     """
     Explore counterfactual phi trajectories via AR intervention.
 
@@ -188,6 +190,16 @@ def analyse(phi: np.ndarray, p: int = 4, H: int = 20,
     Returns:
         CounterfactualResult, or None if phi is too short.
     """
+    if phi is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
+            phi = np.array([float(e["mean_phi_level"]) for e in reversed(entries)
+                            if "mean_phi_level" in e], dtype=float)
+        except Exception:
+            return None
+    if phi is None or len(phi) == 0:
+        return None
     n = len(phi)
     min_len = p + H + 4
     if n < min_len:

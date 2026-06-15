@@ -145,12 +145,14 @@ def analyse(
     lam: float = 1e-3,
     window: int = 20,
     bins: int = 16,
+    agent: str = "albedo",
 ) -> SurprisalResult:
     """
     Measure surprisal in a phi time series.
 
     Args:
-        phi    : phi time series (1-D float array). If None, reads from runtime.
+        agent  : "albedo" or "john" — used to load phi when phi is None.
+        phi    : explicit phi array override.
         p      : AR order.
         lam    : ridge regularisation.
         window : recent window for KL divergence computation.
@@ -158,8 +160,10 @@ def analyse(
     """
     if phi is None:
         try:
-            from runtime.state import phi_series
-            phi = phi_series()
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
+            phi = np.array([float(e["mean_phi_level"]) for e in reversed(entries)
+                            if "mean_phi_level" in e], dtype=float) if entries else None
         except Exception:
             phi = None
 

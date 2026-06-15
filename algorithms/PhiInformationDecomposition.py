@@ -145,6 +145,8 @@ def analyse(
     *,
     n_bins: int = 8,
     lag: int = 1,
+
+    agent: str = "albedo",
 ) -> PIDResult:
     """
     Partial Information Decomposition of Albedo × John phi streams.
@@ -161,7 +163,18 @@ def analyse(
             albedo_phi = np.asarray(get_agent_phi_series("albedo"), dtype=float)
             john_phi   = np.asarray(get_agent_phi_series("john"),   dtype=float)
         except Exception:
-            albedo_phi = john_phi = None
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                def _phi(ag):
+                    raw = chs.load(ag) or []
+                    return np.array([float(e["mean_phi_level"]) for e in reversed(raw)
+                                    if "mean_phi_level" in e], dtype=float)
+                if albedo_phi is None:
+                    albedo_phi = _phi("albedo")
+                if john_phi is None:
+                    john_phi = _phi("john")
+            except Exception:
+                albedo_phi = john_phi = None
 
     if albedo_phi is None or john_phi is None:
         return PIDResult()

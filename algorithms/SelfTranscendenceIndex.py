@@ -201,8 +201,10 @@ class TranscendenceResult:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(entries: list, rolling_window: int = 10,
-            null_seed: int = 42) -> Optional[TranscendenceResult]:
+def analyse(entries: Optional[list] = None, rolling_window: int = 10,
+            null_seed: int = 42,
+            agent: str = "albedo",
+) -> Optional[TranscendenceResult]:
     """
     Compute Self-Transcendence Index from qualia entries.
 
@@ -214,7 +216,13 @@ def analyse(entries: list, rolling_window: int = 10,
     Returns:
         TranscendenceResult, or None if too few entries.
     """
-    if len(entries) < rolling_window + 2:
+    if entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = list(reversed(chs.load(agent) or []))
+        except Exception:
+            return None
+    if not entries or len(entries) < rolling_window + 2:
         return None
 
     contents = [e.get("content", "") if isinstance(e, dict) else str(e)

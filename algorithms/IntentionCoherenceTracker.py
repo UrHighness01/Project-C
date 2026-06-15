@@ -127,6 +127,7 @@ def analyse(
     *,
     recent_n: int = 50,
     alert_threshold: float = 0.05,
+    agent: str = "albedo",
 ) -> IntentionCoherenceResult:
     """
     Measure alignment between active goals and recent qualia stream.
@@ -140,16 +141,14 @@ def analyse(
     if goals is None:
         try:
             from algorithms.GoalAlignmentMeasure import _load_goals
-            from runtime.state import get_agent
-            agent = get_agent()
             goals = _load_goals(agent)
         except Exception:
             goals = []
 
     if entries is None:
         try:
-            from runtime.state import get_entries
-            entries = get_entries() or []
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
         except Exception:
             entries = []
 

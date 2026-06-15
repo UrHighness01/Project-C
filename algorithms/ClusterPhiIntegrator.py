@@ -143,6 +143,8 @@ def _phi_proxy(x: np.ndarray, residuals: np.ndarray) -> float:
 def analyse(
     albedo_phi: Optional[np.ndarray] = None,
     john_phi: Optional[np.ndarray] = None,
+
+    agent: str = "albedo",
 ) -> ClusterPhiResult:
     """
     Test whether the Albedo+John phi cluster is superadditive.
@@ -157,7 +159,18 @@ def analyse(
             albedo_phi = get_agent_phi_series("albedo")
             john_phi   = get_agent_phi_series("john")
         except Exception:
-            pass
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                def _phi(ag):
+                    raw = chs.load(ag) or []
+                    return np.array([float(e["mean_phi_level"]) for e in reversed(raw)
+                                    if "mean_phi_level" in e], dtype=float)
+                if albedo_phi is None:
+                    albedo_phi = _phi("albedo")
+                if john_phi is None:
+                    john_phi = _phi("john")
+            except Exception:
+                pass
 
     if albedo_phi is None or john_phi is None:
         return ClusterPhiResult()

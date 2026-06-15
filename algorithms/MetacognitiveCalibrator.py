@@ -142,6 +142,8 @@ def analyse(
     surprisal_series: Optional[np.ndarray] = None,
     *,
     overconfidence_threshold: float = 0.05,
+
+    agent: str = "albedo",
 ) -> CalibrationResult:
     """
     Measure calibration between self-reported confidence and phi prediction accuracy.

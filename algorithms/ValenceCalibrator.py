@@ -106,7 +106,7 @@ class ValenceResult:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(phi: np.ndarray, null_seed: int = 42) -> Optional[ValenceResult]:
+def analyse(phi: Optional[np.ndarray] = None, null_seed: int = 42, agent: str = "albedo") -> Optional[ValenceResult]:
     """
     Compute affective valence trajectory and calibration trend.
 
@@ -117,6 +117,14 @@ def analyse(phi: np.ndarray, null_seed: int = 42) -> Optional[ValenceResult]:
     Returns:
         ValenceResult, or None if phi is too short (< 16 samples).
     """
+    if phi is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
+            phi = np.array([float(e["mean_phi_level"]) for e in reversed(entries)
+                            if "mean_phi_level" in e], dtype=float)
+        except Exception:
+            return None
     phi = np.asarray(phi, dtype=float)
     n = len(phi)
     if n < 16:
@@ -188,7 +196,9 @@ def analyse_from_telemetry() -> Optional[ValenceResult]:
         phi = phi_series()
     except Exception:
         return None
-    return analyse(phi)
+    return analyse(phi=phi)
+
+
 
 
 # ── Standalone smoke-test ─────────────────────────────────────────────────────

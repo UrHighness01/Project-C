@@ -182,6 +182,8 @@ def analyse(
     min_entries: int = 12,
     n_shuffles: int = 50,
     rng_seed: int = 42,
+
+    agent: str = "albedo",
 ) -> RichnessResult:
     """
     Compute Lempel-Ziv complexity trend of the qualia stream.
@@ -202,7 +204,13 @@ def analyse(
             from runtime.memory_store import qualia_entries
             entries = qualia_entries()
         except Exception:
-            entries = None
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                raw = chs.load(agent) or []
+                entries = [e.get("content", str(e)) if isinstance(e, dict) else str(e)
+                           for e in reversed(raw)]
+            except Exception:
+                entries = None
 
     if entries is None or len(entries) < min_entries:
         return RichnessResult()

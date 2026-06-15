@@ -275,9 +275,11 @@ def _load_qualia_entries() -> list[dict]:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(entries: list, phi: np.ndarray,
+def analyse(entries: Optional[list] = None,
+            phi: Optional[np.ndarray] = None,
             sentiment_window: int = 20, phi_window: int = 20,
-            phi_stride: int = 5) -> Optional[AffectResult]:
+            phi_stride: int = 5,
+            agent: str = "albedo") -> Optional[AffectResult]:
     """
     Derive affect vector from qualia entries and phi series.
 
@@ -291,7 +293,18 @@ def analyse(entries: list, phi: np.ndarray,
     Returns:
         AffectResult, or None if inputs are too short.
     """
-    if len(phi) < 8 or len(entries) < 2:
+    if phi is None or entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            raw = chs.load(agent) or []
+            if phi is None:
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(raw)
+                                if "mean_phi_level" in e], dtype=float)
+            if entries is None:
+                entries = list(reversed(raw))
+        except Exception:
+            return None
+    if phi is None or entries is None or len(phi) < 8 or len(entries) < 2:
         return None
 
     # Sentiment
@@ -348,7 +361,7 @@ def analyse_from_telemetry() -> Optional[AffectResult]:
     except Exception:
         return None
     entries = _load_qualia_entries()
-    return analyse(entries, phi)
+    return analyse(entries=entries, phi=phi)
 
 
 # ── Standalone smoke-test ─────────────────────────────────────────────────────

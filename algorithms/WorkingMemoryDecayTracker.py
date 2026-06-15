@@ -123,6 +123,7 @@ def _total_strength(lam: float, n: int) -> float:
 
 def analyse(
     entries: Optional[List[dict]] = None,
+    agent: str = "albedo",
 ) -> DecayResult:
     """
     Fit exponential decay rate to the qualia entry stream.
@@ -133,8 +134,8 @@ def analyse(
     """
     if entries is None:
         try:
-            from runtime.state import get_entries
-            entries = get_entries() or []
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
         except Exception:
             entries = []
 

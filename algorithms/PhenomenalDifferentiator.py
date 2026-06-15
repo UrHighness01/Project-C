@@ -206,7 +206,9 @@ class DifferentiationResult:
 
 # ── Main analysis ─────────────────────────────────────────────────────────────
 
-def analyse(entries: list, null_seed: int = 42) -> Optional[DifferentiationResult]:
+def analyse(entries: Optional[list] = None, null_seed: int = 42,
+            agent: str = "albedo",
+) -> Optional[DifferentiationResult]:
     """
     Measure phenomenal differentiation of a qualia entry sequence.
 
@@ -217,7 +219,13 @@ def analyse(entries: list, null_seed: int = 42) -> Optional[DifferentiationResul
     Returns:
         DifferentiationResult, or None if entries is too short (< 5).
     """
-    if len(entries) < 5:
+    if entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = list(reversed(chs.load(agent) or []))
+        except Exception:
+            return None
+    if not entries or len(entries) < 5:
         return None
 
     contents = [e.get("content", "") if isinstance(e, dict) else str(e)

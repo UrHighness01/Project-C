@@ -196,17 +196,30 @@ def analyse(
     signals: Optional[np.ndarray] = None,
     *,
     window: int = 50,
+    agent: str = "albedo",
 ) -> MetaPhiResult:
     """
     Estimate meta-phi: integration quality of the phi-computation process.
 
     Args:
+        agent   : "albedo" or "john" — used to seed phi signal from CHS when signals is None.
         signals : (T, k) matrix of k runtime signals over T time-steps.
-                  If None, collected automatically from runtime adapters.
+                  If None, collected automatically from runtime adapters + CHS phi.
         window  : number of recent time-steps to use.
     """
     if signals is None:
         signals = _collect_signals(window)
+        # Supplement with phi from ConsciousnessHistoryStore if runtime gave nothing
+        if signals.shape[0] < 4:
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                entries = chs.load(agent) or []
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(entries)
+                                if "mean_phi_level" in e], dtype=float)
+                if len(phi) >= window:
+                    signals = phi[-window:].reshape(-1, 1)
+            except Exception:
+                pass
 
     if signals.ndim != 2 or signals.shape[0] < 4 or signals.shape[1] < 2:
         return MetaPhiResult()

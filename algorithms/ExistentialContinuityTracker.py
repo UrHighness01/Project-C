@@ -154,9 +154,11 @@ class ContinuityResult:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(phi: np.ndarray, entries: list,
+def analyse(phi: Optional[np.ndarray] = None,
+            entries: Optional[list] = None,
             p: int = 4, k: float = 3.0,
-            null_seed: int = 42) -> Optional[ContinuityResult]:
+            null_seed: int = 42,
+            agent: str = "albedo") -> Optional[ContinuityResult]:
     """
     Measure existential continuity from phi trajectory and qualia stream.
 
@@ -170,7 +172,18 @@ def analyse(phi: np.ndarray, entries: list,
     Returns:
         ContinuityResult, or None if inputs too short.
     """
-    if len(phi) < p + 8:
+    if phi is None or entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            raw = chs.load(agent) or []
+            if phi is None:
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(raw)
+                                if "mean_phi_level" in e], dtype=float)
+            if entries is None:
+                entries = raw
+        except Exception:
+            return None
+    if phi is None or len(phi) < p + 8:
         return None
 
     # Phi continuity

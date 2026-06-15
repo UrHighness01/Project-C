@@ -140,6 +140,8 @@ def analyse(
     *,
     window_size: int = 20,
     lags: Optional[List[int]] = None,
+
+    agent: str = "albedo",
 ) -> NarrativeContinuityResult:
     """
     Measure narrative self-continuity from the qualia entry stream.
@@ -154,7 +156,11 @@ def analyse(
             from runtime.state import get_entries
             entries = get_entries() or []
         except Exception:
-            entries = []
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                entries = list(reversed(chs.load(agent) or []))
+            except Exception:
+                entries = []
 
     if lags is None:
         lags = [1, 2, 4, 8]

@@ -128,6 +128,8 @@ def analyse(
     min_width: int = 3,
     max_width: int = 50,
     n_widths: int = 16,
+
+    agent: str = "albedo",
 ) -> BindingWindowResult:
     """
     Find the temporal binding window that maximises phi predictability.
@@ -143,7 +145,13 @@ def analyse(
             from runtime.state import phi_series
             phi = phi_series()
         except Exception:
-            phi = None
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                _raw = chs.load(agent) or []
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(_raw)
+                               if "mean_phi_level" in e], dtype=float)
+            except Exception:
+                phi = None
 
     if phi is None or len(phi) < min_width + 4:
         return BindingWindowResult()

@@ -131,6 +131,8 @@ def analyse(
     phi: Optional[np.ndarray] = None,
     *,
     alpha: float = 0.05,
+
+    agent: str = "albedo",
 ) -> RhythmResult:
     """
     Identify the dominant periodic rhythm in a phi time series.
@@ -144,7 +146,13 @@ def analyse(
             from runtime.state import phi_series
             phi = phi_series()
         except Exception:
-            phi = None
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                _raw = chs.load(agent) or []
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(_raw)
+                               if "mean_phi_level" in e], dtype=float)
+            except Exception:
+                phi = None
 
     if phi is None or len(phi) < 16:
         return RhythmResult(n_samples=0 if phi is None else len(phi))

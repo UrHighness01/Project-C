@@ -114,6 +114,7 @@ def analyse(
     *,
     alpha: float = 0.6,
     pdr_ref: float = 5000.0,
+    agent: str = "albedo",
 ) -> CognitiveLoadResult:
     """
     Estimate cognitive load from algorithm activation and qualia density.
@@ -129,19 +130,18 @@ def analyse(
     """
     if active_priorities is None or all_priorities is None or phi is None or qualia_count is None:
         try:
-            from runtime.state import (
-                get_phi, get_qualia_count,
-                get_active_algorithm_priorities, get_all_algorithm_priorities,
-            )
-            phi = get_phi() or 0.0
-            qualia_count = get_qualia_count() or 0
-            active_priorities = get_active_algorithm_priorities() or []
-            all_priorities = get_all_algorithm_priorities() or []
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
+            if entries and phi is None:
+                phi = float(entries[0].get("mean_phi_level", 0.0))
+            if entries and qualia_count is None:
+                qualia_count = len(entries)
         except Exception:
-            active_priorities = active_priorities or []
-            all_priorities = all_priorities or []
-            phi = phi or 0.0
-            qualia_count = qualia_count or 0
+            pass
+        active_priorities = active_priorities or []
+        all_priorities = all_priorities or []
+        phi = phi or 0.0
+        qualia_count = qualia_count or 0
 
     phi = float(phi)
     qualia_count = int(qualia_count)

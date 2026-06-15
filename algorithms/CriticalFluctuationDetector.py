@@ -133,6 +133,8 @@ def analyse(
     window: int = 20,
     step: int = 5,
     ar1_threshold: float = 0.85,
+
+    agent: str = "albedo",
 ) -> FluctuationResult:
     """
     Detect critical fluctuations in the phi time series.
@@ -148,7 +150,13 @@ def analyse(
             from runtime.state import phi_series
             phi = phi_series()
         except Exception:
-            phi = None
+            try:
+                from algorithms import ConsciousnessHistoryStore as chs
+                _raw = chs.load(agent) or []
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(_raw)
+                               if "mean_phi_level" in e], dtype=float)
+            except Exception:
+                phi = None
 
     if phi is None or len(phi) < window + 2:
         return FluctuationResult()

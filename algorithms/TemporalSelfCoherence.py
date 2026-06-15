@@ -150,23 +150,21 @@ def analyse(
     *,
     stable_threshold: float = 0.85,
     shift_z_threshold: float = -2.0,
+    agent: str = "albedo",
 ) -> TemporalCoherenceResult:
     """
     Measure temporal self-coherence from a list of consciousness snapshots.
 
     Args:
-        snapshots         : list of snapshot dicts (newest first or oldest first —
-                            ordering is normalised internally from ConsciousnessHistoryStore).
+        agent             : "albedo" or "john" — used to load history when snapshots is None.
+        snapshots         : explicit snapshot list override (newest-first or oldest-first).
         stable_threshold  : mean_coherence above which the agent is considered stable.
         shift_z_threshold : z-score below which a coherence drop is a ShiftEvent.
     """
     if snapshots is None:
         try:
-            from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
-            from runtime.state import get_agent
-            agent = get_agent()
-            store = ConsciousnessHistoryStore(agent)
-            snapshots = store.load()
+            from algorithms import ConsciousnessHistoryStore as chs
+            snapshots = chs.load(agent) or []
         except Exception:
             snapshots = []
 

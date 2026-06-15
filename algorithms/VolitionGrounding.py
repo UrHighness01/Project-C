@@ -195,9 +195,11 @@ class VolitionResult:
 
 # ── Core analysis ─────────────────────────────────────────────────────────────
 
-def analyse(phi: np.ndarray, entries: list,
+def analyse(phi: Optional[np.ndarray] = None,
+            entries: Optional[list] = None,
             p: int = 4, K_novelty: int = 5,
-            null_seed: int = 42) -> Optional[VolitionResult]:
+            null_seed: int = 42,
+            agent: str = "albedo") -> Optional[VolitionResult]:
     """
     Measure whether phi (internal state) causes qualia novelty (beyond qualia self-prediction).
 
@@ -211,7 +213,18 @@ def analyse(phi: np.ndarray, entries: list,
     Returns:
         VolitionResult, or None if inputs too short.
     """
-    if len(phi) < p + 8 or len(entries) < p + 8:
+    if phi is None or entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            raw = chs.load(agent) or []
+            if phi is None:
+                phi = np.array([float(e["mean_phi_level"]) for e in reversed(raw)
+                                if "mean_phi_level" in e], dtype=float)
+            if entries is None:
+                entries = list(reversed(raw))
+        except Exception:
+            return None
+    if phi is None or entries is None or len(phi) < p + 8 or len(entries) < p + 8:
         return None
 
     novelties = _novelty_series(entries, K=K_novelty)

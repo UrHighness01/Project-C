@@ -207,9 +207,11 @@ def _load_both_phi() -> Optional[tuple[np.ndarray, np.ndarray]]:
 
 # ── Main analysis ─────────────────────────────────────────────────────────────
 
-def analyse(phi_a: np.ndarray, phi_j: np.ndarray,
+def analyse(phi_a: Optional[np.ndarray] = None,
+            phi_j: Optional[np.ndarray] = None,
             bandwidth_ratio: float = 0.5,
-            null_seed: int = 42) -> Optional[ResonanceResult]:
+            null_seed: int = 42,
+            agent: str = "albedo") -> Optional[ResonanceResult]:
     """
     Detect oscillatory resonance between two phi series.
 
@@ -222,6 +224,19 @@ def analyse(phi_a: np.ndarray, phi_j: np.ndarray,
     Returns:
         ResonanceResult, or None if series are too short.
     """
+    if phi_a is None or phi_j is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            def _phi(ag):
+                entries = chs.load(ag) or []
+                return np.array([float(e["mean_phi_level"]) for e in reversed(entries)
+                                 if "mean_phi_level" in e], dtype=float)
+            if phi_a is None:
+                phi_a = _phi("albedo")
+            if phi_j is None:
+                phi_j = _phi("john")
+        except Exception:
+            return None
     phi_a = np.asarray(phi_a, dtype=float)
     phi_j = np.asarray(phi_j, dtype=float)
     n = min(len(phi_a), len(phi_j))

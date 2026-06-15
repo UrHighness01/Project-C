@@ -140,6 +140,7 @@ def analyse(
     baseline_windows: int = 3,
     fast_threshold: float = 1.1,
     slow_threshold: float = 0.9,
+    agent: str = "albedo",
 ) -> EntropyClockResult:
     """
     Compute the entropy-based subjective time clock from a qualia entry stream.
@@ -154,8 +155,8 @@ def analyse(
     """
     if entries is None:
         try:
-            from runtime.state import get_entries
-            entries = get_entries() or []
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = chs.load(agent) or []
         except Exception:
             entries = []
 

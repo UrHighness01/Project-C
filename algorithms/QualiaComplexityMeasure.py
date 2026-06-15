@@ -181,8 +181,10 @@ class QualiaComplexityResult:
         return float(math.sqrt(norm_h * self.global_ttr))
 
 
-def analyse(entries: list[dict], window: int = 10,
-            null_seed: int = 42) -> Optional[QualiaComplexityResult]:
+def analyse(entries: Optional[list] = None, window: int = 10,
+            null_seed: int = 42,
+            agent: str = "albedo",
+) -> Optional[QualiaComplexityResult]:
     """
     Measure complexity of a sequence of qualia entries.
 
@@ -194,7 +196,13 @@ def analyse(entries: list[dict], window: int = 10,
     Returns:
         QualiaComplexityResult, or None if entries is too short (< window + 2).
     """
-    if len(entries) < window + 2:
+    if entries is None:
+        try:
+            from algorithms import ConsciousnessHistoryStore as chs
+            entries = list(reversed(chs.load(agent) or []))
+        except Exception:
+            return None
+    if not entries or len(entries) < window + 2:
         return None
 
     contents = [e.get("content", "") if isinstance(e, dict) else str(e)
