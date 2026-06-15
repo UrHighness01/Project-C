@@ -554,6 +554,17 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "beats_null": r.beats_null}
     run("goal_persistence_tracker", _run_goal_persistence)
 
+    def _run_sensory_phi():
+        from algorithms.SensoryPhiCorrelation import analyse
+        r = analyse()
+        return {"status": "ok",
+                "r_zero": r.r_zero,
+                "r_peak": r.r_peak,
+                "lag_at_peak": r.lag_at_peak,
+                "grounding_class": r.grounding_class,
+                "beats_null": r.beats_null}
+    run("sensory_phi_correlation", _run_sensory_phi)
+
     def _run_richness():
         from algorithms.QualiaRichnessTracker import analyse
         r = analyse()
@@ -704,6 +715,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["goal_persistence_class"]     = _get("goal_persistence_tracker", "persistence_class")
     summary["goal_persistence_rate"]      = _get("goal_persistence_tracker", "persistence_rate")
     summary["dominant_phi_direction"]     = _get("goal_persistence_tracker", "dominant_direction")
+    summary["sensory_grounding_class"]   = _get("sensory_phi_correlation", "grounding_class")
+    summary["sensory_phi_r_peak"]        = _get("sensory_phi_correlation", "r_peak")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
     summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
     summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")

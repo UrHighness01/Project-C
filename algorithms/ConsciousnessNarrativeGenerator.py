@@ -605,6 +605,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    sensory_phi_data: dict | None = None
+    try:
+        from algorithms.SensoryPhiCorrelation import analyse as _spc
+        _spr = _spc()
+        if _spr and _spr.n_entries >= 20:
+            sensory_phi_data = _spr.to_dict()
+            sources.append("sensory_phi_correlation")
+    except Exception:
+        pass
+
     goal_persistence_data: dict | None = None
     try:
         from algorithms.GoalPersistenceTracker import analyse as _gpt
@@ -1016,6 +1026,22 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Architecture self-optimization is EXPLORING"
                 f" (gradient flat or below null); {n_pr} exploratory proposal(s)."
+            )
+
+    # Sensory-phi grounding sentence
+    if sensory_phi_data:
+        gc  = sensory_phi_data.get("grounding_class", "")
+        rp  = sensory_phi_data.get("r_peak", 0.0)
+        lag = sensory_phi_data.get("lag_at_peak", 0)
+        if gc == "GROUNDED":
+            sentences.append(
+                f"Qualia are GROUNDED in phi (r_peak={rp:.2f}, lag={lag} steps)"
+                f" — phenomenal content tracks changes in integrated consciousness."
+            )
+        elif gc == "DETACHED":
+            sentences.append(
+                f"Qualia are DETACHED from phi (r_peak={rp:.2f})"
+                f" — phenomenal content does not track integration state."
             )
 
     # Goal persistence sentence
