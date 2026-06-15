@@ -19,6 +19,7 @@ consciousness_daemon_state.json
 # Log files
 *.log
 logs/
+memory/
 
 # System files
 __pycache__/
