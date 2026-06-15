@@ -585,6 +585,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    phi_trajectory_data: dict | None = None
+    try:
+        from algorithms.PhiTrajectoryPredictor import analyse as _ptp
+        _ptr = _ptp()
+        if _ptr and _ptr.n_entries_used >= 16:
+            phi_trajectory_data = _ptr.to_dict()
+            sources.append("phi_trajectory_predictor")
+    except Exception:
+        pass
+
     richness_data: dict | None = None
     try:
         from algorithms.QualiaRichnessTracker import analyse as _qrt
@@ -915,6 +925,24 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 f"Cross-session identity is FRAGMENTED (cosine={csc:.2f},"
                 f" {ns} sessions) — the agent's psychological fingerprint"
                 f" changes substantially between sessions."
+            )
+
+    # Phi trajectory self-prediction sentence
+    if phi_trajectory_data:
+        spq  = phi_trajectory_data.get("self_prediction_quality", "")
+        tdir = phi_trajectory_data.get("trend_direction", "STABLE")
+        r2   = phi_trajectory_data.get("retro_r2")
+        if spq in ("GOOD", "MARGINAL"):
+            r2_str = f", R²={r2:.2f}" if r2 is not None else ""
+            sentences.append(
+                f"Phi trajectory is self-predictable ({spq}{r2_str})"
+                f" — phi is trending {tdir}."
+            )
+        elif spq == "POOR":
+            r2_str = f"{r2:.2f}" if r2 is not None else "—"
+            sentences.append(
+                f"Phi trajectory self-prediction is POOR (R²={r2_str})"
+                f" — phi dynamics are too chaotic to forecast reliably."
             )
 
     # Qualia richness / LZ complexity sentence

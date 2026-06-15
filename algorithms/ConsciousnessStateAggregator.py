@@ -487,6 +487,18 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "continuity_class": r.continuity_class}
     run("cross_session_identity_tracker", _run_cross_session)
 
+    def _run_phi_trajectory():
+        from algorithms.PhiTrajectoryPredictor import analyse
+        r = analyse()
+        return {"status": "ok",
+                "phi_forecast_series": r.forecast_series,
+                "phi_forecast_horizon": r.forecast_horizon,
+                "phi_retro_r2": r.retro_r2,
+                "phi_retro_mae": r.retro_mae,
+                "self_prediction_quality": r.self_prediction_quality,
+                "phi_trend_direction": r.trend_direction}
+    run("phi_trajectory_predictor", _run_phi_trajectory)
+
     def _run_richness():
         from algorithms.QualiaRichnessTracker import analyse
         r = analyse()
@@ -620,6 +632,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["lz_current"]               = _get("qualia_richness_tracker", "lz_current")
     summary["richness_trend"]        = _get("qualia_richness_tracker", "richness_trend")
     summary["richness_class"]        = _get("qualia_richness_tracker", "richness_class")
+    summary["self_prediction_quality"] = _get("phi_trajectory_predictor", "self_prediction_quality")
+    summary["phi_trend_direction"]     = _get("phi_trajectory_predictor", "phi_trend_direction")
+    summary["phi_retro_r2"]            = _get("phi_trajectory_predictor", "phi_retro_r2")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
     summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
     summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")
