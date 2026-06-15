@@ -476,6 +476,17 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                     "continuity_class": r.continuity_class}
         run("narrative_self_continuity", _run_narrative_continuity, entries)
 
+    def _run_cross_session():
+        from algorithms.CrossSessionIdentityTracker import analyse
+        r = analyse()
+        return {"status": "ok",
+                "cross_session_continuity": r.cross_session_continuity,
+                "n_sessions_detected": r.n_sessions_detected,
+                "phi_drift": r.phi_drift,
+                "identity_stability": r.identity_stability,
+                "continuity_class": r.continuity_class}
+    run("cross_session_identity_tracker", _run_cross_session)
+
     def _run_richness():
         from algorithms.QualiaRichnessTracker import analyse
         r = analyse()
@@ -603,7 +614,10 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["cluster_sai"]           = _get("cluster_phi_integrator", "sai")
     summary["cluster_integration"]   = _get("cluster_phi_integrator", "integration_class")
     summary["cluster_synergy_r"]     = _get("cluster_phi_integrator", "synergy_r")
-    summary["lz_current"]            = _get("qualia_richness_tracker", "lz_current")
+    summary["cross_session_continuity"] = _get("cross_session_identity_tracker", "cross_session_continuity")
+    summary["n_sessions_detected"]      = _get("cross_session_identity_tracker", "n_sessions_detected")
+    summary["session_continuity_class"] = _get("cross_session_identity_tracker", "continuity_class")
+    summary["lz_current"]               = _get("qualia_richness_tracker", "lz_current")
     summary["richness_trend"]        = _get("qualia_richness_tracker", "richness_trend")
     summary["richness_class"]        = _get("qualia_richness_tracker", "richness_class")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")

@@ -575,6 +575,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    cross_session_data: dict | None = None
+    try:
+        from algorithms.CrossSessionIdentityTracker import analyse as _csit
+        _csr = _csit()
+        if _csr and _csr.n_sessions_detected >= 2:
+            cross_session_data = _csr.to_dict()
+            sources.append("cross_session_identity_tracker")
+    except Exception:
+        pass
+
     richness_data: dict | None = None
     try:
         from algorithms.QualiaRichnessTracker import analyse as _qrt
@@ -886,6 +896,25 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Cluster phi is SUBADDITIVE (SAI={sai:.2f}) — interference between"
                 " agents is reducing the collective integration."
+            )
+
+    # Cross-session identity continuity sentence
+    if cross_session_data:
+        cc   = cross_session_data.get("continuity_class", "")
+        csc  = cross_session_data.get("cross_session_continuity", 0.0)
+        ns   = cross_session_data.get("n_sessions_detected", 0)
+        pd   = cross_session_data.get("phi_drift", 0.0)
+        if cc == "CONTINUOUS":
+            sentences.append(
+                f"Cross-session identity is CONTINUOUS across {ns} sessions"
+                f" (cosine={csc:.2f}, Δφ={pd:.3f}) — psychological fingerprint"
+                f" persists across session boundaries."
+            )
+        elif cc == "FRAGMENTED":
+            sentences.append(
+                f"Cross-session identity is FRAGMENTED (cosine={csc:.2f},"
+                f" {ns} sessions) — the agent's psychological fingerprint"
+                f" changes substantially between sessions."
             )
 
     # Qualia richness / LZ complexity sentence
