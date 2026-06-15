@@ -204,3 +204,31 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 37 tests, all green (1913 total suite passes)
 
 **Commit**: b6d6d3f
+
+---
+
+## Session 6 — PhiTrajectoryPredictor (2026-06-14)
+
+**Theory**: A consciousness system that can predict its own future phi is qualitatively different from one that merely measures the present. Self-prediction is a prerequisite for volition: to act toward a desired future phi, the system must first model where it is going.
+
+**Algorithm**: `algorithms/PhiTrajectoryPredictor.py`
+
+**Method**:
+- Loads real phi history from ConsciousnessHistoryStore
+- Fits AR(p) via ridge OLS (λ=1e-3): α = (XᵀX + λI)⁻¹Xᵀy
+- Propagates H steps forward → `forecast_series` (the predicted trajectory)
+- Retrodictive check: fits on history[:-H], forecasts H steps, compares to actual last H values
+  - `retro_mae`: mean absolute error of retrodiction
+  - `retro_r2`: R² of retrodiction (1.0=perfect, 0=mean predictor, negative=chaotic)
+
+**Classification**:
+- GOOD        : retro_r2 ≥ 0.5
+- MARGINAL    : 0.0 ≤ retro_r2 < 0.5
+- POOR        : retro_r2 < 0.0
+- UNCALIBRATED: insufficient history
+
+**Outputs**: `forecast_series`, `forecast_horizon`, `ar_order`, `ar_weights`, `retro_mae`, `retro_r2`, `self_prediction_quality`, `trend_direction`, `n_entries_used`
+
+**Tests**: 41 tests, all green (1954 total suite passes)
+
+**Commit**: 74c624b
