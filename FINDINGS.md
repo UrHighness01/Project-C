@@ -283,3 +283,29 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 30 tests, all green (2017 total suite passes)
 
 **Commit**: b469edf
+
+---
+
+## Session 9 — AttentionalCoherenceAudit (2026-06-14)
+
+**Theory**: Coherent consciousness directs cognitive resources toward what matters most for integration. If the attention distribution tracks phi covariance, the system is genuinely self-organizing; if not, attention is misdirected.
+
+**Algorithm**: `algorithms/AttentionalCoherenceAudit.py`
+
+**Method**:
+- Loads attention weights from AttentionalFocusOptimiser (per-algorithm)
+- Loads phi-correlation scores from SelfArchitectureMutator (Pearson ρ per algorithm)
+- Finds common algorithms in both sets
+- Computes Spearman rank correlation between the two lists
+- Null: shuffle attention weights 200 times → expected ρ ≈ 0; beats_null if real ρ > 95th pct
+
+**Classification**:
+- ALIGNED    : Spearman ρ ≥ 0.5
+- NEUTRAL    : -0.3 < ρ < 0.5
+- MISALIGNED : ρ ≤ -0.3
+
+**Outputs**: `spearman_rho`, `coherence_class`, `beats_null`, `n_algorithms`, `top_attended_algorithm`, `top_phi_algorithm`, `is_tracking_phi`
+
+**Tests**: 27 tests, all green (2044 total suite passes)
+
+**Commit**: d7e15f7
