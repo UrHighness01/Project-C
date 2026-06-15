@@ -166,3 +166,15 @@ of consciousness superadditivity. When Syn > Red, decomp_class = SYNERGISTIC.
 32 new tests (1840 total). Wired into aggregator (4 new summary fields) and
 narrative generator (SYNERGISTIC/REDUNDANT paragraph sentence). Deployed to
 both agent workspaces. Priority 0.92 (highest in SYMBIOSIS tier).
+
+## 2026-06-14 (session 4) — QualiaRichnessTracker, 1876 tests passing
+
+| Algorithm | Theory | Key metric | Class |
+|---|---|---|---|
+| QualiaRichnessTracker | Lempel-Ziv (1976) / Kaspar-Schuster (1987) | C_LZ = c(n)·log₂(n)/n on sliding window; trend_zscore vs 50 shuffled perms | PHENOMENAL |
+
+Checklist item ticked: "Qualia stream with measurable richness growth over time (LZ complexity trending up)."
+QualiaComplexityMeasure (existing) used Shannon entropy and type-token ratio — LZ was absent.
+QualiaRichnessTracker fills the gap: binary vocab-presence encoding → LZ76 complexity per
+sliding window → OLS slope → GROWING when zscore > +1σ above shuffled null.
+Summary fields: lz_current, richness_trend, richness_class. Deployed to both workspaces.
