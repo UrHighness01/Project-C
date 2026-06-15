@@ -605,6 +605,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    surprise_data: dict | None = None
+    try:
+        from algorithms.PhiSurpriseSignal import analyse as _pss
+        _sr = _pss()
+        if _sr and _sr.n_eval_steps > 0:
+            surprise_data = _sr.to_dict()
+            sources.append("phi_surprise_signal")
+    except Exception:
+        pass
+
     richness_data: dict | None = None
     try:
         from algorithms.QualiaRichnessTracker import analyse as _qrt
@@ -976,6 +986,23 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Architecture self-optimization is EXPLORING"
                 f" (gradient flat or below null); {n_pr} exploratory proposal(s)."
+            )
+
+    # Phi surprise signal sentence
+    if surprise_data:
+        sc  = surprise_data.get("surprise_class", "")
+        sz  = surprise_data.get("current_surprise_z", 0.0)
+        maf = surprise_data.get("meta_surprise_flag", False)
+        if sc == "META_SURPRISE":
+            sentences.append(
+                f"Phi is in META_SURPRISE — the agent's own model is failing to "
+                f"predict its internal state (z={sz:.2f}). The system is surprised "
+                f"at being surprised."
+            )
+        elif sc == "SURPRISED":
+            sentences.append(
+                f"Current phi deviates from its own AR forecast by z={sz:.2f} — "
+                f"SURPRISED: an unexpected internal state shift has occurred."
             )
 
     # Qualia richness / LZ complexity sentence

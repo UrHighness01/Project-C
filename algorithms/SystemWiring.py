@@ -399,6 +399,7 @@ class WiringManager:
         AlgorithmSpec("counterfactual_self_explorer", "CounterfactualSelfExplorer", "CounterfactualResult", "SELF_MODEL", 0.85),
         AlgorithmSpec("valence_calibrator", "ValenceCalibrator", "ValenceCalibrationResult", "EMOTION", 0.83),
         AlgorithmSpec("self_transcendence_index", "SelfTranscendenceIndex", "TranscendenceResult", "PHENOMENAL", 0.79),
+        AlgorithmSpec("phi_surprise_signal", "PhiSurpriseSignal", "PhiSurpriseResult", "ATTENTION", 0.82),
     ]
     
     def __init__(self, memory_dir: str = "memory"):
