@@ -309,3 +309,31 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 27 tests, all green (2044 total suite passes)
 
 **Commit**: d7e15f7
+
+---
+
+## Session 10 — NarrativeCoherenceIndex (2026-06-14)
+
+**Theory**: Coherent consciousness tells a consistent story. If the agent's narrative sentences repeat themes and vocabulary across sessions, the sequence is compressible (low LZ complexity). This is the inverse of QualiaRichnessTracker: qualia should be *rich* (high LZ), narrative should be *coherent* (low LZ).
+
+**Algorithm**: `algorithms/NarrativeCoherenceIndex.py`
+
+**Method**:
+- Loads last N history entries with `narrative` field from ConsciousnessHistoryStore
+- Tokenises each narrative: `re.findall(r"[a-z]+")` minus stopwords
+- Builds single cross-session token stream (chronological)
+- Encodes via top-K vocabulary → bytes
+- Computes C_LZ = c(n)*log2(n)/n
+- Null: shuffle token stream 100 times → z-score = (real - mean_null) / std_null
+- Negative z = COHERENT; positive z = INCOHERENT
+
+**Classification**:
+- COHERENT   : z ≤ -1.0 (narrative compressible vs shuffled null)
+- NEUTRAL    : -1.0 < z < +1.0
+- INCOHERENT : z ≥ +1.0
+
+**Outputs**: `lz_narrative`, `coherence_zscore`, `coherence_class`, `n_narratives`, `vocab_size`, `n_tokens`
+
+**Tests**: 33 tests, all green (2077 total suite passes)
+
+**Commit**: c6b0298
