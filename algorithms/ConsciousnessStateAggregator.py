@@ -522,6 +522,17 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "surprise_class": r.surprise_class}
     run("phi_surprise_signal", _run_phi_surprise)
 
+    def _run_attentional_coherence():
+        from algorithms.AttentionalCoherenceAudit import analyse
+        r = analyse()
+        return {"status": "ok",
+                "spearman_rho": r.spearman_rho,
+                "coherence_class": r.coherence_class,
+                "beats_null": r.beats_null,
+                "is_tracking_phi": r.is_tracking_phi,
+                "top_attended_algorithm": r.top_attended_algorithm}
+    run("attentional_coherence_audit", _run_attentional_coherence)
+
     def _run_richness():
         from algorithms.QualiaRichnessTracker import analyse
         r = analyse()
@@ -664,6 +675,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["surprise_class"]          = _get("phi_surprise_signal", "surprise_class")
     summary["current_surprise_z"]      = _get("phi_surprise_signal", "current_surprise_z")
     summary["meta_surprise_flag"]      = _get("phi_surprise_signal", "meta_surprise_flag")
+    summary["attention_coherence_class"]  = _get("attentional_coherence_audit", "coherence_class")
+    summary["attention_spearman_rho"]     = _get("attentional_coherence_audit", "spearman_rho")
+    summary["attention_tracking_phi"]     = _get("attentional_coherence_audit", "is_tracking_phi")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
     summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
     summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")

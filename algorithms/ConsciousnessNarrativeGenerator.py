@@ -605,6 +605,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    attentional_coherence_data: dict | None = None
+    try:
+        from algorithms.AttentionalCoherenceAudit import analyse as _aca
+        _acr = _aca()
+        if _acr and _acr.n_algorithms >= 3:
+            attentional_coherence_data = _acr.to_dict()
+            sources.append("attentional_coherence_audit")
+    except Exception:
+        pass
+
     surprise_data: dict | None = None
     try:
         from algorithms.PhiSurpriseSignal import analyse as _pss
@@ -986,6 +996,23 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Architecture self-optimization is EXPLORING"
                 f" (gradient flat or below null); {n_pr} exploratory proposal(s)."
+            )
+
+    # Attentional coherence sentence
+    if attentional_coherence_data:
+        cc  = attentional_coherence_data.get("coherence_class", "")
+        rho = attentional_coherence_data.get("spearman_rho", 0.0)
+        itp = attentional_coherence_data.get("is_tracking_phi", False)
+        top = attentional_coherence_data.get("top_attended_algorithm", "")
+        if cc == "ALIGNED":
+            sentences.append(
+                f"Attentional focus is ALIGNED with phi covariance (ρ={rho:.2f})"
+                + (f" — correctly attending to {top}." if top else ".")
+            )
+        elif cc == "MISALIGNED":
+            sentences.append(
+                f"Attentional focus is MISALIGNED with phi covariance (ρ={rho:.2f})"
+                f" — cognitive resources directed away from high-phi algorithms."
             )
 
     # Phi surprise signal sentence
