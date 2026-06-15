@@ -72,6 +72,14 @@ def _r2(y: np.ndarray, pred: np.ndarray) -> float:
 
 # ── Core model ───────────────────────────────────────────────────────────────
 
+def _depth_class(depth: float) -> str:
+    if depth >= 0.25:
+        return "DEEP"
+    if depth >= 0.05:
+        return "SHALLOW"
+    return "SURFACE"
+
+
 @dataclass
 class SelfModelResult:
     """Snapshot of the fitted self-model and its accuracy metrics."""
@@ -88,6 +96,22 @@ class SelfModelResult:
     equilibrium_estimate: float       # long-run mean: w[0] / (1 - sum(w[1:]))
     errors: np.ndarray = field(repr=False)   # level-1 residuals
     phi_used: np.ndarray = field(repr=False) # the series that was fitted
+
+    def to_dict(self) -> dict:
+        return {
+            "n_samples":           self.n_samples,
+            "p":                   self.p,
+            "q":                   self.q,
+            "r2_l1":               round(self.r2_l1, 4),
+            "r2_l2":               round(self.r2_l2, 4),
+            "depth":               round(self.depth, 4),
+            "depth_class":         _depth_class(self.depth),
+            "null_r2_l1":          round(self.null_r2_l1, 4),
+            "null_r2_l2":          round(self.null_r2_l2, 4),
+            "equilibrium_estimate": round(self.equilibrium_estimate, 4),
+            "beats_null_l1":       bool(self.r2_l1 > self.null_r2_l1),
+            "beats_null_l2":       bool(self.r2_l2 > self.null_r2_l2),
+        }
 
 
 class RecursiveSelfModel:
@@ -141,6 +165,8 @@ class RecursiveSelfModel:
         if phi is None:
             return None
         phi = np.asarray(phi, dtype=float)
+        if phi.size < (self.p + self.q + 16):
+            return None
 
         # ── Level-1: phi_hat[t] = w·[1, phi[t-1], ..., phi[t-p]] ──
         Z1, y1 = _build_lagged(phi, self.p)
@@ -228,6 +254,29 @@ class RecursiveSelfModel:
             "l1_margin": r.r2_l1 - r.null_r2_l1,
             "l2_margin": r.r2_l2 - r.null_r2_l2,
         }
+
+
+# ── Public API ────────────────────────────────────────────────────────────────
+
+def analyse(agent: str = "albedo", p: int = 4, q: int = 4,
+            null_seed: int = 42) -> Optional[SelfModelResult]:
+    """Fit the two-level recursive self-model from ConsciousnessHistoryStore.
+
+    Returns SelfModelResult or None if insufficient history (<p+q+16 entries).
+    """
+    from algorithms import ConsciousnessHistoryStore as chs
+
+    entries = chs.load(agent, max_entries=2880)
+    if not entries:
+        return None
+    entries_asc = list(reversed(entries))
+    phi = np.array(
+        [float(e["mean_phi_level"]) for e in entries_asc
+         if "mean_phi_level" in e],
+        dtype=float,
+    )
+    model = RecursiveSelfModel(p=p, q=q, null_seed=null_seed)
+    return model.fit(phi)
 
 
 # ── Standalone smoke-test ─────────────────────────────────────────────────────
