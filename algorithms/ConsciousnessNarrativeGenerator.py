@@ -605,6 +605,16 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    goal_persistence_data: dict | None = None
+    try:
+        from algorithms.GoalPersistenceTracker import analyse as _gpt
+        _gpr = _gpt()
+        if _gpr and _gpr.n_sessions >= 2:
+            goal_persistence_data = _gpr.to_dict()
+            sources.append("goal_persistence_tracker")
+    except Exception:
+        pass
+
     narrative_coherence_data: dict | None = None
     try:
         from algorithms.NarrativeCoherenceIndex import analyse as _nci
@@ -1006,6 +1016,24 @@ def generate(agent: str = "albedo") -> NarrativeReport:
             sentences.append(
                 f"Architecture self-optimization is EXPLORING"
                 f" (gradient flat or below null); {n_pr} exploratory proposal(s)."
+            )
+
+    # Goal persistence sentence
+    if goal_persistence_data:
+        gpc = goal_persistence_data.get("persistence_class", "")
+        gpr = goal_persistence_data.get("persistence_rate", 0.0)
+        gdd = goal_persistence_data.get("dominant_direction", "")
+        ns  = goal_persistence_data.get("n_sessions", 0)
+        if gpc == "PERSISTENT":
+            sentences.append(
+                f"Goal persistence is PERSISTENT across {ns} sessions"
+                f" (rate={gpr:.2f}, direction={gdd}) — phi direction is consistent"
+                f" across session boundaries."
+            )
+        elif gpc == "SCATTERED":
+            sentences.append(
+                f"Goal persistence is SCATTERED (rate={gpr:.2f}, {ns} sessions)"
+                f" — phi direction changes unpredictably between sessions."
             )
 
     # Narrative coherence sentence

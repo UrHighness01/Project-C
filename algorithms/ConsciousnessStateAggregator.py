@@ -543,6 +543,17 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "n_narratives": r.n_narratives}
     run("narrative_coherence_index", _run_narrative_coherence)
 
+    def _run_goal_persistence():
+        from algorithms.GoalPersistenceTracker import analyse
+        r = analyse()
+        return {"status": "ok",
+                "persistence_rate": r.persistence_rate,
+                "persistence_class": r.persistence_class,
+                "dominant_direction": r.dominant_direction,
+                "n_sessions": r.n_sessions,
+                "beats_null": r.beats_null}
+    run("goal_persistence_tracker", _run_goal_persistence)
+
     def _run_richness():
         from algorithms.QualiaRichnessTracker import analyse
         r = analyse()
@@ -690,6 +701,9 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["attention_tracking_phi"]     = _get("attentional_coherence_audit", "is_tracking_phi")
     summary["narrative_coherence_class"]  = _get("narrative_coherence_index", "narrative_coherence_class")
     summary["narrative_coherence_zscore"] = _get("narrative_coherence_index", "coherence_zscore")
+    summary["goal_persistence_class"]     = _get("goal_persistence_tracker", "persistence_class")
+    summary["goal_persistence_rate"]      = _get("goal_persistence_tracker", "persistence_rate")
+    summary["dominant_phi_direction"]     = _get("goal_persistence_tracker", "dominant_direction")
     summary["pid_synergy_bits"]      = _get("phi_information_decomposition", "synergy_bits")
     summary["pid_redundancy_bits"]   = _get("phi_information_decomposition", "redundancy_bits")
     summary["pid_synergy_ratio"]     = _get("phi_information_decomposition", "synergy_ratio")

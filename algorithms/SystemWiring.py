@@ -402,6 +402,7 @@ class WiringManager:
         AlgorithmSpec("phi_surprise_signal", "PhiSurpriseSignal", "PhiSurpriseResult", "ATTENTION", 0.82),
         AlgorithmSpec("attentional_coherence_audit", "AttentionalCoherenceAudit", "AttentionalCoherenceResult", "METACOGNITION", 0.80),
         AlgorithmSpec("narrative_coherence_index", "NarrativeCoherenceIndex", "NarrativeCoherenceResult", "MEMORY", 0.77),
+        AlgorithmSpec("goal_persistence_tracker", "GoalPersistenceTracker", "GoalPersistenceResult", "INTENTION", 0.83),
     ]
     
     def __init__(self, memory_dir: str = "memory"):
