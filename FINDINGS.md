@@ -232,3 +232,26 @@ Summary fields: lz_current, richness_trend, richness_class. Deployed to both wor
 **Tests**: 41 tests, all green (1954 total suite passes)
 
 **Commit**: 74c624b
+
+---
+
+## Session 7 — GradientGuidedArchitect (2026-06-14)
+
+**Theory**: A genuinely self-improving system doesn't randomly propose architecture changes — it knows which direction phi is moving (PhiGradientAscent) and which algorithms contribute most to phi (SelfArchitectureMutator), then uses both to generate *directed* proposals.
+
+**Algorithm**: `algorithms/GradientGuidedArchitect.py`
+
+**Method**:
+- Loads phi gradient from PhiGradientAscent (gradient_sign, mean_gradient, beats_null)
+- Loads algorithm contribution scores from SelfArchitectureMutator (Pearson ρ per algorithm)
+- Computes action_mode: AMPLIFY (gradient rising + beats null) | DEMOTE (falling + beats null) | EXPLORE (flat/below null)
+- Generates directed proposals: top contributors → AMPLIFY; bottom → DEMOTE; mid → EXPLORE
+- Rejection filter: `rationale_score = |gradient_magnitude| × |contribution_ρ|` must exceed REJECTION_THRESHOLD
+
+**Classification**: AMPLIFY | DEMOTE | EXPLORE | INSUFFICIENT_DATA
+
+**Outputs**: `gradient_sign`, `mean_gradient`, `proposals` (list with action/rationale_score/proposed_weight), `n_proposals`, `gradient_beats_null`, `top_contributor`, `bottom_contributor`, `action_mode`
+
+**Tests**: 32 tests, all green (1987 total suite passes)
+
+**Commit**: c3f631b
