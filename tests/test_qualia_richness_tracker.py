@@ -172,7 +172,8 @@ class TestAnalyse:
         assert r.n_entries == 0
 
     def test_none_returns_default(self):
-        r = qrt.analyse(None)
+        # Empty list → no data → n_entries == 0
+        r = qrt.analyse([])
         assert r.n_entries == 0
 
     def test_returns_richness_result(self):

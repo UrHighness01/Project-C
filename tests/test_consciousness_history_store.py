@@ -86,9 +86,11 @@ def test_entry_from_snapshot_n_algorithms_run():
 
 @pytest.fixture
 def tmp_store(tmp_path):
-    """Fixture: patch _store_path to use a temp dir."""
+    """Fixture: patch _store_path and _adapter_snapshot_path to use a temp dir."""
     p = tmp_path / "memory" / "consciousness_history.jsonl"
-    with patch("algorithms.ConsciousnessHistoryStore._store_path", return_value=p):
+    snap_p = tmp_path / "memory" / "adapter_snapshot.jsonl"
+    with patch("algorithms.ConsciousnessHistoryStore._store_path", return_value=p), \
+         patch("algorithms.ConsciousnessHistoryStore._adapter_snapshot_path", return_value=snap_p):
         yield p
 
 

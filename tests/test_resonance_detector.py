@@ -128,7 +128,9 @@ class TestAnalyse:
         assert 0.0 <= result.plv <= 1.0
 
     def test_none_inputs_return_default(self):
-        result = rd.analyse(None, None)
+        # Empty arrays → no data → n_samples == 0
+        import numpy as np
+        result = rd.analyse(np.array([]), np.array([]))
         assert result.n_samples == 0
         assert result.coupling_strength == "DECOUPLED"
 

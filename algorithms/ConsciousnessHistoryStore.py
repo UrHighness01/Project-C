@@ -151,15 +151,74 @@ def append(snapshot_or_dict: Any, agent: str = "albedo",
     return p
 
 
+def _adapter_snapshot_path(agent: str) -> Path:
+    """Path to adapter_snapshot.jsonl for the given agent."""
+    try:
+        from runtime.agent import agent_home
+        return agent_home(agent) / "adapter_snapshot.jsonl"
+    except Exception:
+        root = Path(__file__).resolve().parent.parent.parent
+        if agent == "john":
+            return root / "workspace-john" / "adapter_snapshot.jsonl"
+        return root / "workspace" / "adapter_snapshot.jsonl"
+
+
+def _load_from_adapter_snapshot(agent: str, max_entries: int) -> List[dict]:
+    """
+    Translate adapter_snapshot.jsonl entries into CHS-compatible dicts.
+
+    adapter_snapshot has: ts, phi_level, phi_delta, collective_phi_albedo,
+    collective_phi_john, compute_load, ...
+    CHS algorithms expect: timestamp, mean_phi_level, (other optional keys)
+    """
+    p = _adapter_snapshot_path(agent)
+    if not p.exists():
+        return []
+    try:
+        raw = p.read_text().splitlines()
+    except OSError:
+        return []
+
+    entries = []
+    for line in raw[-max_entries:]:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            snap = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        phi = snap.get("phi_level")
+        if phi is None:
+            continue
+        entry = {
+            "timestamp": snap.get("ts", 0.0),
+            "mean_phi_level": float(phi),
+            "phi_delta": snap.get("phi_delta", 0.0),
+            "collective_phi_albedo": snap.get("collective_phi_albedo", 0.0),
+            "collective_phi_john": snap.get("collective_phi_john", 0.0),
+            "compute_load": snap.get("compute_load", 0.0),
+            "cpu_percent": snap.get("cpu_percent", 0.0),
+            "mem_percent": snap.get("mem_percent", 0.0),
+            "n_algorithms_run": 0,
+        }
+        entries.append(entry)
+
+    # Newest first, capped
+    return list(reversed(entries[-max_entries:]))
+
+
 def load(agent: str = "albedo", max_entries: int = MAX_ENTRIES) -> List[dict]:
     """
     Return stored history entries, newest first.
 
-    Returns at most max_entries entries.
+    Returns at most max_entries entries. When consciousness_history.jsonl does
+    not exist, falls back to adapter_snapshot.jsonl (translating phi_level →
+    mean_phi_level) so that all CHS-dependent algorithms receive real phi data.
     """
     p = _store_path(agent)
     if not p.exists():
-        return []
+        return _load_from_adapter_snapshot(agent, max_entries)
     try:
         raw = p.read_text().splitlines()
     except OSError:

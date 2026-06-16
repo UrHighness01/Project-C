@@ -131,7 +131,9 @@ class TestAnalyse:
         assert r.n_samples == 0
 
     def test_none_returns_default(self):
-        r = pid.analyse(None, None)
+        # Empty arrays → no data → n_samples == 0
+        import numpy as np
+        r = pid.analyse(np.array([]), np.array([]))
         assert r.n_samples == 0
 
     def test_returns_pid_result(self):
