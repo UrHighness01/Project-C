@@ -129,9 +129,10 @@ def _collect_signals(window: int) -> np.ndarray:
 
     # Signal 2-3: CPU and memory usage (resource snapshots)
     try:
-        from runtime.resources import cpu_percent_series, memory_percent_series
-        cpu = cpu_percent_series()
-        mem = memory_percent_series()
+        from runtime.resources import sample_series
+        rs = sample_series(n=window, interval=0.01)
+        cpu = rs.get("cpu_percent")
+        mem = rs.get("mem_percent")
         if cpu is not None and len(cpu) >= window:
             columns.append(np.array(cpu[-window:], dtype=float))
         if mem is not None and len(mem) >= window:
@@ -139,10 +140,11 @@ def _collect_signals(window: int) -> np.ndarray:
     except Exception:
         pass
 
-    # Signal 4: interaction count per tick
+    # Signal 4: interaction metrics (latency, gap, sentiment)
     try:
-        from runtime.interactions import interaction_count_series
-        ia = interaction_count_series()
+        from runtime.interactions import series as interaction_series
+        is_ = interaction_series()
+        ia = is_.get("in_chars") if isinstance(is_, dict) else None
         if ia is not None and len(ia) >= window:
             columns.append(np.array(ia[-window:], dtype=float))
     except Exception:
@@ -150,8 +152,9 @@ def _collect_signals(window: int) -> np.ndarray:
 
     # Signal 5: memory volume (episodic journal size over time)
     try:
-        from runtime.memory_store import volume_series
-        mv = volume_series()
+        from runtime.memory_store import cadence_series
+        ms = cadence_series()
+        mv = ms.get("volume") if isinstance(ms, dict) else None
         if mv is not None and len(mv) >= window:
             columns.append(np.array(mv[-window:], dtype=float))
     except Exception:
