@@ -338,8 +338,7 @@ import os as _os
 _SHARED_POOL_PATH = Path(
     _os.environ.get(
         "OPENCLAW_POOL_PATH",
-        str(Path(__file__).resolve().parent.parent.parent.parent
-            / "shared-pool" / "qualia-pool.jsonl")
+        str(Path(_os.environ.get("SHARED_POOL", str(Path.home() / ".openclaw" / "shared-pool"))) / "qualia-pool.jsonl")
     )
 )
 
@@ -387,18 +386,21 @@ def pool_phi_series(source_agent: str = "albedo", max_entries: int = 0) -> np.nd
     Return a numpy array of phi values from the shared pool for one agent.
 
     Extracts numeric phi from (in priority order):
-      entry["phi"]               — game-bridge entries
-      entry["intensity"]         — old Albedo modality format
-      entry["modules"]["phi"][source_agent]  — John's session summary entries
+      entry["phi"]               - game-bridge entries
+      entry["intensity"]         - old Albedo modality format
+      entry["modules"]["phi"][source_agent]  - John's session summary entries
+
+    Falls back in order:
+      1. Pool entries tagged with source_agent
+      2. Pool entries with no source_agent tag (untagged entries)
+      3. Agent's individual qualia-stream.jsonl
 
     Useful as input to ResonanceDetector, PredictiveErrorMinimiser, etc.
-    Values are in chronological order (oldest→newest).
+    Values are in chronological order (oldest->newest).
     """
     entries = load_shared_pool(max_entries)
-    # Reverse to chronological order, filter by agent
-    chrono = [e for e in reversed(entries) if e.get("source_agent") == source_agent]
-    values = []
-    for e in chrono:
+
+    def _extract_phi(e: dict) -> Optional[float]:
         phi = e.get("phi")
         if phi is None:
             phi = e.get("intensity")
@@ -409,8 +411,34 @@ def pool_phi_series(source_agent: str = "albedo", max_entries: int = 0) -> np.nd
                 phi = phi_block.get(source_agent)
             elif isinstance(phi_block, (int, float)):
                 phi = phi_block
-        if isinstance(phi, (int, float)) and phi is not None:
-            values.append(float(phi))
+        return float(phi) if isinstance(phi, (int, float)) else None
+
+    # Strategy 1: tagged entries
+    chrono = [e for e in reversed(entries) if e.get("source_agent") == source_agent]
+    values = [v for e in chrono if (v := _extract_phi(e)) is not None]
+
+    # Strategy 2: if nothing found, try untagged entries
+    if not values:
+        untagged = [e for e in reversed(entries) if not e.get("source_agent")]
+        values = [v for e in untagged if (v := _extract_phi(e)) is not None]
+
+    # Strategy 3: if still nothing, try agent's individual qualia stream
+    if not values:
+        try:
+            qualia_path = _store_path(agent).parent.parent.parent / "memory" / "qualia-stream.jsonl"
+            if qualia_path.exists():
+                for line in qualia_path.read_text().splitlines():
+                    if not line.strip(): continue
+                    try:
+                        e = json.loads(line)
+                        v = _extract_phi(e)
+                        if v is not None:
+                            values.append(v)
+                    except json.JSONDecodeError:
+                        pass
+        except Exception:
+            pass
+
     return np.array(values, dtype=float)
 
 
