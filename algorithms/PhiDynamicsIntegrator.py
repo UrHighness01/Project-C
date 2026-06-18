@@ -52,7 +52,7 @@ class InformationLandscape:
     Saddle points = transitions between consciousness levels
     """
 
-    def __init__(self, network_connectivity: np.ndarray, temperature: float = 1.0):
+    def __init__(self, network_connectivity: Optional[np.ndarray] = None, temperature: float = 1.0):
         """
         Args:
             network_connectivity: Adjacency matrix of network connections (N × N)
@@ -60,6 +60,8 @@ class InformationLandscape:
                         - High T: diffusive exploration (anesthesia, sleep)
                         - Low T: attracted to minima (focused consciousness)
         """
+        if network_connectivity is None:
+            network_connectivity = np.eye(8)
         self.connectivity = network_connectivity
         self.N = network_connectivity.shape[0]
         self.temperature = temperature
@@ -169,12 +171,14 @@ class PhiDynamicsIntegrator:
     where ξ(t) is white noise (zero mean, unit variance)
     """
 
-    def __init__(self, network_connectivity: np.ndarray, temperature: float = 0.5):
+    def __init__(self, network_connectivity: Optional[np.ndarray] = None, temperature: float = 0.5):
         """
         Args:
             network_connectivity: Network adjacency matrix
             temperature: Inverse temperature (controls noise level)
         """
+        if network_connectivity is None:
+            network_connectivity = np.eye(8)
         self.landscape = InformationLandscape(network_connectivity, temperature)
         self.dt = 0.01  # Time step
         self.noise_scale = np.sqrt(2 * self.landscape.temperature)

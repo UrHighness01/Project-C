@@ -134,7 +134,7 @@ def criticality_score(alpha: float) -> float:
     return float(np.exp(-abs(alpha - 1.0)))
 
 
-def analyse(y: np.ndarray, series_name: str = "phi_level",
+def analyse(y: Optional[np.ndarray] = None, series_name: str = "phi_level",
             tau_max: int = 60, null_seed: int = 42
             ) -> Optional[CriticalityResult]:
     """
@@ -149,6 +149,8 @@ def analyse(y: np.ndarray, series_name: str = "phi_level",
     Returns:
         CriticalityResult, or None if y is too short.
     """
+    if y is None:
+        return None
     y = np.asarray(y, dtype=float)
     n = len(y)
     if n < tau_max + 16:

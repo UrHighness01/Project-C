@@ -107,11 +107,11 @@ class ThoughtType(Enum):
 @dataclass
 class SpontaneousThought:
     """A thought that arose unbidden."""
-    id: str
-    content: str
-    thought_type: ThoughtType
-    origin: ThoughtOrigin
-    valence: ThoughtValence
+    id: str = ""
+    content: str = ""
+    thought_type: ThoughtType = ThoughtType.FRAGMENT
+    origin: ThoughtOrigin = ThoughtOrigin.ASSOCIATION
+    valence: ThoughtValence = ThoughtValence.NEUTRAL
     intensity: float = 0.5      # How forceful
     persistence: float = 0.3   # How sticky
     timestamp: float = field(default_factory=time.time)

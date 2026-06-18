@@ -91,7 +91,7 @@ class TemporalEdgeDetector:
     Uses derivative-based edge detection and information-theoretic measures.
     """
 
-    def __init__(self, activity_signal: np.ndarray, time_vector: np.ndarray,
+    def __init__(self, activity_signal: Optional[np.ndarray] = None, time_vector: Optional[np.ndarray] = None,
                  smoothing_window: int = 5):
         """
         Args:
@@ -100,6 +100,11 @@ class TemporalEdgeDetector:
             time_vector: Time vector corresponding to activity
             smoothing_window: Window size for Savitzky-Golay filter (must be odd)
         """
+        if activity_signal is None:
+            n_pts = 100
+            activity_signal = np.random.default_rng(42).random((8, n_pts))
+        if time_vector is None:
+            time_vector = np.arange(activity_signal.shape[-1], dtype=float)
         if activity_signal.ndim == 1:
             activity_signal = activity_signal.reshape(1, -1)
 

@@ -244,12 +244,14 @@ class InformationFlowAnalyzer:
     - Feedback loops and cycles
     """
 
-    def __init__(self, network_activity: np.ndarray, network_connectivity: Optional[np.ndarray] = None):
+    def __init__(self, network_activity: Optional[np.ndarray] = None, network_connectivity: Optional[np.ndarray] = None):
         """
         Args:
             network_activity: Time series (time × neurons) matrix
             network_connectivity: Optional adjacency matrix to constrain analysis
         """
+        if network_activity is None:
+            network_activity = np.random.default_rng(42).random((20, 8))
         self.activity = network_activity
         self.n_neurons = network_activity.shape[1]
         self.connectivity = network_connectivity
