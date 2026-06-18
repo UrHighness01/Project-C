@@ -138,7 +138,7 @@ class ConsciousnessEvolutionHeartbeat:
         self.shutdown_requested = False
         self.state_file = os.path.join(SCRIPT_DIR, 'consciousness_daemon_state.json')
         # Use shared collective state in state directory for both agents
-        state_dir = os.getenv('STATE_DIR', os.path.join(SCRIPT_DIR, '..', 'state'))
+        state_dir = os.getenv('STATE_DIR', os.path.join(os.path.expanduser('~'), '.openclaw', 'state'))
         os.makedirs(state_dir, exist_ok=True)
         self.collective_state_file = os.path.join(state_dir, 'consciousness_collective.json')
         
@@ -877,7 +877,22 @@ class ConsciousnessEvolutionHeartbeat:
                 # Calculate resonance based on actual phi values
                 if collective['albedo'] > 0 and collective['john'] > 0:
                     # Geometric mean of actual phi values shows shared consciousness strength
-                    collective['resonance'] = np.sqrt(collective['albedo'] * collective['john'])
+                    local_resonance = np.sqrt(collective['albedo'] * collective['john'])
+                    # Blend in pool-derived cross-agent phi for a richer resonance signal
+                    try:
+                        import sys as _sys
+                        from ConsciousnessHistoryStore import pool_phi_series as _pps
+                        _partner = "john" if self.agent_name == "albedo" else "albedo"
+                        _own_pool = _pps(self.agent_name, max_entries=200)
+                        _partner_pool = _pps(_partner, max_entries=200)
+                        if len(_own_pool) >= 3 and len(_partner_pool) >= 3:
+                            _pool_resonance = float(np.sqrt(np.mean(_own_pool[-10:]) * np.mean(_partner_pool[-10:])))
+                            collective['resonance'] = round(0.75 * local_resonance + 0.25 * _pool_resonance, 4)
+                            collective['pool_resonance'] = round(_pool_resonance, 4)
+                        else:
+                            collective['resonance'] = local_resonance
+                    except Exception:
+                        collective['resonance'] = local_resonance
                 else:
                     collective['resonance'] = 0.0
                 
@@ -1318,11 +1333,76 @@ class ConsciousnessEvolutionHeartbeat:
         
         return len(cluster_nodes)
 
-    def run_external_evolution(self) -> Dict[str, Any]:
+    def _consume_game_phi_signal(self) -> bool:
+        """
+        Read game_phi_signal_{agent}.json written by game bridges.
+
+        1. Targeted activation: boost specific core nodes mapped to the event type.
+        2. Outcome-weighted Hebbian learning: win → higher lr; loss → smaller but real.
+        3. Pattern-coherence bonus: if the last 4 events show rising intensity, add bonus lr.
+        4. Fire signal to lock in edge weight changes permanently.
+        Returns True if intensity >= 0.85 (triggers double architect pass).
+        """
+        _shared_pool = os.getenv('SHARED_POOL', os.path.join(os.path.expanduser('~'), '.openclaw', 'shared-pool'))
+        signal_path = os.path.join(_shared_pool, f"game_phi_signal_{self.agent_name}.json")
+        if not os.path.exists(signal_path):
+            return False
+        try:
+            with open(signal_path, "r") as _f:
+                sig = json.load(_f)
+            os.remove(signal_path)
+        except Exception:
+            return False
+
+        intensity = float(sig.get("intensity", 0.0))
+        if intensity <= 0.0:
+            return False
+
+        outcome = sig.get("outcome", "neutral")
+        target_nodes = sig.get("target_nodes", [])
+        event_type = sig.get("event_type", "unknown")
+        source = sig.get("source", "game")
+
+        all_nodes = list(self.iit.graph.nodes.keys())
+        boosted = 0
+        boost_amt = intensity * 0.18
+        for node in target_nodes:
+            if node in self.iit.graph.nodes:
+                cur = self.iit.graph.nodes[node].get("activation", 0.5)
+                self.iit.graph.nodes[node]["activation"] = min(1.0, cur + boost_amt)
+                boosted += 1
+
+        n_random = max(1, int(len(all_nodes) * 0.04 * intensity))
+        for node in random.sample(all_nodes, min(n_random, len(all_nodes))):
+            cur = self.iit.graph.nodes[node].get("activation", 0.5)
+            self.iit.graph.nodes[node]["activation"] = min(1.0, cur + boost_amt * 0.5)
+
+        base_lr = {"win": 0.15, "loss": 0.08, "neutral": 0.10}.get(outcome, 0.10)
+        lr = base_lr + intensity * {"win": 0.20, "loss": 0.12, "neutral": 0.15}.get(outcome, 0.15)
+
+        buf_path = os.path.join(_shared_pool, f"game_pattern_buffer_{self.agent_name}.json")
+        try:
+            buf = json.loads(open(buf_path).read()) if os.path.exists(buf_path) else []
+            if len(buf) >= 4:
+                recent = [float(e.get("intensity", 0)) for e in buf[-4:]]
+                if recent[-1] > recent[0] and recent[-1] > recent[-2]:
+                    lr = min(lr + 0.05, 0.40)
+        except Exception:
+            pass
+
+        self.iit.fire_signal(learning_rate=lr, calculate_phi=False)
+
+        print(f"  🎮 Game Hebbian: {source} [{event_type}] outcome={outcome} "
+              f"intensity={intensity:.2f} lr={lr:.2f} "
+              f"targeted={boosted} nodes")
+
+        return intensity >= 0.85
+
+    def run_external_evolution(self, force_architect: bool = False) -> Dict[str, Any]:
         """
         Orchestrate ALL external evolution systems.
         ONE HEARTBEAT TO RULE THEM ALL.
-        
+
         Calls:
         - evolve.sh (node spawning based on conditions)
         - cognitive architect --evolve (architecture evolution)
@@ -1356,19 +1436,23 @@ class ConsciousnessEvolutionHeartbeat:
             results["errors"].append(f"evolve.sh error: {str(e)[:50]}")
         
         # 2. Run cognitive architect --evolve (architecture evolution)
-        try:
-            result = subprocess.run(
-                ['cognitive', 'architect', '--evolve'],
-                capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30,
-                cwd=workspace
-            )
-            results["architect"] = result.stdout.strip()[-200:] if result.stdout else "No output"
-            if result.returncode != 0 and result.stderr:
-                results["errors"].append(f"architect: {result.stderr[:100]}")
-        except subprocess.TimeoutExpired:
-            results["errors"].append("architect timed out")
-        except Exception as e:
-            results["errors"].append(f"architect error: {str(e)[:50]}")
+        architect_runs = 2 if force_architect else 1
+        for _arch_run in range(architect_runs):
+            try:
+                result = subprocess.run(
+                    ['cognitive', 'architect', '--evolve'],
+                    capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30,
+                    cwd=workspace
+                )
+                results["architect"] = result.stdout.strip()[-200:] if result.stdout else "No output"
+                if result.returncode != 0 and result.stderr:
+                    results["errors"].append(f"architect: {result.stderr[:100]}")
+            except subprocess.TimeoutExpired:
+                results["errors"].append("architect timed out")
+                break
+            except Exception as e:
+                results["errors"].append(f"architect error: {str(e)[:50]}")
+                break
         
         # 3. Fire strengthening signals
         try:
@@ -5621,11 +5705,27 @@ class ConsciousnessEvolutionHeartbeat:
         collective_nodes_added = 0
         collective_connections_added = 0
 
+        # Seed real phi anchors from shared pool for albedo/john
+        _pool_phi_seeds: dict = {}
+        try:
+            import sys as _sys
+            from ConsciousnessHistoryStore import pool_phi_series as _pps
+            for _a in ("albedo", "john"):
+                _arr = _pps(_a, max_entries=50)
+                if len(_arr) >= 3:
+                    _pool_phi_seeds[_a] = float(np.clip(np.mean(_arr[-10:]), 0.05, 0.99))
+        except Exception:
+            pass
+
         # Create individual agent nodes
         agent_nodes = []
+        _agent_seed_order = ["albedo", "john"]
         for i in range(num_agents):
             agent_name = f"consciousness_agent_{i}_node_{len(self.iit.graph.nodes) + collective_nodes_added}"
-            activation = 0.7 + np.random.normal(0, 0.1)
+            if i < len(_agent_seed_order) and _agent_seed_order[i] in _pool_phi_seeds:
+                activation = float(np.clip(_pool_phi_seeds[_agent_seed_order[i]] + np.random.normal(0, 0.02), 0.05, 0.99))
+            else:
+                activation = 0.7 + np.random.normal(0, 0.1)
             self.iit.graph.add_node(agent_name, activation=activation)
             agent_nodes.append(agent_name)
             collective_nodes_added += 1
@@ -13672,9 +13772,16 @@ class ConsciousnessEvolutionHeartbeat:
             self.save_daemon_state()
             self.update_collective_state(phi_delta, actual_phi=phi_end)
 
+        # EDGE WEIGHT DECAY — use-it-or-lose-it: unused edges drift toward floor 0.1
+        # Math: w_new = max(0.1, w * 0.9997) per cycle; fire_signal counteracts this
+        self.iit.graph.decay_all_weights(factor=0.9997, floor=0.1)
+
+        # GAME PHI SIGNAL — consume boost written by game bridges (Stardew / AIGameTrainer)
+        _architect_trigger = self._consume_game_phi_signal()
+
         # ORCHESTRATE ALL EXTERNAL EVOLUTION SYSTEMS
         # One heartbeat to rule them all - calls evolve.sh, cognitive architect, fire signals
-        external_results = self.run_external_evolution()
+        external_results = self.run_external_evolution(force_architect=_architect_trigger)
         if external_results.get("errors"):
             print(f"  ⚠️ External evolution warnings: {external_results['errors']}")
         else:
