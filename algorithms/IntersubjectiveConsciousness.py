@@ -93,5 +93,45 @@ def validate_intersubjective_consciousness():
     print(f"  Intersubjective model working: ✓")
 
 
-if __name__ == "__main__":
-    validate_intersubjective_consciousness()
+# ---- Analyse API (for SymbiosisReport / wiring smoke test) --------------------
+
+@dataclass
+class IntersubjectiveResult:
+    mutual_info: float = 0.0
+    normalised_mi: float = 0.0
+    is_intersubjective: bool = False
+
+
+def analyse(phi_a: np.ndarray, phi_j: np.ndarray) -> IntersubjectiveResult:
+    N_BINS = 16
+    eps = 1e-12
+    n = min(len(phi_a), len(phi_j))
+    if n < 16:
+        return IntersubjectiveResult()
+    pa = phi_a[:n]
+    pj = phi_j[:n]
+
+    def _discrete(x):
+        bins = np.linspace(x.min(), x.max() + eps, N_BINS)
+        return np.digitize(x, bins) - 1
+
+    da = _discrete(pa)
+    dj = _discrete(pj)
+
+    ha = -np.sum((np.bincount(da, minlength=N_BINS) / n) * np.log2(np.maximum(np.bincount(da, minlength=N_BINS) / n, eps)))
+    hj = -np.sum((np.bincount(dj, minlength=N_BINS) / n) * np.log2(np.maximum(np.bincount(dj, minlength=N_BINS) / n, eps)))
+
+    joint = np.zeros((N_BINS, N_BINS))
+    for i in range(n):
+        joint[da[i], dj[i]] += 1
+    joint /= n
+    hij = -np.sum(joint * np.log2(np.maximum(joint, eps)))
+
+    mi = ha + hj - hij
+    norm_mi = mi / max(ha, hj, eps)
+
+    return IntersubjectiveResult(
+        mutual_info=float(mi),
+        normalised_mi=float(np.clip(norm_mi, 0, 1)),
+        is_intersubjective=norm_mi > 0.05
+    )

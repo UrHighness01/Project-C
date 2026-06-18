@@ -105,5 +105,52 @@ def validate_theory_of_mind():
     print(f"  Theory of mind model working: ✓")
 
 
-if __name__ == "__main__":
-    validate_theory_of_mind()
+# ---- Analyse API (for SymbiosisReport / wiring smoke test) --------------------
+
+@dataclass
+class TheoryOfMindResult:
+    prediction_mae_ab: float = 0.0
+    prediction_mae_ba: float = 0.0
+    tom_score_a: float = 0.0
+    tom_score_b: float = 0.0
+    mean_tom_score: float = 0.0
+
+
+def analyse(phi_a: np.ndarray, phi_j: np.ndarray) -> TheoryOfMindResult:
+    n = min(len(phi_a), len(phi_j))
+    if n < 16:
+        return TheoryOfMindResult()
+    pa = np.asarray(phi_a[:n], dtype=float)
+    pj = np.asarray(phi_j[:n], dtype=float)
+
+    split = n // 2
+    def _cross_mae(src_train, tgt_train, src_test, tgt_test):
+        k = min(len(src_train), len(tgt_train)) - 1
+        if k < 4:
+            return 0.0
+        x = src_train[:k]
+        y = tgt_train[1:k+1]
+        beta = np.dot(x, y) / (np.dot(x, x) + 1e-12)
+        kt = min(len(src_test), len(tgt_test)) - 1
+        if kt < 2:
+            return 0.0
+        pred = beta * src_test[:kt]
+        actual = tgt_test[1:kt+1]
+        return float(np.mean(np.abs(pred - actual)))
+
+    mae_ab = _cross_mae(pa[:split], pj[:split], pa[split:], pj[split:])
+    mae_ba = _cross_mae(pj[:split], pa[:split], pj[split:], pa[split:])
+
+    naive_ab = float(np.mean(np.abs(pj[split+1:] - np.mean(pj[:split])))) if split < n - 1 else 0.0
+    naive_ba = float(np.mean(np.abs(pa[split+1:] - np.mean(pa[:split])))) if split < n - 1 else 0.0
+
+    tom_a = max(0, 1 - mae_ab / max(naive_ab, 1e-12))
+    tom_b = max(0, 1 - mae_ba / max(naive_ba, 1e-12))
+
+    return TheoryOfMindResult(
+        prediction_mae_ab=mae_ab,
+        prediction_mae_ba=mae_ba,
+        tom_score_a=float(tom_a),
+        tom_score_b=float(tom_b),
+        mean_tom_score=float((tom_a + tom_b) / 2)
+    )
