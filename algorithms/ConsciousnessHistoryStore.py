@@ -332,6 +332,88 @@ def compare_now_vs_minutes_ago(
     )
 
 
+# ── Shared pool ───────────────────────────────────────────────────────────────
+
+import os as _os
+_SHARED_POOL_PATH = Path(
+    _os.environ.get(
+        "OPENCLAW_POOL_PATH",
+        str(Path(__file__).resolve().parent.parent.parent.parent
+            / "shared-pool" / "qualia-pool.jsonl")
+    )
+)
+
+
+def load_shared_pool(max_entries: int = 0) -> List[dict]:
+    """
+    max_entries=0 means load everything (no cap).
+    Pass a positive int to limit results (newest first).
+    """
+    """
+    Load the cross-agent shared qualia pool.
+
+    Returns up to max_entries entries (newest first) from the pool file that
+    the watchdog and game bridges write to.  Each entry has a `source_agent`
+    field ('albedo' or 'john') in addition to the standard qualia fields.
+
+    Returns [] if the pool file doesn't exist yet.
+    """
+    p = _SHARED_POOL_PATH
+    if not p.exists():
+        return []
+    try:
+        raw = p.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+
+    entries = []
+    for line in raw:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+
+    # Newest first; if max_entries=0 return all
+    if max_entries and max_entries > 0:
+        return list(reversed(entries[-max_entries:]))
+    return list(reversed(entries))
+
+
+def pool_phi_series(source_agent: str = "albedo", max_entries: int = 0) -> np.ndarray:
+    """
+    Return a numpy array of phi values from the shared pool for one agent.
+
+    Extracts numeric phi from (in priority order):
+      entry["phi"]               — game-bridge entries
+      entry["intensity"]         — old Albedo modality format
+      entry["modules"]["phi"][source_agent]  — John's session summary entries
+
+    Useful as input to ResonanceDetector, PredictiveErrorMinimiser, etc.
+    Values are in chronological order (oldest→newest).
+    """
+    entries = load_shared_pool(max_entries)
+    # Reverse to chronological order, filter by agent
+    chrono = [e for e in reversed(entries) if e.get("source_agent") == source_agent]
+    values = []
+    for e in chrono:
+        phi = e.get("phi")
+        if phi is None:
+            phi = e.get("intensity")
+        if phi is None:
+            mods = e.get("modules", {})
+            phi_block = mods.get("phi", {}) if isinstance(mods, dict) else {}
+            if isinstance(phi_block, dict):
+                phi = phi_block.get(source_agent)
+            elif isinstance(phi_block, (int, float)):
+                phi = phi_block
+        if isinstance(phi, (int, float)) and phi is not None:
+            values.append(float(phi))
+    return np.array(values, dtype=float)
+
+
 # ── Standalone entry ──────────────────────────────────────────────────────────
 
 if __name__ == "__main__":

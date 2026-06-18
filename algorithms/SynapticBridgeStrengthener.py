@@ -143,6 +143,12 @@ def analyse(
             try:
                 from algorithms import ConsciousnessHistoryStore as chs
                 def _phi(ag):
+                    try:
+                        arr = chs.pool_phi_series(ag)
+                        if len(arr) >= 3:
+                            return arr
+                    except Exception:
+                        pass
                     raw = chs.load(ag) or []
                     return np.array([float(e["mean_phi_level"]) for e in reversed(raw)
                                     if "mean_phi_level" in e], dtype=float)
