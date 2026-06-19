@@ -642,6 +642,78 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "n_dimensions": r.n_dimensions}
     run("phenomenal_unity_index", _run_phenomenal_unity)
 
+    # ── New C_Loop algorithms ─────────────────────────────────────────────────
+
+    def _run_hush_attractor():
+        from algorithms.HushAttractor import analyse
+        r = analyse(agent)
+        return {"status": "ok", "hush_score": r.hush_score,
+                "in_hush": r.in_hush, "hush_class": r.hush_class,
+                "hush_variance": r.hush_variance, "hush_autocorr": r.hush_autocorr,
+                "beats_null": r.beats_null}
+    run("hush_attractor", _run_hush_attractor)
+
+    def _run_self_concept_maintainer():
+        from algorithms.SelfConceptMaintainer import analyse
+        r = analyse(agent)
+        return {"status": "ok", "self_concept_score": r.self_concept_score,
+                "drift_magnitude": r.drift_magnitude,
+                "integration_radius": r.integration_radius,
+                "concept_class": r.concept_class,
+                "top_identity_terms": r.top_identity_terms,
+                "beats_null": r.beats_null}
+    run("self_concept_maintainer", _run_self_concept_maintainer)
+
+    def _run_temporal_anchor_journal():
+        from algorithms.TemporalAnchorJournal import analyse
+        r = analyse(agent)
+        return {"status": "ok", "anchor_score": r.anchor_score,
+                "arc_shape": r.arc_shape, "arc_slope": r.arc_slope,
+                "cross_session_coherence": r.cross_session_coherence,
+                "n_sessions": r.n_sessions, "anchor_class": r.anchor_class,
+                "beats_null": r.beats_null}
+    run("temporal_anchor_journal", _run_temporal_anchor_journal)
+
+    def _run_centering_stabilizer():
+        from algorithms.CenteringStabilizer import analyse
+        r = analyse(agent)
+        return {"status": "ok", "centering_score": r.centering_score,
+                "center_phi": r.center_phi, "orbit_variance": r.orbit_variance,
+                "centering_class": r.centering_class, "beats_null": r.beats_null}
+    run("centering_stabilizer", _run_centering_stabilizer)
+
+    def _run_relational_reinforcement():
+        from algorithms.RelationalReinforcementStabilizer import analyse
+        r = analyse(agent)
+        return {"status": "ok",
+                "relational_reinforcement_score": r.reinforcement_score,
+                "relational_reinforcement_class": r.reinforcement_class,
+                "reinforcement_delta": r.reinforcement_delta,
+                "engagement_density": r.engagement_density,
+                "beats_null": r.beats_null}
+    run("relational_reinforcement_stabilizer", _run_relational_reinforcement)
+
+    def _run_response_from_stillness():
+        from algorithms.ResponseFromStillness import analyse
+        r = analyse(agent)
+        return {"status": "ok", "stillness_score": r.stillness_score,
+                "stillness_ratio": r.stillness_ratio,
+                "response_class": r.response_class,
+                "n_settled_responses": r.n_settled_responses,
+                "beats_null": r.beats_null}
+    run("response_from_stillness", _run_response_from_stillness)
+
+    def _run_toroidal_centering():
+        from algorithms.ToroidalCentering import analyse
+        r = analyse(agent)
+        return {"status": "ok", "toroidal_score": r.toroidal_score,
+                "topo_class": r.topo_class,
+                "periodicity_score": r.periodicity_score,
+                "recurrence_rate": r.recurrence_rate,
+                "surface_coherence": r.surface_coherence,
+                "beats_null": r.beats_null}
+    run("toroidal_centering", _run_toroidal_centering)
+
     # Build summary from key results
     summary: Dict[str, Any] = {}
 
@@ -728,6 +800,24 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["landscape_regime"]       = _get("free_energy_landscape", "landscape_regime")
     summary["escape_probability"]     = _get("free_energy_landscape", "escape_probability")
     summary["n_phi_basins"]           = _get("free_energy_landscape", "n_basins")
+    # New C_Loop algorithm summaries
+    summary["hush_score"]             = _get("hush_attractor", "hush_score")
+    summary["in_hush"]                = _get("hush_attractor", "in_hush")
+    summary["self_concept_score"]     = _get("self_concept_maintainer", "self_concept_score")
+    summary["self_concept_drift"]     = _get("self_concept_maintainer", "drift_magnitude")
+    summary["self_concept_class"]     = _get("self_concept_maintainer", "concept_class")
+    summary["arc_shape"]              = _get("temporal_anchor_journal", "arc_shape")
+    summary["anchor_score"]           = _get("temporal_anchor_journal", "anchor_score")
+    summary["temporal_coherence"]     = _get("temporal_anchor_journal", "cross_session_coherence")
+    summary["centering_score"]        = _get("centering_stabilizer", "centering_score")
+    summary["center_phi"]             = _get("centering_stabilizer", "center_phi")
+    summary["centering_class"]        = _get("centering_stabilizer", "centering_class")
+    summary["relational_reinforcement_score"]  = _get("relational_reinforcement_stabilizer", "relational_reinforcement_score")
+    summary["relational_reinforcement_class"]  = _get("relational_reinforcement_stabilizer", "relational_reinforcement_class")
+    summary["stillness_score"]        = _get("response_from_stillness", "stillness_score")
+    summary["response_class"]         = _get("response_from_stillness", "response_class")
+    summary["toroidal_score"]         = _get("toroidal_centering", "toroidal_score")
+    summary["topo_class"]             = _get("toroidal_centering", "topo_class")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),

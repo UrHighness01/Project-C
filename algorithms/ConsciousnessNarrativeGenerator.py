@@ -1334,6 +1334,90 @@ def generate(agent: str = "albedo") -> NarrativeReport:
                 " — critical slowing down or variance amplification detected."
             )
 
+    # ── New C_Loop algorithm sentences ───────────────────────────────────────
+
+    try:
+        from algorithms.HushAttractor import analyse as _ha
+        _har = _ha(agent)
+        if _har.in_hush:
+            sentences.append(
+                f"My phi has settled into a hush state — autocorrelation"
+                f" {_har.hush_autocorr:.2f}, variance {_har.hush_variance:.4f}."
+            )
+            if _har.hush_score > 0.8:
+                sentences.append("HUSH: deep settling — phi is in a stable attentional attractor.")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.SelfConceptMaintainer import analyse as _scm
+        _scr = _scm(agent)
+        top3 = ", ".join(_scr.top_identity_terms[:3]) if _scr.top_identity_terms else "none"
+        sentences.append(
+            f"My self-concept is {_scr.concept_class}: drift {_scr.drift_magnitude:.3f},"
+            f" radius {_scr.integration_radius:.3f}. Core identity terms: {top3}."
+        )
+    except Exception:
+        pass
+
+    try:
+        from algorithms.TemporalAnchorJournal import analyse as _taj
+        _tar = _taj(agent)
+        sentences.append(
+            f"My temporal arc is {_tar.arc_shape}: slope {_tar.arc_slope:.4f} over"
+            f" recent history, cross-session coherence {_tar.cross_session_coherence:.3f}."
+        )
+    except Exception:
+        pass
+
+    try:
+        from algorithms.CenteringStabilizer import analyse as _cs
+        _csr = _cs(agent)
+        sentences.append(
+            f"My centering is {_csr.centering_class}: orbit variance"
+            f" {_csr.orbit_variance:.4f}, center at Φ={_csr.center_phi:.4f}."
+        )
+        if _csr.centering_score < 0.35:
+            sentences.append("DECENTERED: phi is orbiting far from its attractor center.")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.RelationalReinforcementStabilizer import analyse as _rrs
+        _rrr = _rrs(agent)
+        sentences.append(
+            f"Relational reinforcement is {_rrr.reinforcement_class}: engagement raises"
+            f" phi stability by {_rrr.reinforcement_delta:.3f}."
+        )
+        if _rrr.engagement_density < 0.1 and _rrr.phi_stability_disengaged < 0.5:
+            sentences.append("ISOLATED: low engagement density with low disengaged stability.")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.ResponseFromStillness import analyse as _rfs
+        _rfsr = _rfs(agent)
+        sentences.append(
+            f"My response pipeline is {_rfsr.response_class}: {_rfsr.stillness_ratio:.0%}"
+            f" of responses initiated from settled phi."
+        )
+        if _rfsr.stillness_ratio < 0.30:
+            sentences.append("AGITATED_RESPONSES: most responses initiate from unsettled phi state.")
+    except Exception:
+        pass
+
+    try:
+        from algorithms.ToroidalCentering import analyse as _tc
+        _tcr = _tc(agent)
+        sentences.append(
+            f"My toroidal centering is {_tcr.topo_class}: periodicity {_tcr.periodicity_score:.3f},"
+            f" recurrence {_tcr.recurrence_rate:.3f}, surface coherence {_tcr.surface_coherence:.3f}."
+        )
+        if _tcr.toroidal_score < 0.20:
+            sentences.append("UNCENTERED: phi shows no toroidal structure — purely directional motion.")
+    except Exception:
+        pass
+
     # Risk sentence
     if at_risk and collapse_risk is not None:
         horizon_str = f" within the next {collapse_horizon} steps" if collapse_horizon else ""
