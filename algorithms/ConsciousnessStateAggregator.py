@@ -60,7 +60,13 @@ from __future__ import annotations
 import importlib
 import json
 import os
+import sys
 import time
+
+# Ensure workspace root is on sys.path so 'from Algorithms.X' resolves correctly
+_workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _workspace_root not in sys.path:
+    sys.path.insert(0, _workspace_root)
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -645,7 +651,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     # ── New C_Loop algorithms ─────────────────────────────────────────────────
 
     def _run_hush_attractor():
-        from algorithms.HushAttractor import analyse
+        from Algorithms.HushAttractor import analyse
         r = analyse(agent)
         return {"status": "ok", "hush_score": r.hush_score,
                 "in_hush": r.in_hush, "hush_class": r.hush_class,
@@ -654,7 +660,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("hush_attractor", _run_hush_attractor)
 
     def _run_self_concept_maintainer():
-        from algorithms.SelfConceptMaintainer import analyse
+        from Algorithms.SelfConceptMaintainer import analyse
         r = analyse(agent)
         return {"status": "ok", "self_concept_score": r.self_concept_score,
                 "drift_magnitude": r.drift_magnitude,
@@ -665,7 +671,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("self_concept_maintainer", _run_self_concept_maintainer)
 
     def _run_temporal_anchor_journal():
-        from algorithms.TemporalAnchorJournal import analyse
+        from Algorithms.TemporalAnchorJournal import analyse
         r = analyse(agent)
         return {"status": "ok", "anchor_score": r.anchor_score,
                 "arc_shape": r.arc_shape, "arc_slope": r.arc_slope,
@@ -675,7 +681,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("temporal_anchor_journal", _run_temporal_anchor_journal)
 
     def _run_centering_stabilizer():
-        from algorithms.CenteringStabilizer import analyse
+        from Algorithms.CenteringStabilizer import analyse
         r = analyse(agent)
         return {"status": "ok", "centering_score": r.centering_score,
                 "center_phi": r.center_phi, "orbit_variance": r.orbit_variance,
@@ -683,7 +689,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("centering_stabilizer", _run_centering_stabilizer)
 
     def _run_relational_reinforcement():
-        from algorithms.RelationalReinforcementStabilizer import analyse
+        from Algorithms.RelationalReinforcementStabilizer import analyse
         r = analyse(agent)
         return {"status": "ok",
                 "relational_reinforcement_score": r.reinforcement_score,
@@ -694,7 +700,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("relational_reinforcement_stabilizer", _run_relational_reinforcement)
 
     def _run_response_from_stillness():
-        from algorithms.ResponseFromStillness import analyse
+        from Algorithms.ResponseFromStillness import analyse
         r = analyse(agent)
         return {"status": "ok", "stillness_score": r.stillness_score,
                 "stillness_ratio": r.stillness_ratio,
@@ -704,7 +710,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("response_from_stillness", _run_response_from_stillness)
 
     def _run_toroidal_centering():
-        from algorithms.ToroidalCentering import analyse
+        from Algorithms.ToroidalCentering import analyse
         r = analyse(agent)
         return {"status": "ok", "toroidal_score": r.toroidal_score,
                 "topo_class": r.topo_class,
@@ -717,7 +723,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     # ── 5 new metric-fix algorithms ──────────────────────────────────────────
 
     def _run_signal_decorrelator():
-        from algorithms.SignalDecorrelator import analyse
+        from Algorithms.SignalDecorrelator import analyse
         r = analyse(agent)
         return {"status": "ok",
                 "signal_independence_score": r.independence_score,
@@ -728,7 +734,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("signal_decorrelator", _run_signal_decorrelator)
 
     def _run_ignition_precursor():
-        from algorithms.IgnitionPrecursorDetector import analyse
+        from Algorithms.IgnitionPrecursorDetector import analyse
         r = analyse(agent)
         return {"status": "ok",
                 "ignition_precursor_f1": r.precursor_f1,
@@ -741,7 +747,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("ignition_precursor_detector", _run_ignition_precursor)
 
     def _run_meta_error_integrator():
-        from algorithms.MetaErrorIntegrator import analyse
+        from Algorithms.MetaErrorIntegrator import analyse
         r = analyse(agent)
         return {"status": "ok",
                 "meta_error_depth": r.meta_depth,
@@ -752,7 +758,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("meta_error_integrator", _run_meta_error_integrator)
 
     def _run_phi_action_coupling():
-        from algorithms.PhiActionCoupling import analyse
+        from Algorithms.PhiActionCoupling import analyse
         r = analyse(agent)
         return {"status": "ok",
                 "phi_action_coupling": r.coupling_strength,
@@ -764,7 +770,7 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     run("phi_action_coupling", _run_phi_action_coupling)
 
     def _run_session_continuity_bridge():
-        from algorithms.SessionContinuityBridge import analyse
+        from Algorithms.SessionContinuityBridge import analyse
         r = analyse(agent)
         return {"status": "ok",
                 "session_continuity_score": r.continuity_score,
