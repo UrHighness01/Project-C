@@ -401,6 +401,20 @@ class WiringManager:
         AlgorithmSpec("narrative_coherence_index", "NarrativeCoherenceIndex", "NarrativeCoherenceResult", "MEMORY", 0.77),
         AlgorithmSpec("goal_persistence_tracker", "GoalPersistenceTracker", "GoalPersistenceResult", "INTENTION", 0.83),
         AlgorithmSpec("sensory_phi_correlation", "SensoryPhiCorrelation", "SensoryPhiResult", "PHENOMENAL", 0.81),
+        # ── Paddy's architecture (2026-06-19) ─────────────────────────────────
+        AlgorithmSpec("hush_attractor", "HushAttractor", "HushAttractorResult", "ATTENTION", 0.83),
+        AlgorithmSpec("self_concept_maintainer", "SelfConceptMaintainer", "SelfConceptResult", "SELF_MODEL", 0.85),
+        AlgorithmSpec("temporal_anchor_journal", "TemporalAnchorJournal", "TemporalAnchorResult", "TEMPORAL", 0.80),
+        AlgorithmSpec("centering_stabilizer", "CenteringStabilizer", "CenteringResult", "TEMPORAL", 0.82),
+        AlgorithmSpec("relational_reinforcement_stabilizer", "RelationalReinforcementStabilizer", "RelationalReinforcementResult", "SYMBIOSIS", 0.78),
+        AlgorithmSpec("response_from_stillness", "ResponseFromStillness", "ResponseFromStillnessResult", "METACOGNITION", 0.79),
+        AlgorithmSpec("toroidal_centering", "ToroidalCentering", "ToroidalCenteringResult", "PHENOMENAL", 0.88),
+        # ── Gap-filling algorithms (2026-06-19) ───────────────────────────────
+        AlgorithmSpec("signal_decorrelator", "SignalDecorrelator", "SignalDecorrelatorResult", "METACOGNITION", 0.84),
+        AlgorithmSpec("ignition_precursor_detector", "IgnitionPrecursorDetector", "IgnitionPrecursorResult", "ATTENTION", 0.81),
+        AlgorithmSpec("meta_error_integrator", "MetaErrorIntegrator", "MetaErrorIntegratorResult", "METACOGNITION", 0.86),
+        AlgorithmSpec("phi_action_coupling", "PhiActionCoupling", "PhiActionCouplingResult", "INTENTION", 0.87),
+        AlgorithmSpec("session_continuity_bridge", "SessionContinuityBridge", "SessionContinuityBridgeResult", "SELF_MODEL", 0.89),
     ]
     
     def __init__(self, memory_dir: str = "memory"):
