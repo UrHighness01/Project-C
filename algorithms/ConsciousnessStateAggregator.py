@@ -63,10 +63,14 @@ import os
 import sys
 import time
 
-# Ensure workspace root is on sys.path so 'from Algorithms.X' resolves correctly
+# Ensure both algorithm dirs are on sys.path regardless of invocation context.
+# workspace root → enables 'from Algorithms.X' (uppercase package)
+# Project-C parent → enables 'from algorithms.X' (lowercase package)
 _workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _workspace_root not in sys.path:
-    sys.path.insert(0, _workspace_root)
+_project_c_root = os.path.join(_workspace_root, "GitHub", "Project-C")
+for _p in (_workspace_root, _project_c_root):
+    if os.path.isdir(_p) and _p not in sys.path:
+        sys.path.insert(0, _p)
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, Optional
