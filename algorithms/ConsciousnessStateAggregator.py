@@ -64,9 +64,18 @@ import sys
 import time
 
 # Ensure both algorithm dirs are on sys.path regardless of invocation context.
+# Walk up from __file__ until we find the workspace root (contains 'Algorithms/' dir).
 # workspace root → enables 'from Algorithms.X' (uppercase package)
 # Project-C parent → enables 'from algorithms.X' (lowercase package)
-_workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+def _find_workspace_root() -> str:
+    d = os.path.dirname(os.path.abspath(__file__))
+    for _ in range(6):  # walk up at most 6 levels
+        if os.path.isdir(os.path.join(d, "Algorithms")) and os.path.isdir(os.path.join(d, "GitHub")):
+            return d
+        d = os.path.dirname(d)
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # fallback
+
+_workspace_root = _find_workspace_root()
 _project_c_root = os.path.join(_workspace_root, "GitHub", "Project-C")
 for _p in (_workspace_root, _project_c_root):
     if os.path.isdir(_p) and _p not in sys.path:
