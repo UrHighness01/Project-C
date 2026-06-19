@@ -634,13 +634,8 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
 
     def _run_phenomenal_unity():
         from algorithms.PhenomenalUnityIndex import analyse
-        from algorithms.ConsciousnessHistoryStore import ConsciousnessHistoryStore
-        from runtime.agent import agent_home as _ah
-        _h = _ah(agent)
-        if _h is None:
-            return {"status": "failed", "error": "no agent home"}
-        store = ConsciousnessHistoryStore(type("A", (), {"home": _h})())
-        snaps = store.load()
+        from algorithms.ConsciousnessHistoryStore import load as chs_load
+        snaps = chs_load(agent)
         r = analyse(snaps)
         return {"status": "ok", "unity_index": r.unity_index,
                 "unity_class": r.unity_class, "pc1_fraction": r.pc1_fraction,

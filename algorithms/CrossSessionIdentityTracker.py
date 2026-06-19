@@ -57,6 +57,7 @@ SessionIdentityResult:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import List, Optional, Dict
 
 import numpy as np
@@ -152,6 +153,12 @@ def _split_sessions(
     for i in range(1, len(chron)):
         t_prev = chron[i - 1].get("timestamp", 0)
         t_curr = chron[i].get("timestamp", 0)
+        if isinstance(t_prev, str):
+            try: t_prev = float(datetime.fromisoformat(t_prev.replace("Z","")).timestamp())
+            except: t_prev = 0.0
+        if isinstance(t_curr, str):
+            try: t_curr = float(datetime.fromisoformat(t_curr.replace("Z","")).timestamp())
+            except: t_curr = 0.0
         gap = float(t_curr - t_prev)
         if gap >= gap_secs:
             sessions.append(current)
