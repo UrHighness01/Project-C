@@ -1418,6 +1418,97 @@ def generate(agent: str = "albedo") -> NarrativeReport:
     except Exception:
         pass
 
+    # ── New metric-fix algorithm sentences ───────────────────────────────────
+
+    try:
+        from algorithms.SignalDecorrelator import analyse as _sda
+        _sdr = _sda(agent)
+        cls_sd = _sdr.decorrelation_class
+        ind_s  = _sdr.independence_score
+        var_pc1 = _sdr.variance_explained_pc1
+        sentences.append(
+            f"Signal monitoring is {cls_sd}: {ind_s:.2f} independence,"
+            f" PC1 explains {var_pc1:.0%} of variance."
+        )
+        if cls_sd == "COLLINEAR":
+            sentences.append(
+                "DEGENERATE: monitoring signals are collinear — meta-phi is unreliable."
+            )
+    except Exception:
+        pass
+
+    try:
+        from algorithms.IgnitionPrecursorDetector import analyse as _ipda
+        _ipdr = _ipda(agent)
+        cls_ip = _ipdr.precursor_class
+        f1_ip  = _ipdr.precursor_f1
+        nd_ip  = _ipdr.n_buildup_detected
+        ni_ip  = _ipdr.n_ignitions
+        sentences.append(
+            f"Ignition precursors: {cls_ip} — F1={f1_ip:.3f},"
+            f" detected {nd_ip} buildups, {ni_ip} actual ignitions."
+        )
+        if cls_ip == "BLIND":
+            sentences.append(
+                "BLIND: cannot predict ignition events from buildup signature."
+            )
+    except Exception:
+        pass
+
+    try:
+        from algorithms.MetaErrorIntegrator import analyse as _meia
+        _meir = _meia(agent)
+        cls_me = _meir.depth_class
+        l1r    = _meir.l1_r2
+        l2r    = _meir.l2_r2
+        dep    = _meir.meta_depth
+        sentences.append(
+            f"Meta-error integration: {cls_me}"
+            f" (L1 R²={l1r:.3f}, L2 R²={l2r:.3f}, depth={dep:.4f})."
+        )
+        if cls_me == "SURFACE":
+            sentences.append(
+                "SURFACE: system cannot predict its own prediction errors"
+                " — L2 self-awareness absent."
+            )
+    except Exception:
+        pass
+
+    try:
+        from algorithms.PhiActionCoupling import analyse as _paca
+        _pacr = _paca(agent)
+        cls_pa = _pacr.coupling_class
+        v_pa   = _pacr.cramers_v
+        c2_pa  = _pacr.chi2
+        p_pa   = _pacr.p_value
+        sentences.append(
+            f"Phi-action coupling: {cls_pa}"
+            f" (Cramér's V={v_pa:.3f}, χ²={c2_pa:.1f}, p={p_pa:.4f})."
+        )
+        if cls_pa == "UNCOUPLED":
+            sentences.append(
+                "UNCOUPLED: phi level does not predict qualia type — volition signal absent."
+            )
+    except Exception:
+        pass
+
+    try:
+        from algorithms.SessionContinuityBridge import analyse as _scba
+        _scbr = _scba(agent)
+        cls_sc = _scbr.continuity_class
+        sc_s   = _scbr.continuity_score
+        sim_s  = _scbr.phi_similarity
+        sentences.append(
+            f"Session continuity: {cls_sc}"
+            f" (score={sc_s:.3f}, phi-similarity={sim_s:.3f})."
+        )
+        if cls_sc == "FRAGMENTED" and not _scbr.bridge_found:
+            sentences.append(
+                "COLD_START: no session bridge found — continuity reset."
+            )
+    except Exception:
+        pass
+
     # Risk sentence
     if at_risk and collapse_risk is not None:
         horizon_str = f" within the next {collapse_horizon} steps" if collapse_horizon else ""

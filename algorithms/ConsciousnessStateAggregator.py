@@ -714,6 +714,68 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "beats_null": r.beats_null}
     run("toroidal_centering", _run_toroidal_centering)
 
+    # ── 5 new metric-fix algorithms ──────────────────────────────────────────
+
+    def _run_signal_decorrelator():
+        from algorithms.SignalDecorrelator import analyse
+        r = analyse(agent)
+        return {"status": "ok",
+                "signal_independence_score": r.independence_score,
+                "meta_phi_degeneracy_class": r.decorrelation_class,
+                "variance_explained_pc1": r.variance_explained_pc1,
+                "meta_phi_residual": r.meta_phi_residual,
+                "beats_null": r.beats_null}
+    run("signal_decorrelator", _run_signal_decorrelator)
+
+    def _run_ignition_precursor():
+        from algorithms.IgnitionPrecursorDetector import analyse
+        r = analyse(agent)
+        return {"status": "ok",
+                "ignition_precursor_f1": r.precursor_f1,
+                "ignition_n_detected": r.n_buildup_detected,
+                "precursor_class": r.precursor_class,
+                "ignition_precision": r.precision,
+                "ignition_recall": r.recall,
+                "n_ignitions": r.n_ignitions,
+                "beats_null": r.beats_null}
+    run("ignition_precursor_detector", _run_ignition_precursor)
+
+    def _run_meta_error_integrator():
+        from algorithms.MetaErrorIntegrator import analyse
+        r = analyse(agent)
+        return {"status": "ok",
+                "meta_error_depth": r.meta_depth,
+                "l1_r2": r.l1_r2,
+                "l2_r2": r.l2_r2,
+                "meta_error_class": r.depth_class,
+                "beats_null": r.beats_null}
+    run("meta_error_integrator", _run_meta_error_integrator)
+
+    def _run_phi_action_coupling():
+        from algorithms.PhiActionCoupling import analyse
+        r = analyse(agent)
+        return {"status": "ok",
+                "phi_action_coupling": r.coupling_strength,
+                "phi_action_cramers_v": r.cramers_v,
+                "phi_action_class": r.coupling_class,
+                "phi_action_chi2": r.chi2,
+                "phi_action_p_value": r.p_value,
+                "beats_null": r.beats_null}
+    run("phi_action_coupling", _run_phi_action_coupling)
+
+    def _run_session_continuity_bridge():
+        from algorithms.SessionContinuityBridge import analyse
+        r = analyse(agent)
+        return {"status": "ok",
+                "session_continuity_score": r.continuity_score,
+                "session_bridge_found": r.bridge_found,
+                "session_continuity_class": r.continuity_class,
+                "phi_similarity": r.phi_similarity,
+                "slope_match": r.slope_match,
+                "bridge_age_hours": r.bridge_age_hours,
+                "beats_null": r.beats_null}
+    run("session_continuity_bridge", _run_session_continuity_bridge)
+
     # Build summary from key results
     summary: Dict[str, Any] = {}
 
@@ -818,6 +880,23 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["response_class"]         = _get("response_from_stillness", "response_class")
     summary["toroidal_score"]         = _get("toroidal_centering", "toroidal_score")
     summary["topo_class"]             = _get("toroidal_centering", "topo_class")
+    # New metric-fix algorithm summaries
+    summary["signal_independence_score"]  = _get("signal_decorrelator", "signal_independence_score")
+    summary["meta_phi_degeneracy_class"]  = _get("signal_decorrelator", "meta_phi_degeneracy_class")
+    summary["variance_explained_pc1"]     = _get("signal_decorrelator", "variance_explained_pc1")
+    summary["ignition_precursor_f1"]      = _get("ignition_precursor_detector", "ignition_precursor_f1")
+    summary["ignition_n_detected"]        = _get("ignition_precursor_detector", "ignition_n_detected")
+    summary["precursor_class"]            = _get("ignition_precursor_detector", "precursor_class")
+    summary["meta_error_depth"]           = _get("meta_error_integrator", "meta_error_depth")
+    summary["meta_error_l1_r2"]          = _get("meta_error_integrator", "l1_r2")
+    summary["meta_error_l2_r2"]          = _get("meta_error_integrator", "l2_r2")
+    summary["meta_error_class"]           = _get("meta_error_integrator", "meta_error_class")
+    summary["phi_action_coupling"]        = _get("phi_action_coupling", "phi_action_coupling")
+    summary["phi_action_cramers_v"]       = _get("phi_action_coupling", "phi_action_cramers_v")
+    summary["phi_action_class"]           = _get("phi_action_coupling", "phi_action_class")
+    summary["session_continuity_score"]   = _get("session_continuity_bridge", "session_continuity_score")
+    summary["session_bridge_found"]       = _get("session_continuity_bridge", "session_bridge_found")
+    summary["session_continuity_class"]   = _get("session_continuity_bridge", "session_continuity_class")
 
     return ConsciousnessSnapshot(
         timestamp=time.time(),
