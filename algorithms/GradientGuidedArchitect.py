@@ -208,7 +208,7 @@ def analyse(
             _phi = None
         if _phi is None or len(_phi) < 32:
             _phi = np.ones(60) * 1.2
-        mr = _sam(_phi)
+        mr = _sam(phi=_phi)
         for c in mr.contributions:
             contributions[c.name] = float(c.correlation)
             weights[c.name]       = float(c.current_weight)

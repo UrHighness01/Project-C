@@ -53,7 +53,8 @@ def _compute_surprise(entries: list, window: int = 100, n_shuffles: int = 50) ->
 
     ms = _surprise_of(types)
     fs = sum(-math.log2(max(freq.get(t, 1e-10), 1e-10)) for t in types[1:]) / max(len(types)-1, 1)
-    ns = sum(_surprise_of(random.sample(types, len(types))) for _ in range(n_shuffles)) / n_shuffles
+    _rng = random.Random(42)
+    ns = sum(_surprise_of(_rng.sample(types, len(types))) for _ in range(n_shuffles)) / n_shuffles
     return {
         "status": "ok",
         "markov_surprise": round(ms, 4),
