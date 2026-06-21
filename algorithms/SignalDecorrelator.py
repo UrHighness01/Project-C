@@ -21,6 +21,22 @@ from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass
 from typing import List
+from datetime import datetime
+
+
+def _to_unix(ts) -> float:
+    if ts is None:
+        return 0.0
+    if isinstance(ts, (int, float)):
+        return float(ts)
+    try:
+        return float(ts)
+    except (ValueError, TypeError):
+        pass
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
 
 _MIN_ENTRIES = 40
 _N_SHUFFLES = 200
@@ -114,7 +130,7 @@ def analyse(agent: str = "albedo", **kwargs) -> SignalDecorrelatorResult:
     # mem_proxy: cumulative entry count rate (entries per time window)
     mem_proxy = np.linspace(0, 1, n)
     # interaction_proxy: inter-entry gaps (inverse of density)
-    timestamps = np.array([float(e.get("timestamp", (idx) * 60.0)) for idx, e in enumerate(entries_asc)])
+    timestamps = np.array([_to_unix(e.get("timestamp")) or (idx * 60.0) for idx, e in enumerate(entries_asc)])
     if len(timestamps) > 1:
         gaps = np.diff(timestamps)
         gaps = np.concatenate([[gaps[0]], gaps])

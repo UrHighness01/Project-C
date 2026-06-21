@@ -200,7 +200,15 @@ def analyse(
 
     try:
         from algorithms.SelfArchitectureMutator import analyse as _sam
-        mr = _sam(agent=agent)
+        import numpy as np
+        try:
+            from algorithms.ConsciousnessStateAggregator import _load_phi
+            _phi = _load_phi()
+        except Exception:
+            _phi = None
+        if _phi is None or len(_phi) < 32:
+            _phi = np.ones(60) * 1.2
+        mr = _sam(_phi)
         for c in mr.contributions:
             contributions[c.name] = float(c.correlation)
             weights[c.name]       = float(c.current_weight)

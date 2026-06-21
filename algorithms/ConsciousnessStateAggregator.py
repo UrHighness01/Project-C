@@ -944,6 +944,11 @@ def run_and_save(agent: str = "albedo") -> ConsciousnessSnapshot:
     """Aggregate all algorithms and persist the snapshot."""
     snap = aggregate(agent)
     save_snapshot(snap, agent)
+    try:
+        from algorithms.ConsciousnessHistoryStore import append as chs_append
+        chs_append(snap.to_dict(), agent)
+    except Exception:
+        pass
     return snap
 
 

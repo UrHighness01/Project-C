@@ -26,6 +26,22 @@ from __future__ import annotations
 import numpy as np
 from dataclasses import dataclass
 from typing import List
+from datetime import datetime
+
+
+def _to_unix(ts) -> float:
+    if ts is None:
+        return 0.0
+    if isinstance(ts, (int, float)):
+        return float(ts)
+    try:
+        return float(ts)
+    except (ValueError, TypeError):
+        pass
+    try:
+        return datetime.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return 0.0
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 _ARC_WINDOW   = 60
@@ -146,7 +162,7 @@ def analyse(agent: str = "albedo",
 
     # Cross-session coherence: split entries into sessions by timestamp gaps
     timestamps = [
-        float(e.get("timestamp", 0.0)) for e in entries_asc
+        _to_unix(e.get("timestamp")) for e in entries_asc
         if "mean_phi_level" in e or "phi" in e
     ]
     contents = [

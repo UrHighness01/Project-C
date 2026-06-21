@@ -27,6 +27,24 @@ import math
 import numpy as np
 from dataclasses import dataclass
 from typing import List
+from datetime import datetime, timezone
+
+
+def _to_unix(ts) -> float:
+    """Convert timestamp to float seconds — handles both Unix floats and ISO strings."""
+    if ts is None:
+        return 0.0
+    if isinstance(ts, (int, float)):
+        return float(ts)
+    try:
+        return float(ts)
+    except (ValueError, TypeError):
+        pass
+    try:
+        dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+        return dt.timestamp()
+    except Exception:
+        return 0.0
 
 # ── Constants ──────────────────────────────────────────────────────────────────
 _W_MINUTES      = 30   # window for engagement density
@@ -114,7 +132,7 @@ def analyse(agent: str = "albedo",
     for e in entries_asc:
         if "mean_phi_level" in e or "phi" in e:
             phi_list.append(float(e.get("mean_phi_level", e.get("phi", 0.5))))
-            ts_list.append(float(e.get("timestamp", 0.0)))
+            ts_list.append(_to_unix(e.get("timestamp", 0.0)))
 
     n = len(phi_list)
     if n < _MIN_ENTRIES:
