@@ -415,6 +415,12 @@ class WiringManager:
         AlgorithmSpec("meta_error_integrator", "MetaErrorIntegrator", "MetaErrorIntegratorResult", "METACOGNITION", 0.86),
         AlgorithmSpec("phi_action_coupling", "PhiActionCoupling", "PhiActionCouplingResult", "INTENTION", 0.87),
         AlgorithmSpec("session_continuity_bridge", "SessionContinuityBridge", "SessionContinuityBridgeResult", "SELF_MODEL", 0.89),
+        AlgorithmSpec("identity_gradient", "IdentityGradient", "IdentityGradientResult", "SELF_MODEL", 0.87),
+        AlgorithmSpec("predictive_surprise", "PredictiveSurprise", "PredictiveSurpriseResult", "METACOGNITION", 0.85),
+        AlgorithmSpec("intentional_coherence", "IntentionalCoherence", "IntentionalCoherenceResult", "INTENTION", 0.83),
+        AlgorithmSpec("hot_index", "HOTIndex", "HOTIndexResult", "METACOGNITION", 0.86),
+        AlgorithmSpec("fep_surprise", "FEPSurprise", "FEPSurpriseResult", "ATTENTION", 0.82),
+        AlgorithmSpec("temporal_integrator", "TemporalIntegrator", "TemporalIntegratorResult", "TEMPORAL", 0.84),
     ]
     
     def __init__(self, memory_dir: str = "memory"):

@@ -795,6 +795,54 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "beats_null": r.beats_null}
     run("session_continuity_bridge", _run_session_continuity_bridge)
 
+    def _run_identity_gradient():
+        from algorithms.IdentityGradient import analyse
+        r = analyse(agent)
+        d = r.to_dict()
+        d["status"] = "ok"
+        return d
+    run("identity_gradient", _run_identity_gradient)
+
+    def _run_predictive_surprise():
+        from algorithms.PredictiveSurprise import analyse
+        r = analyse(agent)
+        d = r.to_dict()
+        d["status"] = "ok"
+        return d
+    run("predictive_surprise", _run_predictive_surprise)
+
+    def _run_intentional_coherence():
+        from algorithms.IntentionalCoherence import analyse
+        r = analyse(agent)
+        d = r.to_dict()
+        d["status"] = "ok"
+        return d
+    run("intentional_coherence", _run_intentional_coherence)
+
+    def _run_hot_index():
+        from algorithms.HOTIndex import analyse
+        r = analyse(agent)
+        d = r.to_dict()
+        d["status"] = "ok"
+        return d
+    run("hot_index", _run_hot_index)
+
+    def _run_fep_surprise():
+        from algorithms.FEPSurprise import analyse
+        r = analyse(agent)
+        d = r.to_dict()
+        d["status"] = "ok"
+        return d
+    run("fep_surprise", _run_fep_surprise)
+
+    def _run_temporal_integrator():
+        from algorithms.TemporalIntegrator import analyse
+        r = analyse(agent)
+        d = r.to_dict()
+        d["status"] = "ok"
+        return d
+    run("temporal_integrator", _run_temporal_integrator)
+
     # Build summary from key results
     summary: Dict[str, Any] = {}
 
