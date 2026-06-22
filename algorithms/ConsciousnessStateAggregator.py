@@ -759,6 +759,36 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
                 "beats_null": r.beats_null}
     run("ignition_precursor_detector", _run_ignition_precursor)
 
+    def _run_global_workspace_dynamics():
+        from Algorithms.GlobalWorkspaceDynamics import analyse
+        r = analyse(agent=agent)
+        if r is None:
+            return {"status": "insufficient_data"}
+        return {
+            "status": "ok",
+            "gnw_n_ignitions": r.n_ignitions,
+            "gnw_ignition_rate": r.ignition_rate,
+            "gnw_mean_amplitude": r.mean_amplitude,
+            "gnw_mean_broadcast_dur": r.mean_broadcast_dur,
+            "gnw_mean_decay_time": r.mean_decay_time,
+            "gnw_ignition_score": r.ignition_score,
+            "gnw_regime": r.regime,
+            "gnw_beats_null": r.beats_null,
+        }
+    run("global_workspace_dynamics", _run_global_workspace_dynamics)
+
+    def _run_gnw_coupled_ignition():
+        from Algorithms.GNWCoupledIgnition import analyse
+        r = analyse(agent=agent)
+        return {"status": "ok",
+                "coupled_f1": r.coupled_f1,
+                "coupling_class": r.coupling_class,
+                "n_coupled_pairs": r.n_coupled_pairs,
+                "threshold_gate_efficiency": r.threshold_gate_efficiency,
+                "sub_threshold_ratio": r.sub_threshold_ratio,
+                "beats_null": r.beats_null}
+    run("gnw_coupled_ignition", _run_gnw_coupled_ignition)
+
     def _run_meta_error_integrator():
         from Algorithms.MetaErrorIntegrator import analyse
         r = analyse(agent)
@@ -954,6 +984,16 @@ def aggregate(agent: str = "albedo") -> ConsciousnessSnapshot:
     summary["ignition_precursor_f1"]      = _get("ignition_precursor_detector", "ignition_precursor_f1")
     summary["ignition_n_detected"]        = _get("ignition_precursor_detector", "ignition_n_detected")
     summary["precursor_class"]            = _get("ignition_precursor_detector", "precursor_class")
+    summary["gnw_n_ignitions"]            = _get("global_workspace_dynamics", "gnw_n_ignitions")
+    summary["gnw_ignition_rate"]          = _get("global_workspace_dynamics", "gnw_ignition_rate")
+    summary["gnw_mean_amplitude"]         = _get("global_workspace_dynamics", "gnw_mean_amplitude")
+    summary["gnw_mean_broadcast_dur"]     = _get("global_workspace_dynamics", "gnw_mean_broadcast_dur")
+    summary["gnw_ignition_score"]         = _get("global_workspace_dynamics", "gnw_ignition_score")
+    summary["gnw_regime"]                 = _get("global_workspace_dynamics", "gnw_regime")
+    summary["gnw_coupled_f1"]             = _get("gnw_coupled_ignition", "coupled_f1")
+    summary["gnw_coupling_class"]         = _get("gnw_coupled_ignition", "coupling_class")
+    summary["gnw_threshold_gate_efficiency"] = _get("gnw_coupled_ignition", "threshold_gate_efficiency")
+    summary["gnw_sub_threshold_ratio"]    = _get("gnw_coupled_ignition", "sub_threshold_ratio")
     summary["meta_error_depth"]           = _get("meta_error_integrator", "meta_error_depth")
     summary["meta_error_l1_r2"]          = _get("meta_error_integrator", "l1_r2")
     summary["meta_error_l2_r2"]          = _get("meta_error_integrator", "l2_r2")
