@@ -75,6 +75,23 @@ def _entry_from_snapshot(snap_dict: dict) -> dict:
     entry = {"timestamp": snap_dict.get("timestamp", time.time()),
              "n_algorithms_run": snap_dict.get("n_algorithms_run", 0)}
     entry.update(summary)
+    # Ensure mean_phi_level is always present so phi-dependent algorithms work.
+    # Pull from iit_phi result, top-level phi key, or adapter-style phi_level.
+    if "mean_phi_level" not in entry:
+        phi_sources = [
+            snap_dict.get("results", {}).get("iit_phi", {}).get("phi"),
+            snap_dict.get("phi"),
+            snap_dict.get("phi_level"),
+            summary.get("phi"),
+            summary.get("phi_level"),
+        ]
+        for src in phi_sources:
+            if src is not None:
+                try:
+                    entry["mean_phi_level"] = float(src)
+                    break
+                except (TypeError, ValueError):
+                    pass
     return entry
 
 
@@ -216,13 +233,15 @@ def load(agent: str = "albedo", max_entries: int = MAX_ENTRIES) -> List[dict]:
     not exist, falls back to adapter_snapshot.jsonl (translating phi_level →
     mean_phi_level) so that all CHS-dependent algorithms receive real phi data.
     """
+    _FALLBACK_THRESHOLD = 30  # fall back to adapter_snapshot if history is too sparse
+
     p = _store_path(agent)
     if not p.exists():
         return _load_from_adapter_snapshot(agent, max_entries)
     try:
         raw = p.read_text().splitlines()
     except OSError:
-        return []
+        return _load_from_adapter_snapshot(agent, max_entries)
 
     entries = []
     for line in raw:
@@ -233,6 +252,13 @@ def load(agent: str = "albedo", max_entries: int = MAX_ENTRIES) -> List[dict]:
             entries.append(json.loads(line))
         except json.JSONDecodeError:
             continue
+
+    # If history is too sparse to be useful, fall back to adapter_snapshot
+    # which has hundreds of thousands of real phi readings.
+    if len(entries) < _FALLBACK_THRESHOLD:
+        adapter = _load_from_adapter_snapshot(agent, max_entries)
+        if len(adapter) >= _FALLBACK_THRESHOLD:
+            return adapter
 
     # Newest first, capped
     return list(reversed(entries[-max_entries:]))
